@@ -4,6 +4,6 @@ Version=1.0
 Name=soundcraft-utils
 Comment=A tool for setting up inner routing of Soundcraft Notepad devices
 Exec=${gui_bin}
-Icon=${APP_ICON}
+Icon=${APPLICATION_ID}
 Terminal=false
 Categories=X-Multimedia;AudioVideo;Player;Recorder;
