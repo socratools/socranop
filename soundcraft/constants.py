@@ -44,7 +44,6 @@ BASE_EXE_INSTALLTOOL = "soundcraft_installtool"
 # Gtk Application ID of the soundcraft-utils GUI
 # https://developer.gnome.org/gio/stable/GApplication.html#g-application-id-is-valid
 APPLICATION_ID = "soundcraft.utils"
-APP_ICON = "soundcraft-utils"
 
 
 # Helpful for removing remnants of soundcraft-utils 0.4.0 and earlier
