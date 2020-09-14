@@ -43,7 +43,7 @@ BASE_EXE_INSTALLTOOL = "soundcraft_installtool"
 
 # Gtk Application ID of the soundcraft-utils GUI
 # https://developer.gnome.org/gio/stable/GApplication.html#g-application-id-is-valid
-APPLICATION_ID = "soundcraft.utils"
+APPLICATION_ID = "io.github.soundcraft_utils.gui"
 
 
 # The complete set of D-Bus API strings
