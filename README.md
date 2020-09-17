@@ -44,6 +44,41 @@ Installation
 
 Note: This covers manual installation of the pypi package via pip.  For distro-specific packages see [the section below](#distro-specific-packages)
 
+`socranop` is written in Python and interfaces to Linux
+systems in a few ways. This means that the Python code itself is very
+well handled by Python's default installation methods, but the
+interface to the Linux system is not.
+
+Therefore, at this time, the `socranop-installtool` utility must be called
+in addition to the normal Python tools for installing (`--post-install`)
+and uninstalling (`--pre-uninstall`) the files which hook
+`socranop` up with Linux system components like the D-Bus
+session bus and the XDG Desktop files and specification for
+integration into the desktop environment's list of applications. If
+you are running `socranop` from a distribution package, the
+distro package should do that for you.
+
+For the D-bus and XDG Desktop interface, `socranop` supports the
+following three installation locations:
+
+  * `/usr`
+
+    The location probably used only by distro packages.
+
+  * `/usr/local`
+
+    The location probably used for system-wide installations from pypi
+    or github sources.
+
+  * `$HOME/.local`
+
+    The location probably used for user-local installations from pypi
+    or github sources.
+
+In all three cases, the `udev` rules to set the USB device permissions
+for the user need to be installed as well. Again, distro packages
+should already have done that for you.
+
 ### Prerequisites
 
 The D-Bus service and GTK GUI both rely on
@@ -84,11 +119,6 @@ rm ./socranop-sudo.sh
 Again, this can be run as non-root to setup just for the current user, or as
 root to setup system-wide.  How you run this should match the user you used to
 run `pip`.
-
-Regardless of whether this is run as root or as a non-root user, one additional
-action must be taken to set up the udev rules, which can only be done as root.
-The installtool example shown above will write the appropriate script into the
-file specified, allowing for inspection before running as root.
 
 Alternatively, you can ask `socranop-installtool` to write the script contents
 to stdout instead of a file, by omitting the `--sudo-script` option.

@@ -30,6 +30,12 @@ ways.
 - Starts a subshell with the appropriate environment so that the
   sandboxed libraries and utilities are in use
 
+FIXME05: You can start the D-Bus service by running
+         `socranop-session-service` from a pipenv. Bus activation
+         only works per-user, though, not per-pipenv, as the session
+         bus only looks for `*.service` files in one specific location
+         in $HOME.
+
 ### Set up pre-commit
 
 `pre-commit install` (inside of pipenv shell)
