@@ -29,6 +29,7 @@
 import abc
 import argparse
 import io
+import re
 import shutil
 import sys
 import time
@@ -304,6 +305,36 @@ class AbstractInstallTool(metaclass=abc.ABCMeta):
 class FileInstallTool(AbstractInstallTool):
     """A subsystem which needs to install/uninstall a number of files"""
 
+    @staticmethod
+    def int_as_str(thing):
+        """Help sorting numbers
+
+        Help with sorting numbers by converting every integer to a fixed
+        length string starting with leading zeros to make alphabetical
+        sorting sort numerically.
+        """
+        try:
+            i = int(thing)
+            return "%08d" % i
+        except ValueError:
+            return thing
+
+    # Help with sorting numbers inside path elements
+    destfile_key_re = re.compile(r"((?<=\d)(?=\D)|(?<=\D)(?=\d))")
+
+    @staticmethod
+    def destfile_key(file):
+        """Convert a Path() to something which sorts as a alphabetical/numerical hybrid"""
+        path = file.dst
+        return tuple(
+            tuple(
+                map(
+                    FileInstallTool.int_as_str, FileInstallTool.destfile_key_re.split(s)
+                )
+            )
+            for s in path.parts
+        )
+
     def __init__(self):
         super(FileInstallTool, self).__init__()
         self.files = []
@@ -312,11 +343,11 @@ class FileInstallTool(AbstractInstallTool):
         self.files.append(file)
 
     def post_install(self):
-        for file in self.files:
+        for file in sorted(self.files, key=FileInstallTool.destfile_key):
             file._install()
 
     def pre_uninstall(self):
-        for file in reversed(self.files):
+        for file in sorted(self.files, key=FileInstallTool.destfile_key, reverse=True):
             file._uninstall()
 
 
@@ -326,7 +357,7 @@ class DataFileInstallTool(FileInstallTool):
     def walk_through_data_files(self, subdir):
         sources = findDataFiles(subdir)
         for (srcpath, files) in sources.items():
-            for f in sorted(files):
+            for f in files:
                 src = srcpath / f
                 ssrc = str(src)
                 if ssrc[-1] == "~":
