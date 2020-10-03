@@ -80,6 +80,20 @@ Submitting Changes
 
   Our pre-commit hooks will do this for you automatically.
 
+- If you have been git rebasing and had to fix a lot of conflicts, it
+  is possible that a source tree which does not pass the pre-commit
+  checks is committed anyway.
+
+  You can make sure that all the commits in your `my-local-branch`
+  branch after `release` pass the pre-commit checks by running
+
+      $ git rebase --exec 'pre-commit run -a' -i release my-local-branch
+
+  which will then stop at whatever commit that failed the pre-commit
+  run. Then you can fix it until `pre-commit run -a` succeeds, amend
+  the commit and `git rebase --continue`. Repeat fixing, amending, and
+  continuing until the interactive rebase has completed successfully.
+
 - Open pull requests to the default branch, currently named `release`.
 
 - Version numbers are semver-like, and reflect more about the D-Bus protocol
