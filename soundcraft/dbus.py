@@ -193,7 +193,7 @@ class Service:
         if action == "add":
             idVendor = int(device.get_property("ID_VENDOR_ID"), 16)
             idProduct = int(device.get_property("ID_PRODUCT_ID"), 16)
-            if idVendor == soundcraft.notepad.HARMAN_USB:
+            if idVendor == const.VENDOR_ID_HARMAN:
                 print(
                     f"Checking new Soundcraft device ({idVendor:0>4x}:{idProduct:0>4x})..."
                 )
