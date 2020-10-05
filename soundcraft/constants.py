@@ -55,3 +55,16 @@ MGRPATH = "/soundcraft/utils/notepad"
 
 # Helpful for removing remnants of soundcraft-utils 0.4.0 and earlier
 OLD_BASE_EXE_SERVICE = "soundcraft_dbus_service"
+
+
+# USB Device vendor and product IDs
+VENDOR_ID_HARMAN = 0x05FC
+
+PRODUCT_ID_NOTEPAD_5 = 0x0030
+PRODUCT_ID_NOTEPAD_8FX = 0x0031
+PRODUCT_ID_NOTEPAD_12FX = 0x0032
+PY_LIST_OF_PRODUCT_IDS = [
+    PRODUCT_ID_NOTEPAD_5,
+    PRODUCT_ID_NOTEPAD_8FX,
+    PRODUCT_ID_NOTEPAD_12FX,
+]
