@@ -129,7 +129,7 @@ Set channel routing:
 soundcraft_ctl [--no-dbus] -s <number>
 ```
 
-When using the `--no-dbus`, write access to the underling USB device is
+When using the `--no-dbus`, write access to the underlying USB device is
 required. Normally only root can do this, unless you've added some custom
 udev rules.
 
