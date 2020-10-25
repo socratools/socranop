@@ -20,34 +20,84 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-libpaths() {
-    local PYTHON=$1
-    $PYTHON -c "import sys; print('\n'.join(sys.path))" | grep -e "site-packages" -e "dist-packages"
-}
 
-LIB="gi"
+# This is a shell script instead of a python script to allow for
+# easily calling both the system python3 (without the pipenv) and the
+# pipenv python3 (inside the pipenv).
+
+# Non-sh bash features used:
+#
+#   * array variables
+#
+#     This makes the support for systems with python site-packages in
+#     more than one lib dir, e.g. in 'lib' and 'lib64', much easier.
+#
+#   * [[ ]]
+#
+#     This is more or less due to programmer laziness.
+
+
+# The libs to symlink from the system into the pipenv
+LIBS=("gi")
+
+# The system python (as opposed to the pipenv python)
 SYSPYTHON="/usr/bin/python3"
 
-syspaths=$(libpaths $SYSPYTHON)
-LIBPATH=
-for path in $syspaths; do
-    if [[ -d "$path/gi" ]]; then
-        LIBPATH="$path/gi"
-    fi
-done
-echo "Found system libpath for $LIB: $LIBPATH"
 
-envpaths=$(libpaths "pipenv run python3")
-for path in $envpaths; do
-    linkpath="$path/$(basename "$LIBPATH")"
-    if test -L "$linkpath" && test "x$(readlink "$linkpath")" = "x$LIBPATH"; then
-	echo "Nothing to do: $linkpath already pointing to $LIBPATH"
-	break
-    fi
-    echo "Trying to link $LIB into envpath $path"
-    ln -s "$LIBPATH" "$linkpath"
-    if [[ $? == 0 ]]; then
-        echo "Success"
-        break
-    fi
+libpaths() {
+    local PYTHON=$1
+    $PYTHON -c "import sys; print('\n'.join(sys.path))" | grep -e "site-packages" -e "dist-packages" | sort
+}
+
+syspaths=($(libpaths $SYSPYTHON))
+echo "syspaths:" "${syspaths[@]}"
+
+envpaths=($(libpaths "pipenv run python3"))
+echo "envpaths:" "${envpaths[@]}"
+
+if [[ "${#syspaths[@]}" -ne "${#envpaths[@]}" ]]; then
+    echo "Path array size mismatch"
+    exit 1
+fi
+
+echo
+
+for i in "${!syspaths[@]}"; do
+    envpath="${envpaths[$i]}"
+    syspath="${syspaths[$i]}"
+    echo "envpath: $envpath"
+    echo "syspath: $syspath"
+    echo
+
+    for lib in "${LIBS[@]}"; do
+	linkpath="$envpath/$lib"
+	linktarget="$syspath/$lib"
+	echo "linkpath: $linkpath"
+	echo "linktarget: $linktarget"
+	if test -L "$linkpath" && test "x$(readlink "$linkpath")" = "x$linktarget"; then
+	    echo "Nothing to do ($linkpath already pointing to $linktarget)"
+	    echo
+	    continue
+	fi
+	if test -e "$linkpath"; then
+	    echo "Error: Link $linkpath already exists"
+	    exit 1
+	fi
+	if test -e "$linktarget"; then
+	    echo "Link target does not exist, skipping"
+	    echo
+	    continue
+	fi
+
+	echo "Linking $linktarget to $linkpath"
+	if ln -s "$linktarget" "$linkpath"; then
+	    echo "Linking successful"
+	    echo
+	else
+	    echo "Linking has failed."
+	    exit 1
+	fi
+    done
 done
+
+echo "Finished linking system libs."
