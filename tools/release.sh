@@ -12,7 +12,7 @@ if [[ ! $VERSION_SUFFIX =~ ^(a|b|rc)[0-9]+$ ]]; then
     echo "  rc1"
     exit 2
 fi
-$TOOLS/dist.sh || exit 1
+$TOOLS/dist || exit 1
 echo ”----------------------------------------”
 ls dist
 echo -n "About to release; are you sure? [y/N] "
