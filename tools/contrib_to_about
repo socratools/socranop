@@ -23,15 +23,15 @@
 
 
 """\
-contrib-to-about.py - convert CONTRIBUTORS.md to python module
+contrib-to-about - convert CONTRIBUTORS.md to python module
 
 Usage:
-   path/to/contrib-to-about.py
+   tools/contrib-to-about
 
 This reads `../CONTRIBUTORS.md` and writes a new python module
 `../soundcraft/contributors.py` if necessary and requested. The file
-locations are determined relative to the location of
-`contrib-to-about.py`.
+locations are determined relative to the location of the
+`contrib-to-about` script file.
 
 Options:
     --check

@@ -75,7 +75,7 @@ Submitting Changes
   Our pre-commit hooks will do this for you automatically.
 
 - Add yourself to the [`CONTRIBUTORS.md`](CONTRIBUTORS.html) file if you
-  want, but if you do, please also run `tools/contrib_to_about.py` to
+  want, but if you do, please also run `tools/contrib_to_about` to
   synchronize the changes in there to the GUI about screen.
 
   Our pre-commit hooks will do this for you automatically.
