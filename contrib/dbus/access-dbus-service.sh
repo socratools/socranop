@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# This script illustrates how to access the D-Bus interface from the
+# shell, either from an interactive shell command line or from a shell
+# script, using systemd's busctl tool.
+
 busctl="busctl"
 
 busname="soundcraft.utils.notepad"
