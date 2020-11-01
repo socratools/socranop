@@ -136,7 +136,7 @@ class NotepadBase:
             with open(self.stateFile, "r") as fh:
                 self.state = json.loads(fh.read())
         except Exception:
-            pass
+            pass  # keep current self.state if error reading state from file
 
 
 def stereo_label(base):

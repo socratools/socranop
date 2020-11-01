@@ -110,7 +110,7 @@ with open("CONTRIBUTORS.md") as contrib:
         if line.startswith("- "):
             contributors[section].append(parseMarkdown(line))
         elif line.startswith("--") or len(line) == 0:
-            next
+            next  # skip header underlining lines and empty lines
         else:
             section = line
             contributors[section] = []
