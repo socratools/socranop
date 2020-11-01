@@ -51,7 +51,7 @@ def findDataFiles(subdir):
         result[datapath] = []
         for f in datapath.glob("**/*"):
             if f.is_dir():
-                continue
+                continue  # ignore directories
             result[datapath].append(f.relative_to(datapath))
     return result
 
