@@ -57,47 +57,44 @@ echo "envpaths:" "${envpaths[@]}"
 
 if [[ "${#syspaths[@]}" -ne "${#envpaths[@]}" ]]; then
     echo "Path array size mismatch"
-    exit 1
+    exit 1  # path array size should the same
 fi
-
-echo
 
 for i in "${!syspaths[@]}"; do
     envpath="${envpaths[$i]}"
     syspath="${syspaths[$i]}"
+    echo
     echo "envpath: $envpath"
     echo "syspath: $syspath"
-    echo
 
     for lib in "${LIBS[@]}"; do
 	linkpath="$envpath/$lib"
 	linktarget="$syspath/$lib"
+	echo
 	echo "linkpath: $linkpath"
 	echo "linktarget: $linktarget"
 	if test -L "$linkpath" && test "x$(readlink "$linkpath")" = "x$linktarget"; then
 	    echo "Nothing to do ($linkpath already pointing to $linktarget)"
-	    echo
-	    continue
+	    continue  # nothing to do: link exists and points to correct target
 	fi
 	if test -e "$linkpath"; then
 	    echo "Error: Link $linkpath already exists"
-	    exit 1
+	    exit 1  # link already exists and does not point to correct target
 	fi
 	if test -e "$linktarget"; then
 	    echo "Link target does not exist, skipping"
-	    echo
-	    continue
+	    continue  # link target does not exist
 	fi
 
 	echo "Linking $linktarget to $linkpath"
 	if ln -s "$linktarget" "$linkpath"; then
 	    echo "Linking successful"
-	    echo
 	else
 	    echo "Linking has failed."
-	    exit 1
+	    exit 1  # error while creating the link
 	fi
     done
 done
 
+echo
 echo "Finished linking system libs."
