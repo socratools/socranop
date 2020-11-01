@@ -74,6 +74,13 @@ Submitting Changes
 
   Our pre-commit hooks will do this for you automatically.
 
+- If your Python code adds or touches a very short line which is also
+  in other places in the same source file (e.g. `try:`, `pass`,
+  `next`, or `continue`), please try adding a useful comment to the
+  line which makes the line unique enough that git's diff generator
+  cannot confuse this instance of the line with a completely different
+  instance from another part of the code.
+
 - Add yourself to the [`CONTRIBUTORS.md`](CONTRIBUTORS.html) file if you
   want, but if you do, please also run `tools/contrib_to_about` to
   synchronize the changes in there to the GUI about screen.
