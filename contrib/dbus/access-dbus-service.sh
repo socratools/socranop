@@ -6,9 +6,9 @@
 
 busctl="busctl --user"
 
-busname="soundcraft.utils.notepad"
-devinterface="soundcraft.utils.notepad.device"
-devpath="/soundcraft/utils/notepad/0"
+busname="io.github.soundcraft_utils.notepad"
+devinterface="${busname}.device"
+devpath="/io/github/soundcraft_utils/notepad/0"
 
 set -xe
 

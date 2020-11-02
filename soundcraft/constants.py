@@ -47,10 +47,10 @@ APPLICATION_ID = "soundcraft.utils"
 
 
 # The complete set of D-Bus API strings
-BUSNAME = "soundcraft.utils.notepad"
+BUSNAME = "io.github.soundcraft_utils.notepad"
 DEVICE_INTERFACE = f"{BUSNAME}.device"
 SERVICE_INTERFACE = BUSNAME
-MGRPATH = "/soundcraft/utils/notepad"
+MGRPATH = "/io/github/soundcraft_utils/notepad"
 
 
 # Helpful for removing remnants of soundcraft-utils 0.4.0 and earlier
