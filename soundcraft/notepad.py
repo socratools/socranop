@@ -130,15 +130,13 @@ class NotepadBase:
     def _saveState(self):
         try:
             self.stateFile.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
-            with open(self.stateFile, "w") as fh:
-                fh.write(json.dumps(self.state, sort_keys=True, indent=4))
+            self.stateFile.write_text(json.dumps(self.state, sort_keys=True, indent=4))
         except Exception as e:
             print(f"Warning: Could not write state file: {e}")
 
     def _loadState(self):
         try:
-            with open(self.stateFile, "r") as fh:
-                self.state = json.loads(fh.read())
+            self.state = json.loads(self.stateFile.read_text())
         except Exception:
             pass  # keep current self.state if error reading state from file
 
