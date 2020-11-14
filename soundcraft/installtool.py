@@ -160,16 +160,29 @@ def findDataFiles(subdir):
 class AbstractFile(metaclass=abc.ABCMeta):
     """Common behaviour for different types of files defined as Subclasses"""
 
-    def __init__(self, dst):
+    def __init__(self, dst, comment=None):
         super(AbstractFile, self).__init__()
         self.__dst = Path(dst)
+        self.__comment = comment
+
+    @property
+    def comment(self):
+        if self.__comment:
+            return self.__comment
+        else:
+            return f"{self}"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}:{self.dst}"
 
     @property
     def dst(self):
+        """Destination Path() (not chrooted)"""
         return self.__dst
 
     @property
     def chroot_dst(self):
+        """Destination Path() (chrooted if applicable)"""
         chroot = get_dirs().chroot
         if chroot:
             relpath = self.dst.relative_to("/")
@@ -178,75 +191,102 @@ class AbstractFile(metaclass=abc.ABCMeta):
             return self.dst
 
     @abc.abstractmethod
-    def install(self):
-        pass  # AbstractFile.install()
+    def direct_install(self):
+        """Install this file directly from Python code"""
+        pass  # AbstractFile.direct_install()
 
-    def uninstall(self):
-        # Like many other install/uninstall tools, we just remove the
-        # file and leave the directory tree around.
-        self.uninstall_msg(self.dst)
+    @abc.abstractmethod
+    def shell_install(self):
+        """Return shell command for the sudo script"""
+        pass  # AbstractFile.shell_install()
+
+    def _install(self):
+        print(f"  [inst] {self.dst}")
+        """Install this file (either directly from python or via sudo script)"""
+        try:
+            self.chroot_dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+            self.direct_install()
+            self.chroot_dst.chmod(mode=0o0644)
+        except PermissionError:
+            SUDO_SCRIPT.add_cmd(self.shell_install(), comment=self.comment)
+
+    def _uninstall(self):
+        """Uninstall this file (either directly from python or via sudo script)
+
+        Like many other install/uninstall tools, we just remove the
+        file and leave the directory tree around.
+        """
+        print(f"  [rm] {self.dst}")
         try:
             self.chroot_dst.unlink()
         except FileNotFoundError:
-            pass  # No file to remove
-
-    def install_msg(self, dst):
-        print("  [inst]", dst)
-
-    def uninstall_msg(self, dst):
-        print("  [rm]", dst)
+            pass  # we do not need to remove a non existant file
+        except PermissionError:
+            SUDO_SCRIPT.add_cmd(f"rm -f {self.dst}", comment=self.comment)
 
 
 class CopyFile(AbstractFile):
     """This file just needs to be copied from a source file to the destination"""
 
-    def __init__(self, dst, src):
-        super(CopyFile, self).__init__(dst)
+    def __init__(self, dst, src, comment=None):
+        super(CopyFile, self).__init__(dst, comment=comment)
         self.__src = Path(src)
 
     @property
     def src(self):
         return self.__src
 
-    def install(self):
-        self.install_msg(self.dst)
-        self.chroot_dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
-        shutil.copy(self.src, self.chroot_dst)
-        self.chroot_dst.chmod(mode=0o644)
+    def direct_install(self):
+        shutil.copy2(self.src, self.chroot_dst)
+
+    def shell_install(self):
+        lines = [
+            f"mkdir -p {self.dst.parent.absolute()}",
+            f"cp -p {self.src.absolute()} {self.dst}",
+        ]
+        return "\n".join(lines)
 
 
 class StringToFile(AbstractFile):
     """This destination file is written from a string, no source file required"""
 
-    def __init__(self, dst, content):
-        super(StringToFile, self).__init__(dst)
+    def __init__(self, dst, content, comment=None):
+        super(StringToFile, self).__init__(dst, comment=comment)
 
         self.content = content
 
-    def install(self):
-        self.install_msg(self.dst)
-        self.chroot_dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
+    def direct_install(self):
         self.chroot_dst.write_text(self.content)
-        self.chroot_dst.chmod(mode=0o0644)
+
+    def shell_install(self):
+        lines = []
+        lines.append(f"cat>{self.dst}<<EOF")
+        lines.extend(self.content.splitlines())
+        lines.append("EOF")
+        return "\n".join(lines)
 
 
 class TemplateFile(CopyFile):
     """This destination file is a source file after string template processing"""
 
-    def __init__(self, dst, src, template_data=None):
-        super(TemplateFile, self).__init__(dst, src)
+    def __init__(self, dst, src, template_data=None, comment=None):
+        super(TemplateFile, self).__init__(dst, src, comment=comment)
 
         if template_data is None:
-            self.template_data = {}
-        else:
-            self.template_data = template_data
+            template_data = {}
 
-    def install(self):
-        self.install_msg(self.dst)
         src_template = Template(self.src.read_text())
-        self.chroot_dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
-        self.chroot_dst.write_text(src_template.substitute(self.template_data))
-        self.chroot_dst.chmod(mode=0o0644)
+        self.content = src_template.substitute(template_data)
+
+    def direct_install(self):
+        self.chroot_dst.write_text(self.content)
+
+    def shell_install(self):
+        lines = []
+        lines.append(f"cat>{self.dst}<<EOF")
+        lines.extend(self.content.splitlines())
+        lines.append("EOF")
+        return "\n".join(lines)
 
 
 class AbstractInstallTool(metaclass=abc.ABCMeta):
@@ -273,11 +313,11 @@ class FileInstallTool(AbstractInstallTool):
 
     def post_install(self):
         for file in self.files:
-            file.install()
+            file._install()
 
     def pre_uninstall(self):
         for file in reversed(self.files):
-            file.uninstall()
+            file._uninstall()
 
 
 class DataFileInstallTool(FileInstallTool):
