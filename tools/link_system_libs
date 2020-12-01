@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,82 +20,150 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-
-# This is a shell script instead of a python script to allow for
-# easily calling both the system python3 (without the pipenv) and the
-# pipenv python3 (inside the pipenv).
-
-# Non-sh bash features used:
 #
-#   * array variables
+# Usage:
+#     tools/link_system_libs
 #
-#     This makes the support for systems with python site-packages in
-#     more than one lib dir, e.g. in 'lib' and 'lib64', much easier.
-#
-#   * [[ ]]
-#
-#     This is more or less due to programmer laziness.
+# In the pipenv virtualenv, create appropriate symlinks from
+# site-packages/gi pointing to the system's {dist,site}-packages/gi,
+# so that using the pipenv can succeed later without needing to
+# compile the *HUGE* amount of gobject package dependencies.
 
 
-# The libs to symlink from the system into the pipenv
-LIBS=("gi")
+import subprocess
+import sys
 
-# The system python (as opposed to the pipenv python)
-SYSPYTHON="/usr/bin/python3"
+from importlib import import_module
+from pathlib import Path
 
 
-libpaths() {
-    local PYTHON=$1
-    $PYTHON -c "import sys; print('\n'.join(sys.path))" | grep -e "site-packages" -e "dist-packages" | sort
-}
+def pipenv_values(var_names):
+    """Get the value for expr_string from a pipenv python3"""
+    prog = "\n".join(["import sys"] +
+                     [f"print('{var}', '=', repr(sys.{var}))"
+                      for var in var_names])
+    # print("prog", repr(prog))
+    cmd = ["pipenv", "run", "python3", "-c", prog]
+    proc = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    # print("proc.stdout", repr(proc.stdout))
+    vars = {}
+    exec(proc.stdout, vars, vars)
+    retval = dict([(k,vars[k]) for k in var_names])
+    # print("retval", repr(retval))
+    return retval
 
-syspaths=($(libpaths $SYSPYTHON))
-echo "syspaths:" "${syspaths[@]}"
 
-envpaths=($(libpaths "pipenv run python3"))
-echo "envpaths:" "${envpaths[@]}"
+def ensure_symlink(target, symlink):
+    """Ensure symlink 'symlink' points to target 'target'"""
+    print(" ", "from", symlink)
+    print(" ", "  to", target)
+    if symlink.is_symlink():
+        if symlink.samefile(target):
+            print(" ", "    ", "symlink exists and is pointing to the target")
+        else:
+            print(" ", "    ", "updating symlink")
+            symlink.unlink()
+            symlink.symlink_to(target)
+    elif symlink.exists():
+        raise RuntimeError("Something with the symlink name already exists")
+    else:
+        print(" ", "    ", "creating symlink")
+        symlink.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+        symlink.symlink_to(target)
 
-if [[ "${#syspaths[@]}" -ne "${#envpaths[@]}" ]]; then
-    echo "Path array size mismatch"
-    exit 1  # path array size should the same
-fi
 
-for i in "${!syspaths[@]}"; do
-    envpath="${envpaths[$i]}"
-    syspath="${syspaths[$i]}"
-    echo
-    echo "envpath: $envpath"
-    echo "syspath: $syspath"
+class LibraryLinker:
 
-    for lib in "${LIBS[@]}"; do
-	linkpath="$envpath/$lib"
-	linktarget="$syspath/$lib"
-	echo
-	echo "linkpath: $linkpath"
-	echo "linktarget: $linktarget"
-	if test -L "$linkpath" && test "x$(readlink "$linkpath")" = "x$linktarget"; then
-	    echo "Nothing to do ($linkpath already pointing to $linktarget)"
-	    continue  # nothing to do: link exists and points to correct target
-	fi
-	if test -e "$linkpath"; then
-	    echo "Error: Link $linkpath already exists"
-	    exit 1  # link already exists and does not point to correct target
-	fi
-	if test -e "$linktarget"; then
-	    echo "Link target does not exist, skipping"
-	    continue  # link target does not exist
-	fi
+    def __init__(self):
+        self.symlinks = {}
 
-	echo "Linking $linktarget to $linkpath"
-	if ln -s "$linktarget" "$linkpath"; then
-	    echo "Linking successful"
-	else
-	    echo "Linking has failed."
-	    exit 1  # error while creating the link
-	fi
-    done
-done
+        print("Library Linker")
 
-echo
-echo "Finished linking system libs."
+        self.system_executable = Path(sys.executable)
+        print(" ", "system_executable", self.system_executable)
+
+        self.system_prefix = Path(sys.prefix)
+        print(" ", "system_prefix", self.system_prefix)
+
+        self.system_path = [Path(p) for p in sys.path]
+        print(" ", "system_path")
+        for p in self.system_path:
+            print(" ", " ", p)
+
+        print()
+
+        values = pipenv_values(['executable', 'prefix', 'path'])
+
+        self.pipenv_executable = Path(values['executable'])
+        print(" ", "pipenv_executable", self.pipenv_executable)
+
+        if self.system_executable == self.pipenv_executable:
+            raise RuntimeError(f"pipenv python3 must not be {sys.executable} - run this outside pipenv!")
+
+        self.pipenv_prefix = Path(values['prefix'])
+        print(" ", "pipenv_prefix", self.pipenv_prefix)
+
+        self.pipenv_path = [Path(p) for p in values['path']]
+        print(" ", "pipenv_path")
+        for p in self.pipenv_path:
+            print(" ", " ", p)
+
+        yyy = [p.parent.name for p in self.pipenv_path
+               if ((p.name in ["dist-packages", "site-packages"]) and
+                   (str(p).startswith(f"{self.pipenv_prefix}/")))]
+        print(" ", "yyy")
+        for p in yyy:
+            print(" ", " ", p)
+        self.pipenv_python_dir = yyy[0]
+        for p in yyy[1:]:
+            if p != self.pipenv_python_dir:
+                raise RuntimeError("All names in yyy should be the same")
+
+        print(" ", "pipenv_python_dir", self.pipenv_python_dir)
+
+        print()
+
+    def link_lib(self, libname):
+        print("Module", libname)
+        module = import_module(libname)
+        module_path = [Path(p) for p in module.__path__]
+        print(" ", "module_path")
+        for p in module_path:
+            print(" ", " ", "*", p)
+
+            if p.name != libname:
+                raise RuntimeError("last path component must be libname")
+
+            packages_dir = p.parent.name
+            if packages_dir not in ["dist-packages", "site-packages"]:
+                raise RuntimeError("second to last path component must be {dist,site}-packages")
+            python_dir = p.parent.parent.name
+            if not python_dir.startswith('python3'):
+                raise RuntimeError("third to last path component must begin with 'python3'")
+
+            lib_dir = p.parent.parent.parent.name
+            if lib_dir not in ['lib', 'lib32', 'lib64']:
+                raise RuntimeError("fourth to last path component must be lib{,32,64}")
+
+            symlink = self.pipenv_prefix.joinpath(lib_dir, self.pipenv_python_dir,
+                                                 "site-packages", libname)
+            print(" ", " ", "<", symlink)
+
+            self.symlinks[symlink] = p
+        print()
+
+
+def main():
+    libname_list = ["gi"]
+    if libname_list:
+        ll = LibraryLinker()
+        for libname in libname_list:
+            ll.link_lib(libname)
+
+        print("Symlinks")
+        for symlink, target in iter(ll.symlinks.items()):
+            ensure_symlink(target, symlink)
+
+
+if __name__ == '__main__':
+    main()
