@@ -47,11 +47,13 @@ ways.
 
 ### Things to avoid in code
 
-For compatibility with Python >= 3.6, avoid the following:
+For compatibility with all versions of Python >= 3.6, avoid the
+following:
 
-  * The `missing_ok` parameter to several `pathlib.Path` methods (3.8)
+  * The `missing_ok` parameter to several `pathlib.Path` methods
+    (since Python 3.8)
 
-  * The `@functools.cached_property` decorator (3.8)
+  * The `@functools.cached_property` decorator (since Python 3.8)
 
 
 Submitting Changes
