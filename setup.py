@@ -11,12 +11,14 @@ version = re.search(
 
 # Make sure we have imported the correct `soundcraft.constants`. The
 # `PYTHONPATH` (aka `sys.path`) could be set up weirdly, and we do not
-# want to fall victim to such sabotage attempts.
+# want to fall victim to such sabotage attempts, deliberate or
+# accidental.
 topdir_from_const = Path(const.__file__).parent.parent
 topdir_from_setup = Path(__file__).parent
-print("topdir_from_const", topdir_from_const)
-print("topdir_from_setup", topdir_from_setup)
-assert topdir_from_setup.samefile(topdir_from_const)
+if not topdir_from_setup.samefile(topdir_from_const):
+    raise Exception(
+        f"inconsistent locations of soundcraft.constants and setup.py: {topdir_from_const} vs {topdir_from_setup}"
+    )
 
 with open("README.md", "rb") as fh:
     long_description = fh.read().decode("utf-8")
