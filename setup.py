@@ -20,8 +20,8 @@ if not topdir_from_setup.samefile(topdir_from_const):
         f"inconsistent locations of soundcraft.constants and setup.py: {topdir_from_const} vs {topdir_from_setup}"
     )
 
-with open("README.md", "rb") as fh:
-    long_description = fh.read().decode("utf-8")
+readme_md_path = topdir_from_setup / "README.md"
+long_description = readme_md_path.read_text("utf-8")
 
 setup(
     name=const.PACKAGE,
