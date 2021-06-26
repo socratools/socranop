@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -141,7 +142,7 @@ class Service:
 
     @property
     def version(self):
-        return soundcraft.__version__
+        return const.VERSION
 
     @property
     def devices(self):
@@ -258,7 +259,7 @@ def setup_dbus(cfgroot=Path("/usr/share/dbus-1")):
                 srcTemplate = Template(srcfile.read())
                 with open(dst, "w") as dstfile:
                     dstfile.write(srcTemplate.substitute(templateData))
-    print(f"Starting service version {soundcraft.__version__}...")
+    print(f"Starting service version {const.VERSION}...")
     client = Client()
     print(f"Version running: {client.serviceVersion()}")
     print("D-Bus setup is complete")
@@ -394,7 +395,7 @@ class Client:
 
     def ensureServiceVersion(self, allowRestart=False):
         mgrVersion = self.serviceVersion()
-        localVersion = soundcraft.__version__
+        localVersion = const.VERSION
         if mgrVersion != localVersion:
             if not self._canShutdown() or not allowRestart:
                 raise VersionIncompatibilityError(
@@ -463,7 +464,7 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version=f"%(prog)s ({const.PACKAGE}) {soundcraft.__version__}",
+        version=f"%(prog)s ({const.PACKAGE}) {const.VERSION}",
     )
     parser.add_argument(
         "--setup",

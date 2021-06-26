@@ -1,13 +1,19 @@
-import re
+# Call setuptools.setup
+#
+# As we are lazy in defining possibly redundant information, we have
+# put a lot of information into the soundcraft.constants module and
+# import that module both from this setup.py and whzen the actual
+# software package is running.
+#
+# If we were to use importlib.metadata, we could move from setup.py to
+# setup.cfg and get to information like the package version from the
+# software package itself. Unfortunately, importlib.metadata is only
+# available in Python >= 3.8, but we want to support Python 3.6.
 
 import soundcraft.constants as const
 
 from pathlib import Path
 from setuptools import find_packages, setup
-
-version = re.search(
-    '^__version__\\s*=\\s*"(.*)"', open("soundcraft/__init__.py").read(), re.M
-).group(1)
 
 # Make sure we have imported the correct `soundcraft.constants`. The
 # `PYTHONPATH` (aka `sys.path`) could be set up weirdly, and we do not
@@ -25,7 +31,7 @@ long_description = readme_md_path.read_text("utf-8")
 
 setup(
     name=const.PACKAGE,
-    version=version,
+    version=const.VERSION,
     description="Soundcraft Notepad control utilities",
     long_description=long_description,
     long_description_content_type="text/markdown",

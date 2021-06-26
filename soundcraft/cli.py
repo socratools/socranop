@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +24,6 @@ import argparse
 import sys
 
 import soundcraft.constants as const
-
-from soundcraft import __version__
 
 
 def autodetect(dbus=True):
@@ -90,7 +89,7 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version=f"%(prog)s ({const.PACKAGE}) {__version__}",
+        version=f"%(prog)s ({const.PACKAGE}) {const.VERSION}",
     )
     parser.add_argument(
         "--no-dbus",
