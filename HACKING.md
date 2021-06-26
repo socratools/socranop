@@ -14,8 +14,10 @@ ways.
 ### Set up and use pipenv
 
 `pipenv install --dev`
-- Sets up an appropriate virtual environment and installs all
-  appropriate development packages
+- Sets up an appropriate virtual environment, installs all appropriate
+  development packages, and egg-links to our source directory so that
+  the virtualenv will actually use the source files from this source
+  directory.
 
 `tools/link_system_libs`
 - Set up a symlink to your system's 'gi' lib which isn't otherwise available
