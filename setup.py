@@ -59,6 +59,7 @@ setup(
         "console_scripts": [
             f"{const.BASE_EXE_CLI}=soundcraft.cli:main",
             f"{const.BASE_EXE_SERVICE}=soundcraft.dbus:main",
+            f"{const.BASE_EXE_INSTALLTOOL}=soundcraft.installtool:main",
         ],
         "gui_scripts": [f"{const.BASE_EXE_GUI}=soundcraft.gui:main"],
     },

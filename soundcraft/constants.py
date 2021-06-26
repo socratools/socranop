@@ -38,6 +38,7 @@ VERSION = "0.4.90"
 BASE_EXE_CLI = "soundcraft_ctl"
 BASE_EXE_GUI = "soundcraft_gui"
 BASE_EXE_SERVICE = "soundcraft_dbus_service"
+BASE_EXE_INSTALLTOOL = "soundcraft_installtool"
 
 
 # Gtk Application ID of the soundcraft-utils GUI
