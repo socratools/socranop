@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2020 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@
 
 # Package name
 PACKAGE = "soundcraft-utils"
+VERSION = "0.4.90"
 
 # Executable names
 BASE_EXE_CLI = "soundcraft_ctl"

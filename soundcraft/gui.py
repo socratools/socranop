@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -231,7 +232,7 @@ class About(Gtk.AboutDialog):
     def __init__(self):
         super().__init__(
             program_name=const.PACKAGE,
-            version=soundcraft.__version__,
+            version=const.VERSION,
             comments="Linux Utilities for Soundcraft Mixers",
             license_type=Gtk.License.MIT_X11,
             website="https://github.com/lack/soundcraft-utils",
@@ -268,7 +269,7 @@ class App(Gtk.Application):
 
     def __cmdline_version(self):
         prog = Path(sys.argv[0])
-        print(f"{prog.name} ({const.PACKAGE}) {soundcraft.__version__}")
+        print(f"{prog.name} ({const.PACKAGE}) {const.VERSION}")
         return 0
 
     def do_command_line(self, command_line):
