@@ -172,6 +172,31 @@ def post_install_dbus():
         print(f"Run {const.BASE_EXE_GUI} or {const.BASE_EXE_CLI} as a regular user")
 
 
+def pre_uninstall_dbus():
+    if True:
+        datadir = find_datadir()
+        service_dst = datadir / "dbus-1/services" / f"{BUSNAME}.service"
+
+        bus = pydbus.SessionBus()
+        dbus_service = bus.get(".DBus")
+        if not dbus_service.NameHasOwner(BUSNAME):
+            print("Service not running")
+        else:
+            service = bus.get(BUSNAME)
+            service_version = service.version
+            print(f"Shutting down service version {service_version}")
+            service.Shutdown()
+            print("Stopped")
+
+        print(f"Removing {service_dst}")
+        try:
+            service_dst.unlink()
+        except FileNotFoundError:
+            pass  # no service file to remove
+
+        print("D-Bus service is unregistered")
+
+
 def post_install_xdg():
     if True:
         datadir = find_datadir()
@@ -201,36 +226,6 @@ def post_install_xdg():
                     scalable_icondir.mkdir(parents=True, exist_ok=True)
                     shutil.copy(src, scalable_icondir)
         print("Installed all XDG application launcher files")
-
-
-def post_install():
-    post_install_dbus()
-    post_install_xdg()
-
-
-def pre_uninstall_dbus():
-    if True:
-        datadir = find_datadir()
-        service_dst = datadir / "dbus-1/services" / f"{BUSNAME}.service"
-
-        bus = pydbus.SessionBus()
-        dbus_service = bus.get(".DBus")
-        if not dbus_service.NameHasOwner(BUSNAME):
-            print("Service not running")
-        else:
-            service = bus.get(BUSNAME)
-            service_version = service.version
-            print(f"Shutting down service version {service_version}")
-            service.Shutdown()
-            print("Stopped")
-
-        print(f"Removing {service_dst}")
-        try:
-            service_dst.unlink()
-        except FileNotFoundError:
-            pass  # no service file to remove
-
-        print("D-Bus service is unregistered")
 
 
 def pre_uninstall_xdg():
@@ -264,6 +259,11 @@ def pre_uninstall_xdg():
                     except FileNotFoundError:
                         pass  # svg file not found
         print("Removed all XDG application launcher files")
+
+
+def post_install():
+    post_install_dbus()
+    post_install_xdg()
 
 
 def pre_uninstall():
