@@ -74,7 +74,92 @@ def findDataFiles(subdir):
     return result
 
 
+class AbstractFile(metaclass=abc.ABCMeta):
+    """Common behaviour for different types of files defined as Subclasses"""
+
+    def __init__(self, dst):
+        super(AbstractFile, self).__init__()
+        self.__dst = Path(dst)
+
+    @property
+    def dst(self):
+        return self.__dst
+
+    @abc.abstractmethod
+    def install(self):
+        pass  # AbstractFile.install()
+
+    def uninstall(self):
+        # Like many other install/uninstall tools, we just remove the
+        # file and leave the directory tree around.
+        self.uninstall_msg(self.dst)
+        try:
+            self.dst.unlink()
+        except FileNotFoundError:
+            pass  # No file to remove
+
+    def install_msg(self, dst):
+        print("  [inst]", dst)
+
+    def uninstall_msg(self, dst):
+        print("  [rm]", dst)
+
+
+class CopyFile(AbstractFile):
+    """This file just needs to be copied from a source file to the destination"""
+
+    def __init__(self, dst, src):
+        super(CopyFile, self).__init__(dst)
+        self.__src = Path(src)
+
+    @property
+    def src(self):
+        return self.__src
+
+    def install(self):
+        self.install_msg(self.dst)
+        self.dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+        shutil.copy(self.src, self.dst)
+        self.dst.chmod(mode=0o644)
+
+
+class StringToFile(AbstractFile):
+    """This destination file is written from a string, no source file required"""
+
+    def __init__(self, dst, content):
+        super(StringToFile, self).__init__(dst)
+
+        self.content = content
+
+    def install(self):
+        self.install_msg(self.dst)
+        self.dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
+        self.dst.write_text(self.content)
+        self.dst.chmod(mode=0o0644)
+
+
+class TemplateFile(CopyFile):
+    """This destination file is a source file after string template processing"""
+
+    def __init__(self, dst, src, template_data=None):
+        super(TemplateFile, self).__init__(dst, src)
+
+        if template_data is None:
+            self.template_data = {}
+        else:
+            self.template_data = template_data
+
+    def install(self):
+        self.install_msg(self.dst)
+        src_template = Template(self.src.read_text())
+        self.dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
+        self.dst.write_text(src_template.substitute(self.template_data))
+        self.dst.chmod(mode=0o0644)
+
+
 class AbstractInstallTool(metaclass=abc.ABCMeta):
+    """Things common to subsystem installtools"""
+
     @abc.abstractmethod
     def post_install(self):
         pass  # AbstractInstallTool.post_install()
@@ -85,19 +170,37 @@ class AbstractInstallTool(metaclass=abc.ABCMeta):
 
 
 class FileInstallTool(AbstractInstallTool):
+    """A subsystem which needs to install/uninstall a number of files"""
 
-    pass  # class FileInstallTool
+    def __init__(self):
+        super(FileInstallTool, self).__init__()
+        self.files = []
+
+    def add_file(self, file):
+        self.files.append(file)
+
+    def post_install(self):
+        for file in self.files:
+            file.install()
+
+    def pre_uninstall(self):
+        for file in reversed(self.files):
+            file.uninstall()
 
 
 class DBusInstallTool(FileInstallTool):
+    """Subsystem dealing with the D-Bus configuration files"""
+
     def __init__(self):
         super(DBusInstallTool, self).__init__()
-        service_dir = get_dirs().datadir / "dbus-1/services"
-        self.service_dst = service_dir / f"{const.BUSNAME}.service"
 
-    def post_install(self):
+        dirs = get_dirs()
+
+        service_dir = dirs.datadir / "dbus-1/services"
+        service_dst = service_dir / f"{const.BUSNAME}.service"
+
         templateData = {
-            "dbus_service_bin": str(get_dirs().serviceExePath),
+            "dbus_service_bin": str(dirs.serviceExePath),
             "busname": const.BUSNAME,
         }
 
@@ -106,13 +209,13 @@ class DBusInstallTool(FileInstallTool):
             for f in files:
                 src = srcpath / f
                 if src.suffix == ".service":
-                    print("Installing", self.service_dst)
-                    self.service_dst.parent.mkdir(
-                        mode=0o755, parents=True, exist_ok=True
+                    service_file = TemplateFile(
+                        service_dst, src, template_data=templateData
                     )
-                    srcTemplate = Template(src.read_text())
-                    self.service_dst.write_text(srcTemplate.substitute(templateData))
-                    self.service_dst.chmod(mode=0o644)
+                    self.add_file(service_file)
+
+    def post_install(self):
+        super(DBusInstallTool, self).post_install()
 
         print("Starting D-Bus service as a test...")
 
@@ -164,86 +267,52 @@ class DBusInstallTool(FileInstallTool):
             service.Shutdown()
             print("Session D-Bus service stopped")
 
-        print(f"Removing {self.service_dst}")
-        try:
-            self.service_dst.unlink()
-        except FileNotFoundError:
-            pass  # No service file to remove
-
+        super(DBusInstallTool, self).pre_uninstall()
         print("D-Bus service is unregistered")
 
 
 class XDGDesktopInstallTool(FileInstallTool):
+    """Subsystem dealing with the XDG desktop and icon files"""
 
     # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
     #          must be run after all. Fedora Packaging docs suggest so.
 
-    def post_install(self):
-        sources = findDataFiles("xdg")
+    def __init__(self):
+        super(XDGDesktopInstallTool, self).__init__()
+
         dirs = get_dirs()
+
+        templateData = {
+            "gui_bin": dirs.guiExePath,
+            "APPLICATION_ID": const.APPLICATION_ID,
+        }
+
+        sources = findDataFiles("xdg")
         for (srcpath, files) in sources.items():
             for f in files:
                 src = srcpath / f
                 if src.suffix == ".desktop":
-                    application_dir = dirs.datadir / "applications"
-                    dst = application_dir / f"{const.APPLICATION_ID}.desktop"
-                    templateData = {
-                        "gui_bin": dirs.guiExePath,
-                        "APPLICATION_ID": const.APPLICATION_ID,
-                    }
-                    srcTemplate = Template(src.read_text())
-                    print("Installing", dst)
-                    dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
-                    dst.write_text(srcTemplate.substitute(templateData))
-                    dst.chmod(mode=0o644)
+                    applications_dir = dirs.datadir / "applications"
+                    dst = applications_dir / f"{const.APPLICATION_ID}.desktop"
+                    self.add_file(TemplateFile(dst, src, templateData))
                 elif src.suffix == ".png":
                     size_suffix = src.suffixes[-2]
                     assert size_suffix.startswith(".")
                     size = int(size_suffix[1:], 10)
                     dst = self.icondir(size) / f"{const.APPLICATION_ID}.png"
-                    print("Installing", dst)
-                    dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
-                    shutil.copy(src, dst)
-                    dst.chmod(mode=0o644)
+                    self.add_file(CopyFile(dst, src))
                 elif src.suffix == ".svg":
                     dst = self.icondir() / f"{const.APPLICATION_ID}.svg"
-                    print("Installing", dst)
-                    dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
-                    shutil.copy(src, dst)
-                    dst.chmod(mode=0o644)
+                    self.add_file(CopyFile(dst, src))
+                else:
+                    raise ValueError("Unhandled XDG source file {f}")
+
+    def post_install(self):
+        super(XDGDesktopInstallTool, self).post_install()
         print("Installed all XDG application launcher files")
 
     def pre_uninstall(self):
-        sources = findDataFiles("xdg")
-        dirs = get_dirs()
-        for (srcpath, files) in sources.items():
-            for f in files:
-                src = srcpath / f
-                if src.suffix == ".desktop":
-                    application_dir = dirs.datadir / "applications"
-                    dst = application_dir / f"{const.APPLICATION_ID}.desktop"
-                    print(f"Uninstalling {dst}")
-                    try:
-                        dst.unlink()
-                    except FileNotFoundError:
-                        pass  # No dst file to remove
-                elif src.suffix == ".png":
-                    size_suffix = src.suffixes[-2]
-                    assert size_suffix.startswith(".")
-                    size = int(size_suffix[1:], 10)
-                    dst = self.icondir(size) / f"{const.APPLICATION_ID}.png"
-                    print(f"Uninstalling {dst}")
-                    try:
-                        dst.unlink()
-                    except FileNotFoundError:
-                        pass  # No dst file to remove
-                elif src.suffix == ".svg":
-                    dst = self.icondir() / f"{const.APPLICATION_ID}.svg"
-                    print(f"Uninstalling {dst}")
-                    try:
-                        dst.unlink()
-                    except FileNotFoundError:
-                        pass  # No dst file to remove
+        super(XDGDesktopInstallTool, self).pre_uninstall()
         print("Removed all XDG application launcher files")
 
     def icondir(self, size=None):
