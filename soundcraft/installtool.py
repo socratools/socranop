@@ -223,8 +223,9 @@ class UnhandledDataFile(Exception):
 class DBusInstallTool(DataFileInstallTool):
     """Subsystem dealing with the D-Bus configuration files"""
 
-    def __init__(self):
+    def __init__(self, no_launch=False):
         super(DBusInstallTool, self).__init__()
+        self.no_launch = no_launch
         self.walk_through_data_files("dbus-1")
 
     def add_src(self, src):
@@ -246,55 +247,58 @@ class DBusInstallTool(DataFileInstallTool):
     def post_install(self):
         super(DBusInstallTool, self).post_install()
 
-        print("Starting D-Bus service as a test...")
+        if not self.no_launch:
+            print("Starting D-Bus service as a test...")
 
-        bus = pydbus.SessionBus()
-        dbus_service = bus.get(".DBus")
-        print(f"Installtool version: {const.VERSION}")
+            bus = pydbus.SessionBus()
+            dbus_service = bus.get(".DBus")
+            print(f"Installtool version: {const.VERSION}")
 
-        # Give the D-Bus a few seconds to notice the new service file
-        timeout = 5
-        while True:
-            try:
-                dbus_service.StartServiceByName(const.BUSNAME, 0)
-                break  # service has been started, no need to try again
-            except GLibError:
-                # If the bus has not recognized the service config file
-                # yet, the service is not bus activatable yet and thus the
-                # GLibError will happen.
-                if timeout == 0:
-                    raise
-                timeout = timeout - 1
+            # Give the D-Bus a few seconds to notice the new service file
+            timeout = 5
+            while True:
+                try:
+                    dbus_service.StartServiceByName(const.BUSNAME, 0)
+                    break  # service has been started, no need to try again
+                except GLibError:
+                    # If the bus has not recognized the service config file
+                    # yet, the service is not bus activatable yet and thus the
+                    # GLibError will happen.
+                    if timeout == 0:
+                        raise
+                    timeout = timeout - 1
 
-                time.sleep(1)
-                continue  # starting service has failed, but try again
+                    time.sleep(1)
+                    continue  # starting service has failed, but try again
 
-        our_service = bus.get(const.BUSNAME)
-        service_version = our_service.version
-        print(f"Service     version: {service_version}")
+            our_service = bus.get(const.BUSNAME)
+            service_version = our_service.version
+            print(f"Service     version: {service_version}")
 
-        print("Shutting down session D-Bus service...")
-        # As the service should either be running at this time or
-        # at the very least be bus activatable, we do not catch
-        # any exceptions while shutting it down because we want to
-        # see any exceptions if they happen.
-        our_service.Shutdown()
-        print("Session D-Bus service has been shut down")
+            print("Shutting down session D-Bus service...")
+            # As the service should either be running at this time or
+            # at the very least be bus activatable, we do not catch
+            # any exceptions while shutting it down because we want to
+            # see any exceptions if they happen.
+            our_service.Shutdown()
+            print("Session D-Bus service has been shut down")
 
         print("D-Bus installation is complete")
         print(f"Run {const.BASE_EXE_GUI} or {const.BASE_EXE_CLI} as a regular user")
 
     def pre_uninstall(self):
-        bus = pydbus.SessionBus()
-        dbus_service = bus.get(".DBus")
-        if not dbus_service.NameHasOwner(const.BUSNAME):
-            print("D-Bus service not running")
-        else:
-            service = bus.get(const.BUSNAME)
-            service_version = service.version
-            print(f"Shutting down D-Bus service version {service_version}")
-            service.Shutdown()
-            print("Session D-Bus service stopped")
+        if not self.no_launch:
+            bus = pydbus.SessionBus()
+            dbus_service = bus.get(".DBus")
+            if not dbus_service.NameHasOwner(const.BUSNAME):
+                print("D-Bus service not running")
+            else:
+                print(f"Installtool version: {const.VERSION}")
+                service = bus.get(const.BUSNAME)
+                service_version = service.version
+                print(f"Shutting down D-Bus service version {service_version}")
+                service.Shutdown()
+                print("Session D-Bus service stopped")
 
         super(DBusInstallTool, self).pre_uninstall()
         print("D-Bus service is unregistered")
@@ -389,6 +393,12 @@ def main():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--no-launch",
+        help="when installing, do not test launching the service",
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     # Initialize the dirs object
@@ -396,7 +406,7 @@ def main():
     print("Using dirs", dirs)
 
     everything = InstallToolEverything()
-    everything.add(DBusInstallTool())
+    everything.add(DBusInstallTool(no_launch=args.no_launch))
     everything.add(XDGDesktopInstallTool())
 
     if args.post_install:
