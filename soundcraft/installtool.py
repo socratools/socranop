@@ -28,7 +28,9 @@
 
 import abc
 import argparse
+import io
 import shutil
+import sys
 import time
 from pathlib import Path
 from string import Template
@@ -56,6 +58,87 @@ import soundcraft
 import soundcraft.constants as const
 
 from soundcraft.dirs import get_dirs, init_dirs
+
+
+class ScriptCommand:
+    """A single command which may need to be run in a sudo script
+
+    These commands are to be collected into a shell script.  We do
+    *not* run these commands directly via `subprocess.*`.
+
+    Therefore, storing the command as a string containing a shell
+    command is a good fit.
+    """
+
+    def __init__(self, cmd, skip_if=False, comment=None):
+        # print("ScriptCommand.__init__", repr(cmd))
+        assert type(cmd) == str
+        self.cmd = cmd
+        self.skip_if = skip_if
+        self.comment = comment
+
+    def write(self, file):
+        """write this command to the script file"""
+        file.write("\n")
+        if self.comment:
+            file.write(f"# {self.comment}\n")
+
+        if self.skip_if:
+            file.write("# [command skipped (not required)]\n")
+            for line in self.cmd.splitlines():
+                file.write(f"# {line}\n")
+        else:
+            file.write(self.cmd)
+            file.write("\n")
+
+    def __str__(self):
+        return f"ScriptCommand({self.cmd!r})"
+
+
+class SudoScript:
+    """Gather shell commands which must be run by root/sudo into a script
+
+    This script can then be presented to the user to audit and run.
+    """
+
+    def __init__(self):
+        self.sudo_commands = []
+
+    def add_cmd(self, cmd, skip_if=False, comment=None):
+        """Add a command to the sudo script"""
+        if skip_if:
+            c = ScriptCommand(cmd, skip_if=True, comment=comment)
+            print(f"    [skip] {c.cmd!r}")
+        else:
+            c = ScriptCommand(cmd, skip_if=False, comment=comment)
+            print(f"    [q'ed] {c.cmd!r}")
+        self.sudo_commands.append(c)
+
+    def needs_to_run(self):
+        """The sudo script only needs to run if there are commands in the script"""
+        for c in self.sudo_commands:
+            if c.skip_if:
+                continue  # continue looking for a command to execute
+            return True
+        return False
+
+    def write(self, file):
+        """Write the sudo script to the script file"""
+        file.write("#!/bin/sh\n")
+        file.write(
+            f"# This script contains commands which {const.BASE_EXE_INSTALLTOOL} could not run.\n"
+        )
+        file.write(
+            "# You might have better luck running them manually, probably via sudo.\n"
+        )
+        if len(self.sudo_commands) > 0:
+            for cmd in self.sudo_commands:
+                cmd.write(file)
+        else:
+            file.write("\n# No commands to run.\n")
+
+
+SUDO_SCRIPT = SudoScript()
 
 
 def findDataFiles(subdir):
@@ -416,11 +499,22 @@ def main():
         default=None,
     )
 
+    parser.add_argument(
+        "--sudo-script",
+        metavar="FILENAME",
+        help="write the script of sudo commands to the given FILENAME",
+        default=None,
+    )
+
     args = parser.parse_args()
     if args.chroot:
         # If chroot is given, the service file is installed inside the chroot
         # and starting/stopping the service does not make sense.
         args.no_launch = True
+
+    if args.chroot and args.sudo_script:
+        print("Error: argument --chroot and --sudo-script are mutually exclusive.")
+        sys.exit(2)
 
     if args.chroot:
         print("Using chroot", args.chroot)
@@ -439,3 +533,33 @@ def main():
         everything.post_install()
     elif args.pre_uninstall:
         everything.pre_uninstall()
+
+    if args.chroot:
+        return
+
+    if (args.sudo_script is None) or (args.sudo_script in ["", "-"]):
+        sudo_script_file = io.StringIO()
+    else:
+        sudo_script_file = open(args.sudo_script, "w")
+        p = Path(args.sudo_script)
+        p.chmod(0o0755)
+
+    if not SUDO_SCRIPT.needs_to_run():
+        print("No commands left over to run with sudo. Good.")
+        SUDO_SCRIPT.write(sudo_script_file)
+        sys.exit(0)
+
+    SUDO_SCRIPT.write(sudo_script_file)
+
+    if isinstance(sudo_script_file, io.StringIO):
+        print("You should probably run the following commands with sudo:")
+        print()
+        sys.stdout.write(sudo_script_file.getvalue())
+        print()
+    else:
+        sudo_script_file.close()
+        print("You should probably run this script with sudo (example command below):")
+        print()
+        sys.stdout.write(p.read_text())
+        print()
+        print("Suggested command:", "sudo", p.absolute())
