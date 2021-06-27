@@ -485,6 +485,110 @@ class XDGDesktopInstallTool(DataFileInstallTool):
             return dirs.datadir / f"icons/hicolor/{size}x{size}/apps"
 
 
+class UdevRulesInstallTool(FileInstallTool):
+    """Subsystem dealing with the udev rules"""
+
+    # FIXME: udev is Linux-only. What about non-Linux systems?
+
+    def __init__(self):
+        super(UdevRulesInstallTool, self).__init__()
+
+        # Generate the file contents in Python so we can install it
+        # from Python in case we do have write permissions.
+        lines = [
+            "# Soundcraft Notepad series mixers with audio routing controlled by USB"
+        ]
+        for product_id in const.PY_LIST_OF_PRODUCT_IDS:
+            lines.append(
+                f'ACTION=="add", SUBSYSTEM=="usb", ATTRS{{idVendor}}=="{const.VENDOR_ID_HARMAN:04x}", ATTRS{{idProduct}}=="{product_id:04x}", TAG+="uaccess"'
+            )
+
+        self.udev_rules_content = "".join([f"{line}\n" for line in lines])
+        self.udev_rules_dst = get_dirs().udev_rulesdir / f"70-{const.PACKAGE}.rules"
+        self.add_file(
+            StringToFile(
+                self.udev_rules_dst,
+                self.udev_rules_content,
+                comment="udev rules allowing non-root access to the USB device",
+            )
+        )
+
+    def emit_code_for_rule_change(self, skip_if):
+        # udev is supposed to be picking up changed rules "for years"
+        # (relative to 2016), so manually triggering a reload does not
+        # appear to be called for any more.
+        #
+        # SUDO_SCRIPT.add_cmd(
+        #     "udevadm control --reload",
+        #     skip_if=skip_if,
+        #     comment="Make udev take notice of the updated set of udev rules",
+        # )
+
+        # FIXME: In case installtool is running as root, run udevadm directly.
+
+        sh_list_of_product_ids = " ".join(
+            ["%04x" % n for n in const.PY_LIST_OF_PRODUCT_IDS]
+        )
+        SUDO_SCRIPT.add_cmd(
+            f"""\
+sleep 4   # wait until udev should have noticed the new rules
+for product_id in {sh_list_of_product_ids}
+do
+    udevadm trigger --verbose \\
+        --action=add --subsystem-match=usb \\
+        --attr-match=idVendor={const.VENDOR_ID_HARMAN:04x} --attr-match=idProduct=${{product_id}}
+done""",
+            skip_if=skip_if,
+            comment="Trigger udev rules which run when adding existing mixer devices",
+        )
+
+    def post_install(self):
+        # Populate with the files installed pre installation
+        old_content = {}
+        if self.udev_rules_dst.exists():
+            old_content[self.udev_rules_dst] = self.udev_rules_dst.read_text()
+
+        super(UdevRulesInstallTool, self).post_install()
+
+        # Populate with the files which we (should/will) have installed
+        new_content = {}
+        new_content[self.udev_rules_dst] = self.udev_rules_content
+
+        from pprint import pprint
+
+        print("OLD")
+        pprint(old_content)
+        print("NEW")
+        pprint(new_content)
+
+        self.emit_code_for_rule_change(skip_if=(new_content == old_content))
+
+    def pre_uninstall(self):
+        # FIXME05: Do we even want to uninstall the udev rules if it
+        #          is in /etc/udev/rules.d for a $HOME/.local install?
+        #          The next install will just need sudo access again
+        #          to install it again.
+
+        old_content = {}
+        if self.udev_rules_dst.exists():
+            old_content[self.udev_rules_dst] = self.udev_rules_dst.read_text()
+
+        super(UdevRulesInstallTool, self).pre_uninstall()
+
+        new_content = dict(old_content)
+        if self.udev_rules_dst in new_content:
+            del new_content[self.udev_rules_dst]
+
+        from pprint import pprint
+
+        print("OLD")
+        pprint(old_content)
+        print("NEW")
+        pprint(new_content)
+
+        self.emit_code_for_rule_change(skip_if=(new_content == old_content))
+
+
 class InstallToolEverything(AbstractInstallTool):
     """Groups all subsystem installtools"""
 
@@ -568,6 +672,7 @@ def main():
     everything = InstallToolEverything()
     everything.add(DBusInstallTool(no_launch=args.no_launch))
     everything.add(XDGDesktopInstallTool())
+    everything.add(UdevRulesInstallTool())
 
     if args.post_install:
         everything.post_install()

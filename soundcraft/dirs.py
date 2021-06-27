@@ -186,6 +186,11 @@ class AbstractDirs(metaclass=abc.ABCMeta):
 
         return self._statedir
 
+    @property
+    @abc.abstractmethod
+    def udev_rulesdir(self):
+        pass  # AbstractDirs.udev_rulesdir
+
 
 class GlobalDirs(AbstractDirs):
     pass  # class GlobalDirs
@@ -196,17 +201,29 @@ class UsrDirs(GlobalDirs):
 
     PREFIX = Path("/usr")
 
+    @property
+    def udev_rulesdir(self):
+        return Path("/usr/lib/udev/rules.d")
+
 
 class UsrLocalDirs(GlobalDirs):
     """Global install to /usr/local"""
 
     PREFIX = Path("/usr/local")
 
+    @property
+    def udev_rulesdir(self):
+        return Path("/usr/local/lib/udev/rules.d")
+
 
 class HomeDirs(AbstractDirs):
     """User local install to $HOME/.local"""
 
     PREFIX = Path("~/.local").expanduser()
+
+    @property
+    def udev_rulesdir(self):
+        return Path("/etc/udev/rules.d")
 
 
 # The one instance of an AbstractDirs descendant class
