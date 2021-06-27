@@ -83,10 +83,33 @@ def serviceExePath():
     return exename
 
 
-SCALABLE_ICONDIR = Path("/usr/local/share/icons/hicolor/scalable/apps/")
+def find_datadir():
+    exe_path = serviceExePath()
+    for prefix in [Path("/usr/local"), Path("/usr"), Path("~/.local").expanduser()]:
+        for sx_dir in ["bin", "sbin", "libexec"]:
+            for sx in [const.BASE_EXE_INSTALLTOOL]:
+                sx_path = prefix / sx_dir / sx
+                if sx_path == exe_path:
+                    return prefix / "share"
+                try:
+                    exe_path.relative_to(prefix)  # ignore result
+
+                    # If this is
+                    # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/bin/soundcraft_installtool``,
+                    # then the D-Bus and XDG config can either go into
+                    # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/share/``
+                    # and be ignored, or go into
+                    # ``/home/user/.local/share/`` and work. We choose
+                    # the latter.
+                    return prefix / "share"
+                except ValueError:
+                    pass  # exe_path is not a subdir of prefix
+    raise ValueError(f"Service exe path is not supported: {exe_path!r}")
 
 
-def post_install_dbus(cfgroot=Path("/usr/share/dbus-1")):
+def post_install_dbus():
+    dbus1_root = find_datadir() / "dbus-1"
+    print(f"Using dbus-1 config root {dbus1_root}")
     templateData = {
         "dbus_service_bin": str(serviceExePath()),
         "busname": BUSNAME,
@@ -95,7 +118,7 @@ def post_install_dbus(cfgroot=Path("/usr/share/dbus-1")):
     for (srcpath, files) in sources.items():
         for f in files:
             src = srcpath / f
-            dst = cfgroot / f
+            dst = dbus1_root / f
             print(f"Installing {src} -> {dst}")
             with open(src, "r") as srcfile:
                 srcTemplate = Template(srcfile.read())
@@ -130,6 +153,8 @@ def post_install_dbus(cfgroot=Path("/usr/share/dbus-1")):
 
 
 def post_install_xdg():
+    datadir = find_datadir()
+    print("Using datadir", datadir)
     sources = findDataFiles("xdg")
     for (srcpath, files) in sources.items():
         for f in files:
@@ -149,8 +174,9 @@ def post_install_xdg():
                         ]
                     )
             elif src.suffix == ".svg":
-                SCALABLE_ICONDIR.mkdir(parents=True, exist_ok=True)
-                shutil.copy(src, SCALABLE_ICONDIR)
+                scalable_icondir = datadir / "icons/hicolor/scalable/apps"
+                scalable_icondir.mkdir(parents=True, exist_ok=True)
+                shutil.copy(src, scalable_icondir)
     print("Installed all XDG application launcher files")
 
 
@@ -159,7 +185,9 @@ def post_install():
     post_install_xdg()
 
 
-def pre_uninstall_dbus(cfgroot=Path("/usr/share/dbus-1")):
+def pre_uninstall_dbus():
+    dbus1_root = find_datadir() / "dbus-1"
+    print(f"Using dbus-1 config root {dbus1_root}")
     bus = pydbus.SystemBus()
     dbus_service = bus.get(".DBus")
     if not dbus_service.NameHasOwner(BUSNAME):
@@ -174,7 +202,7 @@ def pre_uninstall_dbus(cfgroot=Path("/usr/share/dbus-1")):
     sources = findDataFiles("dbus-1")
     for (srcpath, files) in sources.items():
         for f in files:
-            path = cfgroot / f
+            path = dbus1_root / f
             print(f"Removing {path}")
             try:
                 path.unlink()
@@ -184,6 +212,8 @@ def pre_uninstall_dbus(cfgroot=Path("/usr/share/dbus-1")):
 
 
 def pre_uninstall_xdg():
+    datadir = find_datadir()
+    print("Using datadir", datadir)
     sources = findDataFiles("xdg")
     for (srcpath, files) in sources.items():
         for f in files:
@@ -196,7 +226,8 @@ def pre_uninstall_xdg():
                         ["xdg-icon-resource", "uninstall", "--size", str(size), f.name]
                     )
             elif f.suffix == ".svg":
-                svg = SCALABLE_ICONDIR / f.name
+                scalable_icondir = datadir / "icons/hicolor/scalable/apps"
+                svg = scalable_icondir / f.name
                 try:
                     svg.unlink()
                 except FileNotFoundError:
