@@ -37,7 +37,7 @@ VERSION = "0.4.90"
 # Executable names
 BASE_EXE_CLI = "soundcraft_ctl"
 BASE_EXE_GUI = "soundcraft_gui"
-BASE_EXE_SERVICE = "soundcraft_dbus_service"
+BASE_EXE_SERVICE = "soundcraft_session_service"
 BASE_EXE_INSTALLTOOL = "soundcraft_installtool"
 
 
@@ -45,3 +45,7 @@ BASE_EXE_INSTALLTOOL = "soundcraft_installtool"
 # https://developer.gnome.org/gio/stable/GApplication.html#g-application-id-is-valid
 APPLICATION_ID = "soundcraft.utils"
 APP_ICON = "soundcraft-utils"
+
+
+# Helpful for removing remnants of soundcraft-utils 0.4.0 and earlier
+OLD_BASE_EXE_SERVICE = "soundcraft_dbus_service"
