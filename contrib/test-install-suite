@@ -1,0 +1,171 @@
+#!/bin/sh
+
+if [ "x$PIPENV_ACTIVE" != x ]
+then
+    echo "Fatal: MUST NOT be running in pipenv."
+    exit 2
+fi
+
+if [ "x$VIRTUAL_ENV" != x ]
+then
+    echo "Fatal: MUST NOT be running in virtualenv."
+    exit 2
+fi
+
+abs_scriptdir="$(cd "$(dirname "$0")" && pwd)"
+abs_topdir="$(cd "$(dirname "$abs_scriptdir")" && pwd)"
+
+device_connected=false
+for idProduct in 0030 0031 0032
+do
+    if lsusb -d "05fc:${idProduct}"
+    then
+	device_connected=true
+	break
+    fi
+done
+
+if "$device_connected"
+then
+    echo "Device is connected. Good."
+else
+    echo "Fatal: No device connected."
+    exit 1
+fi
+
+set -ex
+
+cd "$abs_topdir"
+
+if grep SUDO_SCRIPT soundcraft/installtool.py
+then
+    sudo_script_post_install_arg="--sudo-script=sudo-script-post-install.sh"
+    sudo_script_pre_uninstall_arg="--sudo-script=sudo-script-pre_uninstall.sh"
+fi
+
+sudo rm -f  "/usr/local/bin"/soundcraft_* "/usr/local/share/dbus-1/services"/soundcraft*
+sudo rm -rf "/usr/local/lib"/python*/{dist,site}-packages/soundcraft*
+
+rm -f  "$HOME/.local/bin"/soundcraft_* "$HOME/.local/share/dbus-1/services"/soundcraft*
+rm -rf "$HOME/.local/lib"/python*/{dist,site}-packages/soundcraft*
+
+if soundcraft_ctl --version
+then
+    echo "Fatal: There is still soundcraft_ctl in the PATH."
+    exit 2
+fi
+
+test_install_pipenv() {
+    local virtual_env
+    virtual_env="$(pipenv run printenv | sed -n 's|^VIRTUAL_ENV=||p')"
+    rm -f  "$virtual_env"/bin/soundcraft_*
+    rm -rf "$virtual_env"/lib/python*/{dist,site}-packages/soundcraft*
+    pipenv install -e .
+    ./tools/link_system_libs
+    pipenv run "$virtual_env/bin/soundcraft_installtool" $sudo_script_post_install_arg --post-install
+    cat sudo-script-post-install.sh
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 0
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 1
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 2
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
+    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 3
+    pipenv run "$virtual_env/bin/soundcraft_installtool" $sudo_script_pre_uninstall_arg --pre-uninstall
+    cat sudo-script-pre-uninstall.sh
+}
+
+test_install_home() {
+    pip install --user "$wheel"
+    soundcraft_installtool $sudo_script_post_install_arg --post-install
+    if [ -f sudo-script-post-install.sh ]; then cat sudo-script-post-install.sh; fi
+    soundcraft_ctl --list
+    soundcraft_ctl --set 0
+    soundcraft_ctl --list
+    soundcraft_ctl --set 1
+    soundcraft_ctl --list
+    soundcraft_ctl --set 2
+    soundcraft_ctl --list
+    soundcraft_ctl --set 3
+    soundcraft_installtool $sudo_script_pre_uninstall_arg --pre-uninstall
+    if [ -f sudo-script-pre-uninstall.sh ]; then cat sudo-script-pre-uninstall.sh; fi
+    pip --verbose uninstall --yes soundcraft_utils
+}
+
+test_sudo_usr_local() {
+    saved_PATH="$PATH"
+    saved_PYTHONPATH="$PYTHONPATH"
+
+    prefix="/usr/local"
+    bindir="$prefix/bin"
+    PATH="$bindir:$PATH"
+    export PATH
+    sudo pip install "$wheel"
+    site_packages="$(ls -1d "$prefix"/lib/python*/{dist,site}-packages | head -n1)"
+    PYTHONPATH="$site_packages"
+    export PYTHONPATH
+    sudo "$bindir/soundcraft_installtool" --post-install
+    soundcraft_ctl --list
+    soundcraft_ctl --set 0
+    soundcraft_ctl --list
+    soundcraft_ctl --set 1
+    soundcraft_ctl --list
+    soundcraft_ctl --set 2
+    soundcraft_ctl --list
+    soundcraft_ctl --set 3
+    sudo "$bindir/soundcraft_installtool" --pre-uninstall
+    sudo pip --verbose uninstall --yes soundcraft_utils
+
+    PATH="$saved_PATH"
+    export PATH
+    PYTHONPATH="$saved_PYTHONPATH"
+    export PYTHONPATH
+}
+
+test_chroot_usr() {
+    saved_PATH="$PATH"
+    saved_PYTHONPATH="$PYTHONPATH"
+
+    chroot="$PWD/__chroot_usr"
+    prefix="/usr"
+    bindir="$prefix/bin"
+    PATH="$chroot$bindir:$PATH"
+    export PATH
+    rm -rf "$chroot"
+    pip install --root "$chroot" --prefix "$prefix" "$wheel"
+    site_packages="$(ls -1d "$chroot$prefix"/lib/python*/{dist,site}-packages | head -n1)"
+    PYTHONPATH="$site_packages"
+    export PYTHONPATH
+    "$chroot$bindir/soundcraft_installtool" --chroot="$chroot" --post-install
+    # soundcraft_ctl --list
+    # soundcraft_ctl --set 0
+    # soundcraft_ctl --list
+    # soundcraft_ctl --set 1
+    # soundcraft_ctl --list
+    # soundcraft_ctl --set 2
+    # soundcraft_ctl --list
+    # soundcraft_ctl --set 3
+    "$chroot$bindir/soundcraft_installtool" --chroot="$chroot" --pre-uninstall
+    # pip --verbose uninstall --yes soundcraft_utils
+    rm -rf "$chroot"
+
+    PATH="$saved_PATH"
+    export PATH
+    PYTHONPATH="$saved_PYTHONPATH"
+    export PYTHONPATH
+}
+
+test_install_pipenv
+
+pipenv run ./tools/dist
+wheel="$(ls -1 dist/soundcraft_utils-*.whl | head -n1)"
+
+test_install_home
+
+if grep '[-]-chroot' soundcraft/installtool.py
+then
+    test_chroot_usr
+fi
+
+test_sudo_usr_local
