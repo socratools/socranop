@@ -21,6 +21,25 @@
 # SOFTWARE.
 
 
+"""\
+Determine directories adequate for the detected installation type
+
+Supported installation types are:
+
+  * global installation to ``/usr/``
+  * global installation to ``/usr/local/``
+  * local installation to ``$HOME/.local/``
+  * local installation to ``$HOME/.local/share/virtualenv/WHATEVER/``
+    (by installing the config files to ``$HOME/.local/``
+
+When accessed only through ``get_dirs()``, this module defines a
+single object, as the installation type is a global constant which
+needs to be determined only once, and cannot change during one program
+invocation.
+"""
+
+
+import abc
 import sys
 
 from os import getenv
@@ -29,28 +48,33 @@ from pathlib import Path
 import soundcraft.constants as const
 
 
-class _Dirs:
+class NotDetected(Exception):
+    pass  # class NotDetected
 
-    """Detect installation type and determine adequate directories
 
-    Supported installation types are:
+class UnsupportedInstall(Exception):
+    pass  # class UnsupportedInstall
 
-      * global installation to ``/usr/``
-      * global installation to ``/usr/local/``
-      * local installation to ``$HOME/.local/``
-    """
 
+class AbstractDirs(metaclass=abc.ABCMeta):
     def __init__(self):
-        super(_Dirs, self).__init__()
+        super(AbstractDirs, self).__init__()
 
         self._prefix = None
         self._statedir = None
 
-        # print(self)
+        self.__detect()
 
     def __str__(self):
         props = ["prefix", "datadir", "statedir"]
-        ps = ", ".join([("%s=%r" % (p, str(getattr(self, p)))) for p in props])
+
+        def c(obj):
+            if isinstance(obj, Path):
+                return str(obj)
+            else:
+                return obj
+
+        ps = ", ".join([("%s=%r" % (p, c(getattr(self, p)))) for p in props])
         return f"{self.__class__.__name__}({ps})"
 
     @property
@@ -71,44 +95,43 @@ class _Dirs:
         """Full path to the service script executable"""
         return self.exePath.parent / const.BASE_EXE_SERVICE
 
-    def __init_prefix(self):
-        for prefix in [
-            Path("/usr/local"),
-            Path("/usr"),
-            Path("~/.local").expanduser(),
-        ]:
-            for sx_dir in ["bin", "sbin", "libexec"]:
-                for sx in [
-                    const.BASE_EXE_CLI,
-                    const.BASE_EXE_GUI,
-                    const.BASE_EXE_SERVICE,
-                    const.BASE_EXE_INSTALLTOOL,
-                ]:
-                    sx_path = prefix / sx_dir / sx
-                    print("sx_path", sx_path)
-                    if sx_path == self.exePath:
-                        return prefix
-                    try:
-                        self.exePath.relative_to(prefix)  # ignore result
+    def __detect(self):
+        """Detect whether the current installation matches this class.
 
-                        # If this is, say,
-                        # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/bin/soundcraft_installtool``,
-                        # then the D-Bus and XDG config can either go into
-                        # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/share/``
-                        # and be ignored, or go into
-                        # ``/home/user/.local/share/`` and work. We choose
-                        # the latter.
-                        return prefix
-                    except ValueError:
-                        pass  # self.exePath is not a subdir of prefix
-        raise ValueError(f"Exe path is not supported: {self.exePath!r}")
+        Call this from __init__().
+        """
+
+        for sx_dir in ["bin", "sbin", "libexec"]:
+            for sx in [
+                const.BASE_EXE_CLI,
+                const.BASE_EXE_GUI,
+                const.BASE_EXE_SERVICE,
+                const.BASE_EXE_INSTALLTOOL,
+            ]:
+                sx_path = self.prefix / sx_dir / sx
+                # print("sx_path", sx_path)
+                if sx_path == self.exePath:
+                    return
+                try:
+                    self.exePath.relative_to(self.prefix)  # ignore result
+
+                    # If this is, say,
+                    # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/bin/soundcraft_installtool``,
+                    # then the D-Bus and XDG config can either go into
+                    # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/share/``
+                    # and be ignored, or go into
+                    # ``/home/user/.local/share/`` and work. We choose
+                    # the latter.
+                    return
+                except ValueError:
+                    pass  # self.exePath is not a subdir of self.prefix
+
+        raise NotDetected(f"Exe path is not supported: {self.exePath!r}")
 
     @property
     def prefix(self):
         """The prefix corresponding to the installation type of the currently running executable"""
-        if self._prefix is None:
-            self._prefix = self.__init_prefix()
-        return self._prefix
+        return self.PREFIX
 
     @property
     def datadir(self):
@@ -135,7 +158,29 @@ class _Dirs:
         return self._statedir
 
 
-# The one instance of a _Dirs class object
+class GlobalDirs(AbstractDirs):
+    pass  # class GlobalDirs
+
+
+class UsrDirs(GlobalDirs):
+    """Global install to /usr"""
+
+    PREFIX = Path("/usr")
+
+
+class UsrLocalDirs(GlobalDirs):
+    """Global install to /usr/local"""
+
+    PREFIX = Path("/usr/local")
+
+
+class HomeDirs(AbstractDirs):
+    """User local install to $HOME/.local"""
+
+    PREFIX = Path("~/.local").expanduser()
+
+
+# The one instance of an AbstractDirs descendant class
 __dir_instance = None
 
 
@@ -143,7 +188,16 @@ def __init_dirs():
     global __dir_instance
 
     assert __dir_instance is None
-    __dir_instance = _Dirs()
+
+    for cls in [UsrLocalDirs, UsrDirs, HomeDirs]:
+        try:
+            __dir_instance = cls()
+            print("Using dirs:", __dir_instance)
+            return __dir_instance
+        except NotDetected:
+            pass  # This installation is not for the current cls
+
+    raise UnsupportedInstall("exename=%r" % str(Path(sys.argv[0]).resolve()))
 
 
 def get_dirs():

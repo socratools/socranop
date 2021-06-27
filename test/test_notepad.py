@@ -1,9 +1,17 @@
 import array
+from pathlib import Path
+import sys
 from unittest.mock import DEFAULT, MagicMock, patch
 
 import pytest
 import usb.core
 from soundcraft import notepad
+import soundcraft.constants as const
+
+
+# Prepare argv array to use for @patch
+patched_argv = sys.argv
+patched_argv[0] = str(Path("~/.local/bin").expanduser() / const.BASE_EXE_INSTALLTOOL)
 
 
 class UsbCoreMock:
@@ -26,6 +34,7 @@ def usbCore():
     return mock
 
 
+@patch("sys.argv", patched_argv)
 def test_autodetect_none(usbCore, tmpdir):
     dev = notepad.autodetect(tmpdir)
     assert dev is None
@@ -78,6 +87,7 @@ def messageFor(i):
         (notepad.Notepad_12fx.Sources.INPUT_7_8, messageFor(2)),
     ],
 )
+@patch("sys.argv", patched_argv)
 @patch("usb.core.find")
 def test_notepad_statesave(find, desiredSource, expectedCtrlMessage, tmpdir):
     usbdev = find.return_value
