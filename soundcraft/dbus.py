@@ -42,17 +42,14 @@ import soundcraft.notepad
 import soundcraft.constants as const
 
 
-BUSNAME = "soundcraft.utils.notepad"
-
-
 class NotepadDbus(object):
-    dbus = """
+    dbus = f"""
       <node>
-        <interface name='soundcraft.utils.notepad.device'>
+        <interface name='{const.DEVICE_INTERFACE}'>
           <property name='name'          type='s'           access='read' />
           <property name='fixedRouting'  type='a((ss)(ss))' access='read' />
           <property name='routingTarget' type='(ss)'        access='read' />
-          <property name='sources'       type='a{s(ss)}'    access='read' />
+          <property name='sources'       type='a{{s(ss)}}'  access='read' />
           <property name='routingSource' type='s'           access='readwrite'>
             <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
                         value="true"/>
@@ -61,7 +58,7 @@ class NotepadDbus(object):
       </node>
     """
 
-    InterfaceName = "soundcraft.utils.notepad.device"
+    InterfaceName = const.DEVICE_INTERFACE
 
     def __init__(self, dev):
         self._dev = dev
@@ -97,9 +94,9 @@ class NotepadDbus(object):
 
 
 class Service:
-    dbus = """
+    dbus = f"""
       <node>
-        <interface name='soundcraft.utils.notepad'>
+        <interface name='{const.SERVICE_INTERFACE}'>
           <property name='version' type='s'  access='read' />
           <property name='devices' type='ao' access='read'>
             <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
@@ -116,7 +113,8 @@ class Service:
       </node>
     """
 
-    InterfaceName = "soundcraft.utils.notepad"
+    InterfaceName = const.SERVICE_INTERFACE
+
     PropertiesChanged = signal()
     Added = signal()
     Removed = signal()
@@ -127,7 +125,7 @@ class Service:
         self.udev = GUdev.Client(subsystems=["usb/usb_device"])
         self.udev.connect("uevent", self.uevent)
         self.loop = GLib.MainLoop()
-        self.busname = self.bus.publish(BUSNAME, self)
+        self.busname = self.bus.publish(const.BUSNAME, self)
 
     def run(self):
         self.tryRegister()
@@ -151,7 +149,7 @@ class Service:
         self.loop.quit()
 
     def objPath(self, idx):
-        return f"/soundcraft/utils/notepad/{idx}"
+        return f"{const.MGRPATH}/{idx}"
 
     def tryRegister(self):
         if self.hasDevice():
@@ -227,13 +225,11 @@ class VersionIncompatibilityError(DbusInitializationError):
 class DbusServiceSetupError(DbusInitializationError):
     def __init__(self):
         super().__init__(
-            f"No D-Bus service found for {BUSNAME}. Maybe run '{const.BASE_EXE_INSTALLTOOL} --post-install' to enable it?"
+            f"No D-Bus service found for {const.BUSNAME}. Maybe run '{const.BASE_EXE_INSTALLTOOL} --post-install' to enable it?"
         )
 
 
 class Client:
-    MGRPATH = "/soundcraft/utils/notepad"
-
     def __init__(self, added_cb=None, removed_cb=None):
         self.bus = SessionBus()
         self.dbusmgr = self.bus.get(".DBus")
@@ -249,7 +245,7 @@ class Client:
 
     def initManager(self):
         try:
-            self.manager = self.bus.get(BUSNAME, self.MGRPATH)
+            self.manager = self.bus.get(const.BUSNAME, const.MGRPATH)
             self.manager.onAdded = self._onAdded
             self.manager.onRemoved = self._onRemoved
         except Exception as e:
@@ -258,7 +254,7 @@ class Client:
             raise e
 
     def servicePid(self):
-        return self.dbusmgr.GetConnectionUnixProcessID(BUSNAME)
+        return self.dbusmgr.GetConnectionUnixProcessID(const.BUSNAME)
 
     def serviceVersion(self):
         return self.manager.version
@@ -297,7 +293,7 @@ class Client:
     serviceDisconnected = signal()
 
     def _nameChanged(self, busname, old, new):
-        if busname != BUSNAME:
+        if busname != const.BUSNAME:
             return
         if old == "":
             print(f"New {busname} connected")
@@ -310,7 +306,7 @@ class Client:
         devices = self.manager.devices
         if not devices:
             return None
-        proxyDevice = self.bus.get(BUSNAME, devices[0])
+        proxyDevice = self.bus.get(const.BUSNAME, devices[0])
         self.deviceAdded(proxyDevice)
         return proxyDevice
 
@@ -323,7 +319,7 @@ class Client:
     deviceAdded = signal()
 
     def _onAdded(self, path):
-        proxyDevice = self.bus.get(BUSNAME, path)
+        proxyDevice = self.bus.get(const.BUSNAME, path)
         self.deviceAdded(proxyDevice)
 
     deviceRemoved = signal()
