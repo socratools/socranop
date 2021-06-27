@@ -132,9 +132,11 @@ def post_install_dbus():
                     with open(service_dst, "w") as dstfile:
                         dstfile.write(srcTemplate.substitute(templateData))
 
+    print("Starting D-Bus service as a test")
+
     bus = pydbus.SessionBus()
     dbus_service = bus.get(".DBus")
-    print(f"Starting service version {const.VERSION}...")
+    print(f"Installtool version: {const.VERSION}")
 
     # Give the D-Bus a few seconds to notice the new service file
     timeout = 5
@@ -154,7 +156,7 @@ def post_install_dbus():
             continue  # starting service has failed, but try again
 
     service_version = bus.get(BUSNAME).version
-    print(f"Version running: {service_version}")
+    print(f"Service     version: {service_version}")
     print("D-Bus post-install is complete")
     print(f"Run {const.BASE_EXE_GUI} or {const.BASE_EXE_CLI} as a regular user")
 
