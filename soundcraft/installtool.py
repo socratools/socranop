@@ -55,7 +55,7 @@ import soundcraft
 
 import soundcraft.constants as const
 
-from soundcraft.dirs import get_dirs
+from soundcraft.dirs import get_dirs, init_dirs
 
 
 def findDataFiles(subdir):
@@ -85,6 +85,15 @@ class AbstractFile(metaclass=abc.ABCMeta):
     def dst(self):
         return self.__dst
 
+    @property
+    def chroot_dst(self):
+        chroot = get_dirs().chroot
+        if chroot:
+            relpath = self.dst.relative_to("/")
+            return chroot / relpath
+        else:
+            return self.dst
+
     @abc.abstractmethod
     def install(self):
         pass  # AbstractFile.install()
@@ -94,7 +103,7 @@ class AbstractFile(metaclass=abc.ABCMeta):
         # file and leave the directory tree around.
         self.uninstall_msg(self.dst)
         try:
-            self.dst.unlink()
+            self.chroot_dst.unlink()
         except FileNotFoundError:
             pass  # No file to remove
 
@@ -118,9 +127,9 @@ class CopyFile(AbstractFile):
 
     def install(self):
         self.install_msg(self.dst)
-        self.dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
-        shutil.copy(self.src, self.dst)
-        self.dst.chmod(mode=0o644)
+        self.chroot_dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+        shutil.copy(self.src, self.chroot_dst)
+        self.chroot_dst.chmod(mode=0o644)
 
 
 class StringToFile(AbstractFile):
@@ -133,9 +142,9 @@ class StringToFile(AbstractFile):
 
     def install(self):
         self.install_msg(self.dst)
-        self.dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
-        self.dst.write_text(self.content)
-        self.dst.chmod(mode=0o0644)
+        self.chroot_dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
+        self.chroot_dst.write_text(self.content)
+        self.chroot_dst.chmod(mode=0o0644)
 
 
 class TemplateFile(CopyFile):
@@ -152,9 +161,9 @@ class TemplateFile(CopyFile):
     def install(self):
         self.install_msg(self.dst)
         src_template = Template(self.src.read_text())
-        self.dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
-        self.dst.write_text(src_template.substitute(self.template_data))
-        self.dst.chmod(mode=0o0644)
+        self.chroot_dst.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
+        self.chroot_dst.write_text(src_template.substitute(self.template_data))
+        self.chroot_dst.chmod(mode=0o0644)
 
 
 class AbstractInstallTool(metaclass=abc.ABCMeta):
@@ -223,9 +232,10 @@ class UnhandledDataFile(Exception):
 class DBusInstallTool(DataFileInstallTool):
     """Subsystem dealing with the D-Bus configuration files"""
 
-    def __init__(self, no_launch=False):
+    def __init__(self, no_launch):
         super(DBusInstallTool, self).__init__()
         self.no_launch = no_launch
+
         self.walk_through_data_files("dbus-1")
 
     def add_src(self, src):
@@ -399,10 +409,26 @@ def main():
         action="store_true",
     )
 
-    args = parser.parse_args()
+    parser.add_argument(
+        "--chroot",
+        metavar="CHROOT",
+        help="chroot dir to (un)install from/into (implies --no-launch)",
+        default=None,
+    )
 
-    # Initialize the dirs object
-    dirs = get_dirs()
+    args = parser.parse_args()
+    if args.chroot:
+        # If chroot is given, the service file is installed inside the chroot
+        # and starting/stopping the service does not make sense.
+        args.no_launch = True
+
+    if args.chroot:
+        print("Using chroot", args.chroot)
+
+    # Initialize the dirs object with the chroot given so that later
+    # calls to get_dirs() will yield an object which uses the same
+    # chroot value.
+    dirs = init_dirs(chroot=args.chroot)
     print("Using dirs", dirs)
 
     everything = InstallToolEverything()

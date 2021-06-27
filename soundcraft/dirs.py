@@ -32,10 +32,15 @@ Supported installation types are:
   * local installation to ``$HOME/.local/share/virtualenv/WHATEVER/``
     (by installing the config files to ``$HOME/.local/``
 
-When accessed only through ``get_dirs()``, this module defines a
-single object, as the installation type is a global constant which
-needs to be determined only once, and cannot change during one program
-invocation.
+The ``chroot=`` parameter to ``init_dirs()`` is used when building
+binary packages for distributions. Apart from that one use, users of
+this module only need to call ``get_dirs()`` to get the object
+representing the current installation.
+
+When accessed only through ``get_dirs()`` and optionally
+``init_dirs(...)``, this module defines a single object, as the
+installation type is a global constant which needs to be determined
+only once, and cannot change during one program invocation.
 """
 
 
@@ -57,16 +62,23 @@ class UnsupportedInstall(Exception):
 
 
 class AbstractDirs(metaclass=abc.ABCMeta):
-    def __init__(self):
+    def __init__(self, chroot=None):
         super(AbstractDirs, self).__init__()
+
+        if chroot:
+            self._chroot = Path(chroot)
+        else:
+            self._chroot = None
 
         self._prefix = None
         self._statedir = None
 
+        print("AbstractDirs.__init__", self, f"chroot={chroot!r}")
+
         self.__detect()
 
     def __str__(self):
-        props = ["prefix", "datadir", "statedir"]
+        props = ["chroot", "prefix", "datadir", "statedir"]
 
         def c(obj):
             if isinstance(obj, Path):
@@ -76,6 +88,17 @@ class AbstractDirs(metaclass=abc.ABCMeta):
 
         ps = ", ".join([("%s=%r" % (p, c(getattr(self, p)))) for p in props])
         return f"{self.__class__.__name__}({ps})"
+
+    @property
+    def chroot(self):
+        return self._chroot
+
+    def __remove_chroot(self, path):
+        if self.chroot is None:
+            return path
+        else:
+            rel_path = path.relative_to(self.chroot)
+            return Path(f"/{rel_path}")
 
     @property
     def exePath(self):
@@ -88,18 +111,24 @@ class AbstractDirs(metaclass=abc.ABCMeta):
     @property
     def guiExePath(self):
         """Full path to the gui script executable"""
-        return self.exePath.parent / const.BASE_EXE_GUI
+        return self.__remove_chroot(self.exePath.parent / const.BASE_EXE_GUI)
 
     @property
     def serviceExePath(self):
         """Full path to the service script executable"""
-        return self.exePath.parent / const.BASE_EXE_SERVICE
+        return self.__remove_chroot(self.exePath.parent / const.BASE_EXE_SERVICE)
 
     def __detect(self):
         """Detect whether the current installation matches this class.
 
         Call this from __init__().
         """
+
+        if self.chroot is None:
+            chr_prefix = self.PREFIX
+        else:
+            root_rel_prefix = self.PREFIX.relative_to("/")
+            chr_prefix = self.chroot / root_rel_prefix
 
         for sx_dir in ["bin", "sbin", "libexec"]:
             for sx in [
@@ -108,12 +137,12 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                 const.BASE_EXE_SERVICE,
                 const.BASE_EXE_INSTALLTOOL,
             ]:
-                sx_path = self.prefix / sx_dir / sx
+                sx_path = chr_prefix / sx_dir / sx
                 # print("sx_path", sx_path)
                 if sx_path == self.exePath:
                     return
                 try:
-                    self.exePath.relative_to(self.prefix)  # ignore result
+                    self.exePath.relative_to(chr_prefix)  # ignore result
 
                     # If this is, say,
                     # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/bin/soundcraft_installtool``,
@@ -124,7 +153,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                     # the latter.
                     return
                 except ValueError:
-                    pass  # self.exePath is not a subdir of self.prefix
+                    pass  # self.exePath is not a subdir of chr_prefix
 
         raise NotDetected(f"Exe path is not supported: {self.exePath!r}")
 
@@ -184,26 +213,28 @@ class HomeDirs(AbstractDirs):
 __dir_instance = None
 
 
-def __init_dirs():
+def init_dirs(chroot=None):
     global __dir_instance
 
     assert __dir_instance is None
 
     for cls in [UsrLocalDirs, UsrDirs, HomeDirs]:
         try:
-            __dir_instance = cls()
+            __dir_instance = cls(chroot)
             print("Using dirs:", __dir_instance)
             return __dir_instance
         except NotDetected:
             pass  # This installation is not for the current cls
 
-    raise UnsupportedInstall("exename=%r" % str(Path(sys.argv[0]).resolve()))
+    raise UnsupportedInstall(
+        "exename=%r, chroot=%r" % (str(Path(sys.argv[0]).resolve()), chroot)
+    )
 
 
 def get_dirs():
     global __dir_instance
 
     if __dir_instance is None:
-        __init_dirs()
+        init_dirs()
 
     return __dir_instance
