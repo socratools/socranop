@@ -409,13 +409,23 @@ class DBusInstallTool(DataFileInstallTool):
             raise UnhandledDataFile(src)
 
     def post_install(self):
+        if not self.no_launch:
+            bus = pydbus.SessionBus()
+            dbus_service = bus.get(".DBus")
+
+            if not dbus_service.NameHasOwner(const.BUSNAME):
+                print("Old D-Bus service not running")
+            else:
+                service = bus.get(const.BUSNAME)
+                service_version = service.version
+                print(f"Shutting down old D-Bus service version {service_version}")
+                service.Shutdown()
+                print("Old session D-Bus service stopped")
+
         super(DBusInstallTool, self).post_install()
 
         if not self.no_launch:
             print("Starting D-Bus service as a test...")
-
-            bus = pydbus.SessionBus()
-            dbus_service = bus.get(".DBus")
             print(f"Installtool version: {const.VERSION}")
 
             # Give the D-Bus a few seconds to notice the new service file
