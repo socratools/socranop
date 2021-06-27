@@ -28,13 +28,20 @@
 
 import abc
 import argparse
+import base64
 import importlib
 import io
 import re
-import shutil
 import sys
 import time
+
 from pathlib import Path
+from pkg_resources import (
+    resource_isdir,
+    resource_string,
+    resource_stream,
+    resource_listdir,
+)
 from string import Template
 
 
@@ -210,26 +217,31 @@ class AbstractFile(metaclass=abc.ABCMeta):
             SUDO_SCRIPT.add_cmd(f"rm -f {self.dst}", comment=self.comment)
 
 
-class CopyFile(AbstractFile):
-    """This file just needs to be copied from a source file to the destination"""
+RESOURCE_MODULE = "soundcraft"
 
-    def __init__(self, dst, src, comment=None):
-        super(CopyFile, self).__init__(dst, comment=comment)
-        self.__src = Path(src)
 
-    @property
-    def src(self):
-        return self.__src
+class ResourceFile(AbstractFile):
+    """This destination file is written from a pkg_resource resource"""
+
+    def __init__(self, dst, resource_name, comment=None):
+        super(ResourceFile, self).__init__(dst, comment=comment)
+        self.resource_name = resource_name
+
+    def __str__(self):
+        return f"{self.__class__.__name__}:{self.dst}:resource({self.resource_name})"
 
     def direct_install(self):
-        shutil.copy2(self.src, self.chroot_dst)
+        self.chroot_dst.write_bytes(
+            resource_string(RESOURCE_MODULE, self.resource_name)
+        )
 
     def shell_install(self):
-        lines = [
-            f"mkdir -p {self.dst.parent.absolute()}",
-            f"cp -p {self.src.absolute()} {self.dst}",
-        ]
-        return "\n".join(lines)
+        first_line = f"base64>{self.dst}<<EOF\n"
+        bio = io.BytesIO()
+        res_stream = resource_stream(RESOURCE_MODULE, self.resource_name)
+        base64.encode(res_stream, bio).decode("ascii")
+        last_line = "EOF\n"
+        return f"{first_line}{bio.getvalue()}{last_line}"
 
 
 class StringToFile(AbstractFile):
@@ -251,17 +263,24 @@ class StringToFile(AbstractFile):
         return "\n".join(lines)
 
 
-class TemplateFile(CopyFile):
+class TemplateFile(AbstractFile):
     """This destination file is a source file after string template processing"""
 
-    def __init__(self, dst, src, template_data=None, comment=None):
-        super(TemplateFile, self).__init__(dst, src, comment=comment)
+    def __init__(self, dst, resource_name, template_data=None, comment=None):
+        super(TemplateFile, self).__init__(dst, comment=comment)
 
         if template_data is None:
             template_data = {}
 
-        src_template = Template(self.src.read_text())
+        src_template = Template(
+            resource_string(RESOURCE_MODULE, resource_name).decode("utf-8")
+        )
         self.content = src_template.substitute(template_data)
+
+        self.__resource_name = resource_name
+
+    def __str__(self):
+        return f"{self.__class__.__name__}:{self.dst}:resource({self.__resource_name})"
 
     def direct_install(self):
         self.chroot_dst.write_text(self.content)
@@ -422,6 +441,7 @@ class FileInstallTool(AbstractInstallTool):
         self.files = []
 
     def add_file(self, file):
+        print("Adding file", self, file)
         self.files.append(file)
 
     def post_install(self):
@@ -433,49 +453,58 @@ class FileInstallTool(AbstractInstallTool):
             file._uninstall()
 
 
-class DataFileInstallTool(FileInstallTool):
-    """Some installtool which iterates through files in data/"""
+class ResourceInstallTool(FileInstallTool):
+    """A subsystem which iterates through resources in data/"""
 
-    def walk_through_data_files(self, subdir):
-        sources = findDataFiles(subdir)
-        for (srcpath, files) in sources.items():
-            for f in files:
-                src = srcpath / f
-                ssrc = str(src)
-                if ssrc[-1] == "~":
-                    continue  # ignore backup files ending with a tilde
-                self.add_src(src)
+    def walk_resources(self, resdir):
+        print("walk_through_data_files", self, resdir)
+        assert resource_isdir(RESOURCE_MODULE, "data")
+
+        def walk_resource_subdir(subdir):
+            full_subdir = f"data/{subdir}"
+            assert resource_isdir(RESOURCE_MODULE, full_subdir)
+            for name in resource_listdir(RESOURCE_MODULE, full_subdir):
+                full_name = f"{full_subdir}/{name}"
+                print("res fullname", full_name)
+                if resource_isdir(RESOURCE_MODULE, full_name):
+                    walk_resource_subdir(f"{subdir}/{name}")
+                else:
+                    self.add_resource(full_name)
+
+        walk_resource_subdir(resdir)
 
     @abc.abstractmethod
-    def add_src(self, src):
+    def add_resource(self, fullname):
         """Examine src file and decide what to do about it
 
-        Examine the given source file ``src`` and then decide whether
-        to
+        Examine the given source resource ``fullname`` and then
+        decide whether to
 
-          * ``self.add_file()`` an instance of ``AbstractFile``
-          * ``raise UnhandledDataFile(src)``
+          * ``self.add_file()`` an instance of ``ResourceToFile``
+          * ``raise UnhandledResource(src)``
         """
-        pass  # DataFileInstallTool.add_src()
+        pass  # ResourceInstallTool.add_resource()
 
 
-class UnhandledDataFile(Exception):
-    """Unhandled data file encountered while walking through data tree"""
+class UnhandledResource(Exception):
+    """Unhandled resource encountered while walking through resource tree"""
 
-    pass  # class UnhandledDataFile
+    pass  # class UnhandledResource
 
 
-class DBusInstallTool(DataFileInstallTool):
+class DBusInstallTool(ResourceInstallTool):
     """Subsystem dealing with the D-Bus configuration files"""
 
     def __init__(self, no_launch):
         super(DBusInstallTool, self).__init__()
         self.no_launch = no_launch
 
-        self.walk_through_data_files("dbus-1")
+        print("DBusInstallTool walk_through_data_files")
+        self.walk_resources("dbus-1")
 
-    def add_src(self, src):
-        if src.suffix == ".service":
+    def add_resource(self, fullname):
+        print("add_resource", self, fullname)
+        if fullname.endswith(".service"):
             dirs = get_dirs()
             templateData = {
                 "dbus_service_bin": str(dirs.serviceExePath),
@@ -485,10 +514,12 @@ class DBusInstallTool(DataFileInstallTool):
             service_dir = dirs.datadir / "dbus-1/services"
             service_dst = service_dir / f"{const.BUSNAME}.service"
 
-            service_file = TemplateFile(service_dst, src, template_data=templateData)
+            service_file = TemplateFile(
+                service_dst, fullname, template_data=templateData
+            )
             self.add_file(service_file)
         else:
-            raise UnhandledDataFile(src)
+            raise UnhandledResource(fullname)
 
     def post_install(self):
         if not self.no_launch:
@@ -509,7 +540,7 @@ class DBusInstallTool(DataFileInstallTool):
         super(DBusInstallTool, self).post_install()
 
         if not self.no_launch:
-            print("Starting D-Bus service as a test...")
+            print(f"Starting D-Bus service {const.BUSNAME} as a test...")
             print(f"Installtool version: {const.VERSION}")
 
             # CheckDependencies.post_install() has already checked this import works
@@ -527,6 +558,8 @@ class DBusInstallTool(DataFileInstallTool):
                     # GLibError will happen.
                     if timeout == 0:
                         raise
+
+                    print(f"Retrying {timeout}...")
                     timeout = timeout - 1
 
                     time.sleep(1)
@@ -567,7 +600,7 @@ class DBusInstallTool(DataFileInstallTool):
         print("D-Bus service is unregistered")
 
 
-class XDGDesktopInstallTool(DataFileInstallTool):
+class XDGDesktopInstallTool(ResourceInstallTool):
     """Subsystem dealing with the XDG desktop and icon files"""
 
     # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
@@ -575,10 +608,10 @@ class XDGDesktopInstallTool(DataFileInstallTool):
 
     def __init__(self):
         super(XDGDesktopInstallTool, self).__init__()
-        self.walk_through_data_files("xdg")
+        self.walk_resources("xdg")
 
-    def add_src(self, src):
-        if src.suffix == ".desktop":
+    def add_resource(self, fullname):
+        if fullname.endswith(".desktop"):
             dirs = get_dirs()
             applications_dir = dirs.datadir / "applications"
             dst = applications_dir / f"{const.APPLICATION_ID}.desktop"
@@ -586,18 +619,18 @@ class XDGDesktopInstallTool(DataFileInstallTool):
                 "gui_bin": dirs.guiExePath,
                 "APPLICATION_ID": const.APPLICATION_ID,
             }
-            self.add_file(TemplateFile(dst, src, templateData))
-        elif src.suffix == ".png":
-            size_suffix = src.suffixes[-2]
-            assert size_suffix.startswith(".")
-            size = int(size_suffix[1:], 10)
+            self.add_file(TemplateFile(dst, fullname, templateData))
+        elif fullname.endswith(".png"):
+            m = len(fullname) - 4
+            n = fullname.rindex(".", 0, m) + 1
+            size = int(fullname[n:m], 10)
             dst = self.icondir(size) / f"{const.APPLICATION_ID}.png"
-            self.add_file(CopyFile(dst, src))
-        elif src.suffix == ".svg":
+            self.add_file(ResourceFile(dst, fullname))
+        elif fullname.endswith(".svg"):
             dst = self.icondir() / f"{const.APPLICATION_ID}.svg"
-            self.add_file(CopyFile(dst, src))
+            self.add_file(ResourceFile(dst, fullname))
         else:
-            raise UnhandledDataFile(src)
+            raise UnhandledResource(fullname)
 
     def post_install(self):
         super(XDGDesktopInstallTool, self).post_install()
