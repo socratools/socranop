@@ -24,6 +24,7 @@ import sys
 import traceback
 from pathlib import Path
 from collections.abc import Iterable
+from pkg_resources import resource_filename
 
 try:
     import gi
@@ -54,14 +55,8 @@ def iconFile():
     if png.exists():
         return str(png)
 
-    # For soundcraft-utils running from source tree
-    modulepaths = soundcraft.__path__
-    for path in modulepaths:
-        png = Path(path) / "data" / "xdg" / f"{const.APPLICATION_ID}.256.png"
-        if png.exists():
-            return str(png)
-
-    return None
+    # Try finding an icon file in the egg data files
+    return resource_filename("soundcraft", f"data/xdg/{const.APPLICATION_ID}.256.png")
 
 
 class Main(Gtk.ApplicationWindow):
