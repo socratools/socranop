@@ -29,24 +29,54 @@ from pathlib import Path
 import soundcraft.constants as const
 
 
-def serviceExePath():
-    if True:
-        return exePath().parent / const.BASE_EXE_SERVICE
+class _Dirs:
 
+    """Detect installation type and determine adequate directories
 
-def exePath():
-    if True:
+    Supported installation types are:
+
+      * global installation to ``/usr/``
+      * global installation to ``/usr/local/``
+      * local installation to ``$HOME/.local/``
+    """
+
+    def __init__(self):
+        super(_Dirs, self).__init__()
+
+        self._prefix = None
+        self._statedir = None
+
+        # print(self)
+
+    def __str__(self):
+        props = ["prefix", "datadir", "statedir"]
+        ps = ", ".join([("%s=%r" % (p, str(getattr(self, p)))) for p in props])
+        return f"{self.__class__.__name__}({ps})"
+
+    @property
+    def exePath(self):
+        """The path the currently running executable"""
         exename = Path(sys.argv[0]).resolve()
         if exename.suffix == ".py":
             raise ValueError("Running out of a module-based execution is not supported")
         return exename
 
+    @property
+    def guiExePath(self):
+        """Full path to the gui script executable"""
+        return self.exePath.parent / const.BASE_EXE_GUI
 
-def find_datadir():
-    if True:
-        exe_path = exePath()
-        # print("exe_path", exe_path)
-        for prefix in [Path("/usr/local"), Path("/usr"), Path("~/.local").expanduser()]:
+    @property
+    def serviceExePath(self):
+        """Full path to the service script executable"""
+        return self.exePath.parent / const.BASE_EXE_SERVICE
+
+    def __init_prefix(self):
+        for prefix in [
+            Path("/usr/local"),
+            Path("/usr"),
+            Path("~/.local").expanduser(),
+        ]:
             for sx_dir in ["bin", "sbin", "libexec"]:
                 for sx in [
                     const.BASE_EXE_CLI,
@@ -55,38 +85,71 @@ def find_datadir():
                     const.BASE_EXE_INSTALLTOOL,
                 ]:
                     sx_path = prefix / sx_dir / sx
-                    # print("sx_path", sx_path)
-                    if sx_path == exe_path:
-                        return prefix / "share"
+                    print("sx_path", sx_path)
+                    if sx_path == self.exePath:
+                        return prefix
                     try:
-                        exe_path.relative_to(prefix)  # ignore result
+                        self.exePath.relative_to(prefix)  # ignore result
 
-                        # If this is
+                        # If this is, say,
                         # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/bin/soundcraft_installtool``,
                         # then the D-Bus and XDG config can either go into
                         # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/share/``
                         # and be ignored, or go into
                         # ``/home/user/.local/share/`` and work. We choose
                         # the latter.
-                        return prefix / "share"
+                        return prefix
                     except ValueError:
-                        pass  # exe_path is not a subdir of prefix
-        raise ValueError(f"Exe path is not supported: {exe_path!r}")
+                        pass  # self.exePath is not a subdir of prefix
+        raise ValueError(f"Exe path is not supported: {self.exePath!r}")
 
+    @property
+    def prefix(self):
+        """The prefix corresponding to the installation type of the currently running executable"""
+        if self._prefix is None:
+            self._prefix = self.__init_prefix()
+        return self._prefix
 
-def find_statedir():
-    if True:
+    @property
+    def datadir(self):
+        """The datadir corresponding to the installation type of the currently running executable"""
+        return self.prefix / "share"
+
+    @property
+    def statedir(self):
         """The statedir where the device state files are stored
 
-            The state directory for a user session service must be somewhere
-            in the user's ``$HOME``, and a config file is a good place.
-            """
-        config_dir = Path("~/.config").expanduser()
+        The state directory for a user session service must be somewhere
+        in the user's ``$HOME``, and a config file is a good place.
+        """
+        if self._statedir is None:
+            config_dir = Path("~/.config").expanduser()
 
-        xdg_config_home = getenv("XDG_CONFIG_HOME")
-        if xdg_config_home:  # neither None nor empty string
-            xdg_config_home_path = Path(xdg_config_home)
-            config_dir = xdg_config_home_path
+            xdg_config_home = getenv("XDG_CONFIG_HOME")
+            if xdg_config_home:  # neither None nor empty string
+                xdg_config_home_path = Path(xdg_config_home)
+                config_dir = xdg_config_home_path
 
-        statedir = config_dir / const.PACKAGE / "state"
-        return statedir
+            self._statedir = config_dir / const.PACKAGE / "state"
+
+        return self._statedir
+
+
+# The one instance of a _Dirs class object
+__dir_instance = None
+
+
+def __init_dirs():
+    global __dir_instance
+
+    assert __dir_instance is None
+    __dir_instance = _Dirs()
+
+
+def get_dirs():
+    global __dir_instance
+
+    if __dir_instance is None:
+        __init_dirs()
+
+    return __dir_instance

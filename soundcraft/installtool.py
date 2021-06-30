@@ -55,7 +55,7 @@ import soundcraft
 
 import soundcraft.constants as const
 
-from soundcraft.dirs import exePath, find_datadir, serviceExePath
+from soundcraft.dirs import get_dirs
 
 
 def findDataFiles(subdir):
@@ -75,10 +75,6 @@ def findDataFiles(subdir):
 
 
 class AbstractInstallTool(metaclass=abc.ABCMeta):
-    def __init__(self):
-        self.datadir = find_datadir()
-        # print(f"Using datadir {self.datadir}")
-
     @abc.abstractmethod
     def post_install(self):
         pass  # AbstractInstallTool.post_install()
@@ -88,14 +84,20 @@ class AbstractInstallTool(metaclass=abc.ABCMeta):
         pass  # AbstractInstallTool.pre_uninstall()
 
 
-class DBusInstallTool(AbstractInstallTool):
+class FileInstallTool(AbstractInstallTool):
+
+    pass  # class FileInstallTool
+
+
+class DBusInstallTool(FileInstallTool):
     def __init__(self):
         super(DBusInstallTool, self).__init__()
-        self.service_dst = self.datadir / "dbus-1/services" / f"{const.BUSNAME}.service"
+        service_dir = get_dirs().datadir / "dbus-1/services"
+        self.service_dst = service_dir / f"{const.BUSNAME}.service"
 
     def post_install(self):
         templateData = {
-            "dbus_service_bin": str(serviceExePath()),
+            "dbus_service_bin": str(get_dirs().serviceExePath),
             "busname": const.BUSNAME,
         }
 
@@ -171,21 +173,22 @@ class DBusInstallTool(AbstractInstallTool):
         print("D-Bus service is unregistered")
 
 
-class XDGDesktopInstallTool(AbstractInstallTool):
+class XDGDesktopInstallTool(FileInstallTool):
 
     # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
     #          must be run after all. Fedora Packaging docs suggest so.
 
     def post_install(self):
         sources = findDataFiles("xdg")
+        dirs = get_dirs()
         for (srcpath, files) in sources.items():
             for f in files:
                 src = srcpath / f
                 if src.suffix == ".desktop":
-                    application_dir = self.datadir / "applications"
+                    application_dir = dirs.datadir / "applications"
                     dst = application_dir / f"{const.APPLICATION_ID}.desktop"
                     templateData = {
-                        "gui_bin": exePath().parent / const.BASE_EXE_GUI,
+                        "gui_bin": dirs.guiExePath,
                         "APPLICATION_ID": const.APPLICATION_ID,
                     }
                     srcTemplate = Template(src.read_text())
@@ -212,11 +215,12 @@ class XDGDesktopInstallTool(AbstractInstallTool):
 
     def pre_uninstall(self):
         sources = findDataFiles("xdg")
+        dirs = get_dirs()
         for (srcpath, files) in sources.items():
             for f in files:
                 src = srcpath / f
                 if src.suffix == ".desktop":
-                    application_dir = self.datadir / "applications"
+                    application_dir = dirs.datadir / "applications"
                     dst = application_dir / f"{const.APPLICATION_ID}.desktop"
                     print(f"Uninstalling {dst}")
                     try:
@@ -243,10 +247,11 @@ class XDGDesktopInstallTool(AbstractInstallTool):
         print("Removed all XDG application launcher files")
 
     def icondir(self, size=None):
+        dirs = get_dirs()
         if size is None:
-            return self.datadir / "icons/hicolor/scalable/apps"
+            return dirs.datadir / "icons/hicolor/scalable/apps"
         else:
-            return self.datadir / f"icons/hicolor/{size}x{size}/apps"
+            return dirs.datadir / f"icons/hicolor/{size}x{size}/apps"
 
 
 class InstallToolEverything(AbstractInstallTool):
@@ -291,6 +296,10 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Initialize the dirs object
+    dirs = get_dirs()
+    print("Using dirs", dirs)
 
     everything = InstallToolEverything()
     everything.add(DBusInstallTool())
