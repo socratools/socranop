@@ -4,7 +4,7 @@
 #
 # TODO: Turn this into a pre-commit check?
 
-cd "$(dirname $(dirname $(dirname "$0")))"
+cd "$(dirname "$(dirname "$(dirname "$0")")")"
 
 find_py_mistake() {
     if git grep "$@" '*.py'

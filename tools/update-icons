@@ -44,7 +44,7 @@ fi
 ${INKSCAPE} --version
 
 # Change to top source directory
-cd "$(dirname $(dirname "$0"))"
+cd "$(dirname "$(dirname "$0")")"
 
 # File locations
 icon_dir="soundcraft/data/xdg"
