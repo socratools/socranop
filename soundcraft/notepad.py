@@ -23,7 +23,9 @@
 import array
 import enum
 import json
-import os
+
+from pathlib import Path
+
 
 import usb.core
 
@@ -40,8 +42,8 @@ class NotepadBase:
             fixedRouting = []
         self.routingTarget = routingTarget
         self.fixedRouting = fixedRouting
-        assert stateDir
-        self.stateDir = stateDir
+        if not stateDir:
+            stateDir = find_statedir()
         self.dev = usb.core.find(idVendor=const.VENDOR_ID_HARMAN, idProduct=idProduct)
         if self.dev is not None:
             major = self.dev.bcdDevice >> 8
@@ -52,7 +54,7 @@ class NotepadBase:
                 # Fall-back to class name, since reading the product over USB requires write access
                 self.product = self.__class__.__name__
             self.fwVersion = "%d.%02d" % (major, minor)
-            self.stateFile = f"{stateDir}/{self.product}.state"
+            self.stateFile = Path(stateDir) / f"{self.product}.state"
             self.state = {}
             self._loadState()
 
@@ -127,7 +129,7 @@ class NotepadBase:
 
     def _saveState(self):
         try:
-            os.makedirs(self.stateDir, exist_ok=True)
+            self.stateFile.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
             with open(self.stateFile, "w") as fh:
                 fh.write(json.dumps(self.state, sort_keys=True, indent=4))
         except Exception as e:
@@ -212,6 +214,7 @@ class Notepad_5(NotepadBase):
     }
 
 
+# Note: The stateDir parameter is required by the test suite.
 def autodetect(stateDir=None):
     if not stateDir:
         stateDir = find_statedir()

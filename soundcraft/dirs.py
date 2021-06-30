@@ -23,6 +23,7 @@
 
 import sys
 
+from os import getenv
 from pathlib import Path
 
 import soundcraft.constants as const
@@ -71,6 +72,17 @@ def find_datadir():
 
 
 def find_statedir():
-    datadir = find_datadir()
-    # FIXME05: What about non-$HOME installs?
-    return datadir / "soundcraft-utils"
+    """The statedir where the device state files are stored
+
+    The state directory for a user session service must be somewhere
+    in the user's ``$HOME``, and a config file is a good place.
+    """
+    config_dir = Path("~/.config").expanduser()
+
+    xdg_config_home = getenv("XDG_CONFIG_HOME")
+    if xdg_config_home:  # neither None nor empty string
+        xdg_config_home_path = Path(xdg_config_home)
+        config_dir = xdg_config_home_path
+
+    statedir = config_dir / const.PACKAGE / "state"
+    return statedir
