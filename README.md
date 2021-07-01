@@ -54,11 +54,11 @@ Set up the D-Bus service so it can access the system bus and be
 auto-started on demand:
 
 ```bash
-sudo socranop_dbus_service --setup
+sudo socranop-dbus_service --setup
 ```
 
 The D-Bus service will run as root, providing access to the underlying
-USB device so the `socranop_ctl` user-facing part can be run by an
+USB device so the `socranop-ctl` user-facing part can be run by an
 unprivileged account.
 
 ### Upgrading
@@ -70,7 +70,7 @@ the D-Bus service is upgraded to the latest version:
 
 ```bash
 sudo pip install -U socranop
-sudo socranop_dbus_service --setup
+sudo socranop-dbus_service --setup
 ```
 
 
@@ -81,7 +81,7 @@ FIXME05 This section needs to be rewritten for the session dbus
 You can remove the D-Bus and xdg files first by running the following as root:
 
 ```bash
-sudo socranop_dbus_service --uninstall
+sudo socranop-dbus_service --uninstall
 ```
 
 Then remove the package with pip:
@@ -102,7 +102,7 @@ Usage
 ### GUI
 
 ```bash
-socranop_gui
+socranop-gui
 ```
 
 - Select the desired input using the up and down arrow keys or using the mouse
@@ -118,13 +118,13 @@ socranop_gui
 List possible channel routing choices:
 
 ```bash
-socranop_ctl [--no-dbus] -l
+socranop-ctl [--no-dbus] -l
 ```
 
 Set channel routing:
 
 ```bash
-socranop_ctl [--no-dbus] -s <number>
+socranop-ctl [--no-dbus] -s <number>
 ```
 
 When using the `--no-dbus`, write access to the underlying USB device is

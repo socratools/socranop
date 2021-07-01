@@ -141,7 +141,7 @@ specifications which `socranop` comes into contact with.
 
   * [Desktop Entry Specification](https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html)
 
-    The `.desktop` file hooks the `socranop_gui` GUI application
+    The `.desktop` file hooks the `socranop-gui` GUI application
     into the desktop environment's list of applications.
 
   * [Desktop Menu Specification](https://specifications.freedesktop.org/menu-spec/menu-spec-1.0.html)

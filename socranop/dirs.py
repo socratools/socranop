@@ -145,7 +145,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                     self.exePath.relative_to(chr_prefix)  # ignore result
 
                     # If this is, say,
-                    # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/bin/socranop_installtool``,
+                    # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/bin/socranop-installtool``,
                     # then the D-Bus and XDG config can either go into
                     # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/share/``
                     # and be ignored, or go into
