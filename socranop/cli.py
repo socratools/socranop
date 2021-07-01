@@ -23,13 +23,13 @@
 import argparse
 import sys
 
-import soundcraft.constants as const
+import socranop.constants as const
 
 
 def autodetect(dbus=True):
     if dbus:
         try:
-            from soundcraft.dbus import Client, DbusInitializationError
+            from socranop.dbus import Client, DbusInitializationError
 
             client = Client()
             result = client.autodetect()
@@ -41,9 +41,9 @@ def autodetect(dbus=True):
             print(e)
             sys.exit(2)
     else:
-        import soundcraft.notepad
+        import socranop.notepad
 
-        return soundcraft.notepad.autodetect()
+        return socranop.notepad.autodetect()
 
 
 def max_lengths(dev):

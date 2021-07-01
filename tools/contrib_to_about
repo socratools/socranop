@@ -29,7 +29,7 @@ Usage:
    tools/contrib-to-about
 
 This reads `../CONTRIBUTORS.md` and writes a new python module
-`../soundcraft/contributors.py` if necessary and requested. The file
+`../socranop/contributors.py` if necessary and requested. The file
 locations are determined relative to the location of the
 `contrib-to-about` script file.
 
@@ -135,7 +135,7 @@ def write_people(file, people_group, people_list):
         file.write(f"]\n")
 
 
-target_path = Path("soundcraft/contributors.py")
+target_path = Path("socranop/contributors.py")
 new_path = Path(f"{target_path}.new")
 with new_path.open("w") as dst:
     tool_name = Path(__file__).name

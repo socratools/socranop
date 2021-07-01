@@ -50,7 +50,7 @@ import sys
 from os import getenv
 from pathlib import Path
 
-import soundcraft.constants as const
+import socranop.constants as const
 
 
 class NotDetected(Exception):
@@ -145,9 +145,9 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                     self.exePath.relative_to(chr_prefix)  # ignore result
 
                     # If this is, say,
-                    # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/bin/soundcraft_installtool``,
+                    # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/bin/socranop_installtool``,
                     # then the D-Bus and XDG config can either go into
-                    # ``/home/user/.local/share/virtualenvs/soundcraft-utils-ABCDEFG/share/``
+                    # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/share/``
                     # and be ignored, or go into
                     # ``/home/user/.local/share/`` and work. We choose
                     # the latter.

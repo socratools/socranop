@@ -37,9 +37,9 @@ from gi.repository import GLib, GUdev
 from pydbus import SessionBus
 from pydbus.generic import signal
 
-import soundcraft
-import soundcraft.notepad
-import soundcraft.constants as const
+import socranop
+import socranop.notepad
+import socranop.constants as const
 
 
 class NotepadDbus(object):
@@ -157,7 +157,7 @@ class Service:
                 f"There is already a {self.object._wrapped._dev.name} on the bus at {self.object._path}"
             )
             return
-        dev = soundcraft.notepad.autodetect()
+        dev = socranop.notepad.autodetect()
         if dev is None:
             print("No recognised device was found")
             return
@@ -276,7 +276,7 @@ class Client:
 
     def restartService(self, mgrVersion, localVersion):
         print(
-            f"Restarting soundcraft D-Bus service ({self.servicePid()}) to upgrade {mgrVersion}->{localVersion}"
+            f"Restarting socranop D-Bus service ({self.servicePid()}) to upgrade {mgrVersion}->{localVersion}"
         )
         self.shutdown()
         self.initManager()

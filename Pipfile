@@ -8,7 +8,7 @@ pyusb = "*"
 pydbus = "*"
 
 [dev-packages]
-soundcraft-utils = {editable = true, path = "."}
+socranop = {editable = true, path = "."}
 black = "*"
 flake8 = "*"
 isort = "*"

@@ -41,27 +41,27 @@ from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Gio
 
-import soundcraft
-import soundcraft.constants as const
-import soundcraft.contributors
-from soundcraft.dbus import Client, DbusInitializationError, VersionIncompatibilityError
-from soundcraft.dirs import get_dirs
+import socranop
+import socranop.constants as const
+import socranop.contributors
+from socranop.dbus import Client, DbusInitializationError, VersionIncompatibilityError
+from socranop.dirs import get_dirs
 
 
 def iconFile():
-    # For properly installed soundcraft-utils
+    # For properly installed socranop
     dirs = get_dirs()
     png = dirs.datadir / f"icons/hicolor/256x256/apps/{const.APPLICATION_ID}.png"
     if png.exists():
         return str(png)
 
     # Try finding an icon file in the egg data files
-    return resource_filename("soundcraft", f"data/xdg/{const.APPLICATION_ID}.256.png")
+    return resource_filename("socranop", f"data/xdg/{const.APPLICATION_ID}.256.png")
 
 
 class Main(Gtk.ApplicationWindow):
     def __init__(self, app):
-        super().__init__(title="Soundcraft-utils", application=app)
+        super().__init__(title="socranop", application=app)
         self.app = app
         icon = iconFile()
         if icon is not None:
@@ -240,10 +240,10 @@ class About(Gtk.AboutDialog):
             version=const.VERSION,
             comments="Linux Utilities for Soundcraft Mixers",
             license_type=Gtk.License.MIT_X11,
-            website="https://github.com/lack/soundcraft-utils",
+            website="https://github.com/socratools/socranop",
             website_label="Github page",
-            authors=soundcraft.contributors.authors,
-            artists=soundcraft.contributors.artists,
+            authors=socranop.contributors.authors,
+            artists=socranop.contributors.artists,
         )
         self.connect("response", self.close_cb)
 

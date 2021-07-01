@@ -1,4 +1,4 @@
-# soundcraft/installtool.py - post-install and pre-uninstall commands
+# socranop/installtool.py - post-install and pre-uninstall commands
 #
 # Implements post-install (install config files after having installed
 # a wheel), and pre-uninstall (uninstall config files before
@@ -45,11 +45,11 @@ from pkg_resources import (
 from string import Template
 
 
-import soundcraft
+import socranop
 
-import soundcraft.constants as const
+import socranop.constants as const
 
-from soundcraft.dirs import get_dirs, init_dirs
+from socranop.dirs import get_dirs, init_dirs
 
 
 class ScriptCommand:
@@ -134,10 +134,10 @@ SUDO_SCRIPT = SudoScript()
 
 
 def findDataFiles(subdir):
-    """Walk through data files in the soundcraft module's ``data`` subdir``"""
+    """Walk through data files in the socranop module's ``data`` subdir``"""
 
     result = {}
-    modulepaths = soundcraft.__path__
+    modulepaths = socranop.__path__
     for path in modulepaths:
         path = Path(path)
         datapath = path / "data" / subdir
@@ -217,7 +217,7 @@ class AbstractFile(metaclass=abc.ABCMeta):
             SUDO_SCRIPT.add_cmd(f"rm -f {self.dst}", comment=self.comment)
 
 
-RESOURCE_MODULE = "soundcraft"
+RESOURCE_MODULE = "socranop"
 
 
 class ResourceFile(AbstractFile):
@@ -773,7 +773,7 @@ class ObsoleteThingsInstallTool(AbstractInstallTool):
 
         import pydbus
 
-        old_busname = "soundcraft.utils"
+        old_busname = "socranop.utils"
         bus = pydbus.SystemBus()
         dbus_service = bus.get(".DBus")
         if not dbus_service.NameHasOwner(old_busname):
@@ -786,7 +786,7 @@ class ObsoleteThingsInstallTool(AbstractInstallTool):
         """Remove obsolete files from older installations"""
         print("Remove obsolete files from older installations")
 
-        old_statedir = Path("/var/lib/soundcraft-utils")
+        old_statedir = Path("/var/lib/socranop")
         if old_statedir.is_dir():
             SUDO_SCRIPT.add_cmd(
                 f"rmdir {old_statedir}",
@@ -796,8 +796,8 @@ class ObsoleteThingsInstallTool(AbstractInstallTool):
         # Old installs always installed into "/usr/share/dbus-1".
         old_dbus1dir = Path("/usr/share/dbus-1")
         obsolete_files = [
-            old_dbus1dir / "system.d/soundcraft-utils.conf",
-            old_dbus1dir / "system-services/soundcraft.utils.notepad.service",
+            old_dbus1dir / "system.d/socranop.conf",
+            old_dbus1dir / "system-services/socranop.utils.notepad.service",
             Path("/usr/local/bin") / const.OLD_BASE_EXE_SERVICE,
             Path("/usr/bin") / const.OLD_BASE_EXE_SERVICE,
         ]

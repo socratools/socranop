@@ -3,7 +3,7 @@ The files in contrib/
 
 The files in `contrib/` are intended to be examples helpful
 illustrations when installing, configuring, and using
-`soundcraft-utils`, mainly by giving some ideas which can help you
+`socranop`, mainly by giving some ideas which can help you
 find a solution.
 
 These files are not intended to be working out of the box, be

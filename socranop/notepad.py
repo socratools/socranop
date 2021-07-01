@@ -29,9 +29,9 @@ from pathlib import Path
 
 import usb.core
 
-import soundcraft.constants as const
+import socranop.constants as const
 
-from soundcraft.dirs import get_dirs
+from socranop.dirs import get_dirs
 
 
 class NotepadBase:
