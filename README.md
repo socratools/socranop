@@ -43,7 +43,7 @@ Installation
 FIXME05 This section needs to be rewritten for the session dbus
 
 ```bash
-sudo pip install soundcraft-utils
+sudo pip install socranop
 ```
 
 It is not recommended to use `--user` mode and install this
@@ -54,11 +54,11 @@ Set up the D-Bus service so it can access the system bus and be
 auto-started on demand:
 
 ```bash
-sudo soundcraft_dbus_service --setup
+sudo socranop_dbus_service --setup
 ```
 
 The D-Bus service will run as root, providing access to the underlying
-USB device so the `soundcraft_ctl` user-facing part can be run by an
+USB device so the `socranop_ctl` user-facing part can be run by an
 unprivileged account.
 
 ### Upgrading
@@ -69,8 +69,8 @@ Simply update your package from pip, and rerun the 'setup' to ensure
 the D-Bus service is upgraded to the latest version:
 
 ```bash
-sudo pip install -U soundcraft-utils
-sudo soundcraft_dbus_service --setup
+sudo pip install -U socranop
+sudo socranop_dbus_service --setup
 ```
 
 
@@ -81,28 +81,20 @@ FIXME05 This section needs to be rewritten for the session dbus
 You can remove the D-Bus and xdg files first by running the following as root:
 
 ```bash
-sudo soundcraft_dbus_service --uninstall
+sudo socranop_dbus_service --uninstall
 ```
 
 Then remove the package with pip:
 
 ```bash
-sudo pip uninstall soundcraft-utils
+sudo pip uninstall socranop
 ```
 
 ### Prepared Packages
 
-#### Arch Linux, Manjaro
-soundcraft-utils are available in [AUR](https://aur.archlinux.org/packages/soundcraft-utils/): 
-
-```bash
-yay -S soundcraft-utils
-```
-
-#### NixOS
-For NixOS there exists an experimental
-[Nix expression](https://github.com/pakettiale/soundcraft-utils-nixos).
-For instructions, check out the repo.
+The previous version of this software, called 'soundcraft-utils' had Arch Linux
+and NixOS packages.  These will have to be re-done with the rename to
+'socranop'
 
 Usage
 -----
@@ -110,7 +102,7 @@ Usage
 ### GUI
 
 ```bash
-soundcraft_gui
+socranop_gui
 ```
 
 - Select the desired input using the up and down arrow keys or using the mouse
@@ -126,13 +118,13 @@ soundcraft_gui
 List possible channel routing choices:
 
 ```bash
-soundcraft_ctl [--no-dbus] -l
+socranop_ctl [--no-dbus] -l
 ```
 
 Set channel routing:
 
 ```bash
-soundcraft_ctl [--no-dbus] -s <number>
+socranop_ctl [--no-dbus] -s <number>
 ```
 
 When using the `--no-dbus`, write access to the underlying USB device is

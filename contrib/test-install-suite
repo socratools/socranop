@@ -37,60 +37,60 @@ set -ex
 
 cd "$abs_topdir"
 
-if grep SUDO_SCRIPT soundcraft/installtool.py
+if grep SUDO_SCRIPT socranop/installtool.py
 then
     sudo_script_post_install_arg="--sudo-script=sudo-script-post-install.sh"
     sudo_script_pre_uninstall_arg="--sudo-script=sudo-script-pre_uninstall.sh"
 fi
 
-sudo rm -f  "/usr/local/bin"/soundcraft_* "/usr/local/share/dbus-1/services"/soundcraft*
-sudo rm -rf "/usr/local/lib"/python*/{dist,site}-packages/soundcraft*
+sudo rm -f  "/usr/local/bin"/socranop_* "/usr/local/share/dbus-1/services"/socranop*
+sudo rm -rf "/usr/local/lib"/python*/{dist,site}-packages/socranop*
 
-rm -f  "$HOME/.local/bin"/soundcraft_* "$HOME/.local/share/dbus-1/services"/soundcraft*
-rm -rf "$HOME/.local/lib"/python*/{dist,site}-packages/soundcraft*
+rm -f  "$HOME/.local/bin"/socranop_* "$HOME/.local/share/dbus-1/services"/socranop*
+rm -rf "$HOME/.local/lib"/python*/{dist,site}-packages/socranop*
 
-if soundcraft_ctl --version
+if socranop_ctl --version
 then
-    echo "Fatal: There is still soundcraft_ctl in the PATH."
+    echo "Fatal: There is still socranop_ctl in the PATH."
     exit 2
 fi
 
 test_install_pipenv() {
     local virtual_env
     virtual_env="$(pipenv run printenv | sed -n 's|^VIRTUAL_ENV=||p')"
-    rm -f  "$virtual_env"/bin/soundcraft_*
-    rm -rf "$virtual_env"/lib/python*/{dist,site}-packages/soundcraft*
+    rm -f  "$virtual_env"/bin/socranop_*
+    rm -rf "$virtual_env"/lib/python*/{dist,site}-packages/socranop*
     pipenv install -e .
     ./tools/link_system_libs
-    pipenv run "$virtual_env/bin/soundcraft_installtool" $sudo_script_post_install_arg --post-install
+    pipenv run "$virtual_env/bin/socranop_installtool" $sudo_script_post_install_arg --post-install
     cat sudo-script-post-install.sh
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 0
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 1
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 2
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --list
-    pipenv run "$virtual_env/bin/soundcraft_ctl" --set 3
-    pipenv run "$virtual_env/bin/soundcraft_installtool" $sudo_script_pre_uninstall_arg --pre-uninstall
+    pipenv run "$virtual_env/bin/socranop_ctl" --list
+    pipenv run "$virtual_env/bin/socranop_ctl" --set 0
+    pipenv run "$virtual_env/bin/socranop_ctl" --list
+    pipenv run "$virtual_env/bin/socranop_ctl" --set 1
+    pipenv run "$virtual_env/bin/socranop_ctl" --list
+    pipenv run "$virtual_env/bin/socranop_ctl" --set 2
+    pipenv run "$virtual_env/bin/socranop_ctl" --list
+    pipenv run "$virtual_env/bin/socranop_ctl" --set 3
+    pipenv run "$virtual_env/bin/socranop_installtool" $sudo_script_pre_uninstall_arg --pre-uninstall
     cat sudo-script-pre-uninstall.sh
 }
 
 test_install_home() {
     pip install --user "$wheel"
-    soundcraft_installtool $sudo_script_post_install_arg --post-install
+    socranop_installtool $sudo_script_post_install_arg --post-install
     if [ -f sudo-script-post-install.sh ]; then cat sudo-script-post-install.sh; fi
-    soundcraft_ctl --list
-    soundcraft_ctl --set 0
-    soundcraft_ctl --list
-    soundcraft_ctl --set 1
-    soundcraft_ctl --list
-    soundcraft_ctl --set 2
-    soundcraft_ctl --list
-    soundcraft_ctl --set 3
-    soundcraft_installtool $sudo_script_pre_uninstall_arg --pre-uninstall
+    socranop_ctl --list
+    socranop_ctl --set 0
+    socranop_ctl --list
+    socranop_ctl --set 1
+    socranop_ctl --list
+    socranop_ctl --set 2
+    socranop_ctl --list
+    socranop_ctl --set 3
+    socranop_installtool $sudo_script_pre_uninstall_arg --pre-uninstall
     if [ -f sudo-script-pre-uninstall.sh ]; then cat sudo-script-pre-uninstall.sh; fi
-    pip --verbose uninstall --yes soundcraft_utils
+    pip --verbose uninstall --yes socranop
 }
 
 test_sudo_usr_local() {
@@ -105,17 +105,17 @@ test_sudo_usr_local() {
     site_packages="$(ls -1d "$prefix"/lib/python*/{dist,site}-packages | head -n1)"
     PYTHONPATH="$site_packages"
     export PYTHONPATH
-    sudo "$bindir/soundcraft_installtool" --post-install
-    soundcraft_ctl --list
-    soundcraft_ctl --set 0
-    soundcraft_ctl --list
-    soundcraft_ctl --set 1
-    soundcraft_ctl --list
-    soundcraft_ctl --set 2
-    soundcraft_ctl --list
-    soundcraft_ctl --set 3
-    sudo "$bindir/soundcraft_installtool" --pre-uninstall
-    sudo pip --verbose uninstall --yes soundcraft_utils
+    sudo "$bindir/socranop_installtool" --post-install
+    socranop_ctl --list
+    socranop_ctl --set 0
+    socranop_ctl --list
+    socranop_ctl --set 1
+    socranop_ctl --list
+    socranop_ctl --set 2
+    socranop_ctl --list
+    socranop_ctl --set 3
+    sudo "$bindir/socranop_installtool" --pre-uninstall
+    sudo pip --verbose uninstall --yes socranop
 
     PATH="$saved_PATH"
     export PATH
@@ -137,17 +137,17 @@ test_chroot_usr() {
     site_packages="$(ls -1d "$chroot$prefix"/lib/python*/{dist,site}-packages | head -n1)"
     PYTHONPATH="$site_packages"
     export PYTHONPATH
-    "$chroot$bindir/soundcraft_installtool" --chroot="$chroot" --post-install
-    # soundcraft_ctl --list
-    # soundcraft_ctl --set 0
-    # soundcraft_ctl --list
-    # soundcraft_ctl --set 1
-    # soundcraft_ctl --list
-    # soundcraft_ctl --set 2
-    # soundcraft_ctl --list
-    # soundcraft_ctl --set 3
-    "$chroot$bindir/soundcraft_installtool" --chroot="$chroot" --pre-uninstall
-    # pip --verbose uninstall --yes soundcraft_utils
+    "$chroot$bindir/socranop_installtool" --chroot="$chroot" --post-install
+    # socranop_ctl --list
+    # socranop_ctl --set 0
+    # socranop_ctl --list
+    # socranop_ctl --set 1
+    # socranop_ctl --list
+    # socranop_ctl --set 2
+    # socranop_ctl --list
+    # socranop_ctl --set 3
+    "$chroot$bindir/socranop_installtool" --chroot="$chroot" --pre-uninstall
+    # pip --verbose uninstall --yes socranop
     rm -rf "$chroot"
 
     PATH="$saved_PATH"
@@ -159,11 +159,11 @@ test_chroot_usr() {
 test_install_pipenv
 
 pipenv run ./tools/dist
-wheel="$(ls -1 dist/soundcraft_utils-*.whl | head -n1)"
+wheel="$(ls -1 dist/socranop-*.whl | head -n1)"
 
 test_install_home
 
-if grep '[-]-chroot' soundcraft/installtool.py
+if grep '[-]-chroot' socranop/installtool.py
 then
     test_chroot_usr
 fi

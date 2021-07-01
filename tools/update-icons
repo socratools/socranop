@@ -47,7 +47,7 @@ ${INKSCAPE} --version
 cd "$(dirname "$(dirname "$0")")"
 
 # File locations
-icon_dir="soundcraft/data/xdg"
+icon_dir="socranop/data/xdg"
 
 # Avoid hard coding the actual icon name by using a wildcard...
 for svgicon in ${icon_dir}/*.svg

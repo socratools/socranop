@@ -5,8 +5,8 @@ from unittest.mock import DEFAULT, MagicMock, patch
 
 import pytest
 import usb.core
-from soundcraft import notepad
-import soundcraft.constants as const
+from socranop import notepad
+import socranop.constants as const
 
 
 # Prepare argv array to use for @patch

@@ -26,31 +26,31 @@
 # Python libraries; ideally without any imports at all.
 #
 # This allows us to import this both from the setuptools `setup.py`
-# and from any code inside `soundcraft/` as well.
+# and from any code inside `socranop/` as well.
 #
 ########################################################################
 
 # Package name
-PACKAGE = "soundcraft-utils"
+PACKAGE = "socranop"
 VERSION = "0.4.90"
 
 # Executable names
-BASE_EXE_CLI = "soundcraft_ctl"
-BASE_EXE_GUI = "soundcraft_gui"
-BASE_EXE_SERVICE = "soundcraft_session_service"
-BASE_EXE_INSTALLTOOL = "soundcraft_installtool"
+BASE_EXE_CLI = "socranop_ctl"
+BASE_EXE_GUI = "socranop_gui"
+BASE_EXE_SERVICE = "socranop_session_service"
+BASE_EXE_INSTALLTOOL = "socranop_installtool"
 
 
-# Gtk Application ID of the soundcraft-utils GUI
+# Gtk Application ID of the socranop GUI
 # https://developer.gnome.org/gio/stable/GApplication.html#g-application-id-is-valid
-APPLICATION_ID = "io.github.soundcraft_utils.gui"
+APPLICATION_ID = "io.github.socratools.socranop"
 
 
 # The complete set of D-Bus API strings
-BUSNAME = "io.github.soundcraft_utils.notepad"
+BUSNAME = "io.github.socratools.socranop"
 DEVICE_INTERFACE = f"{BUSNAME}.device"
 SERVICE_INTERFACE = BUSNAME
-MGRPATH = "/io/github/soundcraft_utils/notepad"
+MGRPATH = "/io/github/socratools/socranop"
 
 
 # Helpful for removing remnants of soundcraft-utils 0.4.0 and earlier

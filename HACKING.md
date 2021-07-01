@@ -78,7 +78,7 @@ Submitting Changes
 
 - Run `flake8` and `black` to format your code.
 
-  The soundcraft-utils source code is written to conform to stock `flake8`
+  The socranop source code is written to conform to stock `flake8`
   without any extra plugins installed.  Using pipenv (see above) should make
   sure you have the right set of flake8 plugins installed.
 
@@ -135,13 +135,13 @@ Interfaces, Namespaces, Specifications
 ======================================
 
 This lists and links to (at least some) interfaces, namespaces, and
-specifications which `soundcraft-utils` comes into contact with.
+specifications which `socranop` comes into contact with.
 
   * [D-Bus](https://dbus.freedesktop.org/doc/dbus-specification.html)
 
   * [Desktop Entry Specification](https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html)
 
-    The `.desktop` file hooks the `soundcraft_gui` GUI application
+    The `.desktop` file hooks the `socranop_gui` GUI application
     into the desktop environment's list of applications.
 
   * [Desktop Menu Specification](https://specifications.freedesktop.org/menu-spec/menu-spec-1.0.html)
@@ -150,5 +150,5 @@ specifications which `soundcraft-utils` comes into contact with.
 
   * [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
 
-    This specifies the locations the soundcraft-utils Desktop file and
+    This specifies the locations the socranop Desktop file and
     icons should be installed to.

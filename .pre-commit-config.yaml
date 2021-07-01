@@ -30,5 +30,5 @@ repos:
     language: system
     entry: pytest
     pass_filenames: false
-    files: ^(soundcraft|test)/
+    files: ^(socranop|test)/
     types: [file, python]

@@ -6,13 +6,13 @@
 
 busctl="busctl --user"
 
-busname="io.github.soundcraft_utils.notepad"
+busname="io.github.socratools.socranop"
 devinterface="${busname}.device"
-devpath="/io/github/soundcraft_utils/notepad/0"
+devpath="/io/github/socratools/socranop/0"
 
 set -xe
 
-# Start the soundcraft-utils D-Bus service via bus activation on the
+# Start the socranop D-Bus service via bus activation on the
 # session bus.
 
 # dbus-send --session --print-reply --dest=org.freedesktop.DBus \
@@ -27,7 +27,7 @@ ${busctl} call org.freedesktop.DBus /org/freedesktop/DBus \
 
 sleep 2
 
-# See what objects the soundcraft-utils D-Bus service exposes on the
+# See what objects the socranop D-Bus service exposes on the
 # session bus.
 
 ${busctl} tree "${busname}"

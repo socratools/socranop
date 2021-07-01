@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=soundcraft-utils
+Name=socranop
 Comment=A tool for setting up inner routing of Soundcraft Notepad devices
 Exec=${gui_bin}
 Icon=${APPLICATION_ID}
