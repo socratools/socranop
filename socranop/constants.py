@@ -35,10 +35,10 @@ PACKAGE = "socranop"
 VERSION = "0.4.90"
 
 # Executable names
-BASE_EXE_CLI = "socranop_ctl"
-BASE_EXE_GUI = "socranop_gui"
-BASE_EXE_SERVICE = "socranop_session_service"
-BASE_EXE_INSTALLTOOL = "socranop_installtool"
+BASE_EXE_CLI = "socranop-ctl"
+BASE_EXE_GUI = "socranop-gui"
+BASE_EXE_SERVICE = "socranop-session-service"
+BASE_EXE_INSTALLTOOL = "socranop-installtool"
 
 
 # Gtk Application ID of the socranop GUI
