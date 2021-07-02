@@ -39,16 +39,16 @@ from pathlib import Path
 
 def pipenv_values(var_names):
     """Get the value for expr_string from a pipenv python3"""
-    prog = "\n".join(["import sys"] +
-                     [f"print('{var}', '=', repr(sys.{var}))"
-                      for var in var_names])
+    prog = "\n".join(
+        ["import sys"] + [f"print('{var}', '=', repr(sys.{var}))" for var in var_names]
+    )
     # print("prog", repr(prog))
     cmd = ["pipenv", "run", "python3", "-c", prog]
     proc = subprocess.run(cmd, check=True, capture_output=True, text=True)
     # print("proc.stdout", repr(proc.stdout))
     vars = {}
     exec(proc.stdout, vars, vars)
-    retval = dict([(k,vars[k]) for k in var_names])
+    retval = dict([(k, vars[k]) for k in var_names])
     # print("retval", repr(retval))
     return retval
 
@@ -73,7 +73,6 @@ def ensure_symlink(target, symlink):
 
 
 class LibraryLinker:
-
     def __init__(self):
         self.symlinks = {}
 
@@ -92,25 +91,32 @@ class LibraryLinker:
 
         print()
 
-        values = pipenv_values(['executable', 'prefix', 'path'])
+        values = pipenv_values(["executable", "prefix", "path"])
 
-        self.pipenv_executable = Path(values['executable'])
+        self.pipenv_executable = Path(values["executable"])
         print(" ", "pipenv_executable", self.pipenv_executable)
 
         if self.system_executable == self.pipenv_executable:
-            raise RuntimeError(f"pipenv python3 must not be {sys.executable} - run this outside pipenv!")
+            raise RuntimeError(
+                f"pipenv python3 must not be {sys.executable} - run this outside pipenv!"
+            )
 
-        self.pipenv_prefix = Path(values['prefix'])
+        self.pipenv_prefix = Path(values["prefix"])
         print(" ", "pipenv_prefix", self.pipenv_prefix)
 
-        self.pipenv_path = [Path(p) for p in values['path']]
+        self.pipenv_path = [Path(p) for p in values["path"]]
         print(" ", "pipenv_path")
         for p in self.pipenv_path:
             print(" ", " ", p)
 
-        yyy = [p.parent.name for p in self.pipenv_path
-               if ((p.name in ["dist-packages", "site-packages"]) and
-                   (str(p).startswith(f"{self.pipenv_prefix}/")))]
+        yyy = [
+            p.parent.name
+            for p in self.pipenv_path
+            if (
+                (p.name in ["dist-packages", "site-packages"])
+                and (str(p).startswith(f"{self.pipenv_prefix}/"))
+            )
+        ]
         print(" ", "yyy")
         for p in yyy:
             print(" ", " ", p)
@@ -136,17 +142,22 @@ class LibraryLinker:
 
             packages_dir = p.parent.name
             if packages_dir not in ["dist-packages", "site-packages"]:
-                raise RuntimeError("second to last path component must be {dist,site}-packages")
+                raise RuntimeError(
+                    "second to last path component must be {dist,site}-packages"
+                )
             python_dir = p.parent.parent.name
-            if not python_dir.startswith('python3'):
-                raise RuntimeError("third to last path component must begin with 'python3'")
+            if not python_dir.startswith("python3"):
+                raise RuntimeError(
+                    "third to last path component must begin with 'python3'"
+                )
 
             lib_dir = p.parent.parent.parent.name
-            if lib_dir not in ['lib', 'lib32', 'lib64']:
+            if lib_dir not in ["lib", "lib32", "lib64"]:
                 raise RuntimeError("fourth to last path component must be lib{,32,64}")
 
-            symlink = self.pipenv_prefix.joinpath(lib_dir, self.pipenv_python_dir,
-                                                 "site-packages", libname)
+            symlink = self.pipenv_prefix.joinpath(
+                lib_dir, self.pipenv_python_dir, "site-packages", libname
+            )
             print(" ", " ", "<", symlink)
 
             self.symlinks[symlink] = p
@@ -165,5 +176,5 @@ def main():
             ensure_symlink(target, symlink)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
