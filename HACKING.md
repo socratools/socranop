@@ -19,6 +19,9 @@ ways.
   the virtualenv will actually use the source files from this source
   directory.
 
+  If you are getting the black version subdependency problem on Debian
+  or Ubuntu, `pipenv lock --pre --clear` might help.
+
 `tools/link_system_libs`
 - Set up a symlink to your system's 'gi' lib which isn't otherwise available
   via pip (allows you to run the D-Bus service and the gui from within pipenv)
