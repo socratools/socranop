@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,7 +23,7 @@
 import argparse
 import sys
 
-import socranop.constants as const
+import socranop.common as common
 
 
 def autodetect(dbus=True):
@@ -86,11 +86,8 @@ def show(dev):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"%(prog)s ({const.PACKAGE}) {const.VERSION}",
-    )
+    common.parser_args(parser)
+
     parser.add_argument(
         "--no-dbus",
         help="Use direct USB device access instead of D-Bus service access",
@@ -106,6 +103,7 @@ def main():
         "-s", "--set", help="Set the specified source to route to the USB capture input"
     )
     args = parser.parse_args()
+    common.VERBOSE = args.verbose
     if args.list or args.set:
         dev = autodetect(dbus=not args.no_dbus)
         if dev is None:

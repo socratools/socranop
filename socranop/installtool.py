@@ -4,7 +4,7 @@
 # a wheel), and pre-uninstall (uninstall config files before
 # uninstalling a wheel).
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -46,9 +46,8 @@ from string import Template
 
 
 import socranop
-
 import socranop.constants as const
-
+import socranop.common as common
 from socranop.dirs import get_dirs, init_dirs
 
 
@@ -833,11 +832,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=f"hook {const.PACKAGE} into the system post-install (or do the reverse)"
     )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"%(prog)s ({const.PACKAGE}) {const.VERSION}",
-    )
+    common.parser_args(parser)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -872,6 +867,7 @@ def main():
     )
 
     args = parser.parse_args()
+    common.VERBOSE = args.verbose
     if args.chroot:
         # If chroot is given, the service file is installed inside the chroot
         # and starting/stopping the service does not make sense.

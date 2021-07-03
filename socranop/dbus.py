@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -40,6 +40,7 @@ from pydbus.generic import signal
 import socranop
 import socranop.notepad
 import socranop.constants as const
+import socranop.common as common
 
 
 class NotepadDbus(object):
@@ -330,13 +331,10 @@ class Client:
 
 def service_main():
     parser = argparse.ArgumentParser(description=f"The {const.PACKAGE} D-Bus service.")
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"%(prog)s ({const.PACKAGE}) {const.VERSION}",
-    )
+    common.parser_args(parser)
 
-    parser.parse_args()
+    args = parser.parse_args()
+    common.VERBOSE = args.verbose
 
     service = Service()
     service.run()

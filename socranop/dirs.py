@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -51,6 +51,7 @@ from os import getenv
 from pathlib import Path
 
 import socranop.constants as const
+from socranop.common import debug
 
 
 class NotDetected(Exception):
@@ -73,7 +74,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
         self._prefix = None
         self._statedir = None
 
-        print("AbstractDirs.__init__", self, f"chroot={chroot!r}")
+        debug("AbstractDirs.__init__", self, f"chroot={chroot!r}")
 
         self.__detect()
 
@@ -238,7 +239,7 @@ def init_dirs(chroot=None):
     for cls in [UsrLocalDirs, UsrDirs, HomeDirs]:
         try:
             __dir_instance = cls(chroot)
-            print("Using dirs:", __dir_instance)
+            debug("Using dirs:", __dir_instance)
             return __dir_instance
         except NotDetected:
             pass  # This installation is not for the current cls
