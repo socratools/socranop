@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -42,6 +42,7 @@ from gi.repository import Gtk
 from gi.repository import Gio
 
 import socranop
+import socranop.common as common
 import socranop.constants as const
 import socranop.contributors
 from socranop.dbus import Client, DbusInitializationError, VersionIncompatibilityError
@@ -272,6 +273,15 @@ class App(Gtk.Application):
             None,
         )
 
+        self.add_main_option(
+            "verbose",
+            ord("v"),
+            GLib.OptionFlags.NONE,
+            GLib.OptionArg.NONE,
+            "Enable more verbose output, largely for debugging",
+            None,
+        )
+
     def __cmdline_version(self):
         prog = Path(sys.argv[0])
         print(f"{prog.name} ({const.PACKAGE}) {const.VERSION}")
@@ -281,6 +291,8 @@ class App(Gtk.Application):
         options = command_line.get_options_dict()
         # convert GVariantDict -> GVariant -> dict
         options = options.end().unpack()
+
+        common.VERBOSE = "verbose" in options
 
         if "version" in options:
             return self.__cmdline_version()

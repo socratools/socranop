@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -30,8 +30,8 @@ from pathlib import Path
 import usb.core
 
 import socranop.constants as const
-
 from socranop.dirs import get_dirs
+from socranop.common import debug
 
 
 class NotepadBase:
@@ -48,9 +48,9 @@ class NotepadBase:
             # Note that the testsuite absolutely requires we convert
             # whatever type stateDir is to a Path.
             stateDir = Path(stateDir)
-        print("Using stateDir", repr(stateDir))
+        debug("Using stateDir", repr(stateDir))
         self.dev = usb.core.find(idVendor=const.VENDOR_ID_HARMAN, idProduct=idProduct)
-        print("Found device", self.dev)
+        debug("Found device", self.dev)
         if self.dev is not None:
             major = self.dev.bcdDevice >> 8
             minor = self.dev.bcdDevice & 0xFF
@@ -62,14 +62,14 @@ class NotepadBase:
             self.fwVersion = "%d.%02d" % (major, minor)
             self.stateFile = stateDir / f"{self.product}.state"
             if self.stateFile.exists():
-                print(self, "using existing stateFile", self.stateFile)
+                debug(self, "using existing stateFile", self.stateFile)
             else:
                 # If self.stateFile does not exist, import the state
                 # file from the old /var/lib location if one exists.
                 # TODO: This should be removed some time in the future (seen from 2020-11).
                 oldStateFile = Path(const.OLD_STATEDIR) / f"{self.product}.state"
                 if oldStateFile.exists():
-                    print(
+                    debug(
                         self,
                         "using stateFile",
                         self.stateFile,
@@ -78,7 +78,7 @@ class NotepadBase:
                     )
                     shutil.copy(oldStateFile, self.stateFile)
                 else:
-                    print(self, "using new stateFile", self.stateFile)
+                    debug(self, "using new stateFile", self.stateFile)
             self.state = {}
             self._loadState()
 
@@ -109,7 +109,7 @@ class NotepadBase:
         # 1 => 0x00 00 04 00 01 00 00 00
         #        Change this -^
         message = array.array("B", [0x00, 0x00, 0x04, 0x00, source, 0x00, 0x00, 0x00])
-        print(f"Sending {message}")
+        debug(f"Sending {message}")
         self.dev.ctrl_transfer(0x40, 16, 0, 0, message)
         self.state["source"] = source
         self._saveState()
@@ -153,7 +153,7 @@ class NotepadBase:
 
     def _saveState(self):
         try:
-            print("self.stateFile", repr(self.stateFile))
+            debug("self.stateFile", repr(self.stateFile))
             self.stateFile.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
             self.stateFile.write_text(json.dumps(self.state, sort_keys=True, indent=4))
         except Exception as e:
