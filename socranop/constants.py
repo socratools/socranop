@@ -32,7 +32,7 @@
 
 # Package name
 PACKAGE = "socranop"
-VERSION = "0.4.90"
+VERSION = "0.4.92"
 
 # Executable names
 BASE_EXE_CLI = "socranop-ctl"
