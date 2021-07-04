@@ -155,7 +155,8 @@ class NotepadBase:
         try:
             debug("self.stateFile", repr(self.stateFile))
             self.stateFile.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
-            self.stateFile.write_text(json.dumps(self.state, sort_keys=True, indent=4))
+            text = json.dumps(self.state, sort_keys=True, indent=4) + "\n"
+            self.stateFile.write_text(text)
         except Exception as e:
             print(f"Warning: Could not write state file: {e}")
 
