@@ -264,6 +264,9 @@ class App(Gtk.Application):
         )
         self.window = None
 
+        # Caution: If you change the command line parser in any way,
+        #          update the man pages and bash completions accordingly.
+
         self.add_main_option(
             "version",
             0,
@@ -288,6 +291,10 @@ class App(Gtk.Application):
         return 0
 
     def do_command_line(self, command_line):
+
+        # Caution: If you change the command line parser in any way,
+        #          update the man pages and bash completions accordingly.
+
         options = command_line.get_options_dict()
         # convert GVariantDict -> GVariant -> dict
         options = options.end().unpack()
