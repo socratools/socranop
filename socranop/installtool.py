@@ -751,64 +751,6 @@ done""",
         self.emit_code_for_rule_change(skip_if=(new_content == old_content))
 
 
-class ObsoleteThingsInstallTool(AbstractInstallTool):
-    """Subsystem trying to clean up leftovers from old installs"""
-
-    def post_install(self):
-        self.check_install()
-
-    def pre_uninstall(self):
-        self.check_install()
-
-    def check_install(self):
-        dirs = get_dirs()
-        if not dirs.chroot:
-            self.stop_system_bus_service()
-            self.remove_obsolete_files()
-
-    def stop_system_bus_service(self):
-        """Stop the obsolete system bus service"""
-        print("Stopping obsolete D-Bus service on the system bus (when possible)")
-
-        import pydbus
-
-        old_busname = "socranop.utils"
-        bus = pydbus.SystemBus()
-        dbus_service = bus.get(".DBus")
-        if not dbus_service.NameHasOwner(old_busname):
-            print("Obsolete system D-Bus service is not running.")
-        else:
-            bus.get(old_busname).Shutdown()
-            print("Stopped obsolete system D-Bus service.")
-
-    def remove_obsolete_files(self):
-        """Remove obsolete files from older installations"""
-        print("Remove obsolete files from older installations")
-
-        old_statedir = Path("/var/lib/socranop")
-        if old_statedir.is_dir():
-            SUDO_SCRIPT.add_cmd(
-                f"rmdir {old_statedir}",
-                comment="Remove obsolete state directory (if empty)",
-            )
-
-        # Old installs always installed into "/usr/share/dbus-1".
-        old_dbus1dir = Path("/usr/share/dbus-1")
-        obsolete_files = [
-            old_dbus1dir / "system.d/socranop.conf",
-            old_dbus1dir / "system-services/socranop.utils.notepad.service",
-            Path("/usr/local/bin") / const.OLD_BASE_EXE_SERVICE,
-            Path("/usr/bin") / const.OLD_BASE_EXE_SERVICE,
-        ]
-        files_to_delete = [str(f) for f in obsolete_files if f.exists()]
-        delete_str = " ".join(files_to_delete)
-        if files_to_delete:
-            SUDO_SCRIPT.add_cmd(
-                f"rm -f {delete_str}",
-                comment="Remove obsolete system D-Bus service config and script files (from pre-0.5.0)",
-            )
-
-
 class InstallToolEverything(AbstractInstallTool):
     """Groups all subsystem installtools"""
 
@@ -888,7 +830,6 @@ def main():
 
     everything = InstallToolEverything()
     everything.add(CheckDependencies())
-    everything.add(ObsoleteThingsInstallTool())
     everything.add(DBusInstallTool(no_launch=args.no_launch))
     everything.add(XDGDesktopInstallTool())
     everything.add(UdevRulesInstallTool())
