@@ -53,10 +53,6 @@ SERVICE_INTERFACE = BUSNAME
 MGRPATH = "/io/github/socratools/socranop"
 
 
-# Helpful for removing remnants of soundcraft-utils 0.4.0 and earlier
-OLD_STATEDIR = "/var/lib/soundcraft-utils"
-
-
 # USB Device vendor and product IDs
 VENDOR_ID_HARMAN = 0x05FC
 

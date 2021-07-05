@@ -23,7 +23,6 @@
 import array
 import enum
 import json
-import shutil
 
 from pathlib import Path
 
@@ -61,24 +60,6 @@ class NotepadBase:
                 self.product = self.__class__.__name__
             self.fwVersion = "%d.%02d" % (major, minor)
             self.stateFile = stateDir / f"{self.product}.state"
-            if self.stateFile.exists():
-                debug(self, "using existing stateFile", self.stateFile)
-            else:
-                # If self.stateFile does not exist, import the state
-                # file from the old /var/lib location if one exists.
-                # TODO: This should be removed some time in the future (seen from 2020-11).
-                oldStateFile = Path(const.OLD_STATEDIR) / f"{self.product}.state"
-                if oldStateFile.exists():
-                    debug(
-                        self,
-                        "using stateFile",
-                        self.stateFile,
-                        "copied over from old",
-                        oldStateFile,
-                    )
-                    shutil.copy(oldStateFile, self.stateFile)
-                else:
-                    debug(self, "using new stateFile", self.stateFile)
             self.state = {}
             self._loadState()
 
