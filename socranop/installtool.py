@@ -818,6 +818,9 @@ class InstallToolEverything(AbstractInstallTool):
 
 
 def main():
+    # Caution: If you change the command line parser in any way,
+    #          update the man pages and bash completions accordingly.
+
     parser = argparse.ArgumentParser(
         description=f"hook {const.PACKAGE} into the system post-install (or do the reverse)"
     )

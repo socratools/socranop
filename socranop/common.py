@@ -36,6 +36,9 @@ def debug(*args, **kwargs):
 
 
 def parser_args(parser):
+    # Caution: If you change the command line parser in any way,
+    #          update the man pages and bash completions accordingly.
+
     parser.add_argument(
         "--version",
         action="version",

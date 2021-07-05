@@ -330,6 +330,9 @@ class Client:
 
 
 def service_main():
+    # Caution: If you change the command line parser in any way,
+    #          update the man pages and bash completions accordingly.
+
     parser = argparse.ArgumentParser(description=f"The {const.PACKAGE} D-Bus service.")
     common.parser_args(parser)
 
