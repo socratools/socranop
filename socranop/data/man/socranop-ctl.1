@@ -1,0 +1,160 @@
+.\" ======================================================================
+.\"
+.\" The socranop-ctl(1) man page
+.\"
+.\" This man page has been (re)written adhering to the following
+.\" documentation: man(7), man-pages(7), tbl(1)
+.\"
+.\" ======================================================================
+.\"
+.TH SOCRANOP\-CTL 1 "2021\-07\-04" "${PACKAGE} ${VERSION}" "User commands"
+.\"
+.\" ======================================================================
+.\"
+.SH NAME
+socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from command line
+.\"
+.\" ======================================================================
+.\"
+.\" usage: socranop-ctl [-h] [--version] [--no-dbus] [-l] [-s SET]
+.\"
+.\" optional arguments:
+.\"   -h, --help         show this help message and exit
+.\"   --version          show program's version number and exit
+.\"   -v, --verbose      Enable more verbose output, largely for debugging
+.\"   --no-dbus          Use direct USB device access instead of D-Bus service
+.\"                      access
+.\"   -l, --list         List the available source routing options
+.\"   -s SET, --set SET  Set the specified source to route to the USB capture
+.\"                      input
+.\"
+.SH SYNOPSIS
+.B "socranop\-ctl"
+.RB (\| \-\-help \|| \-\-version \|)
+.br
+.B "socranop\-ctl"
+.RB [\| \-\-verbose \|]
+.RB [\| \-\-no\-dbus \|]
+.B \-\-list
+.br
+.B "socranop\-ctl"
+.RB [\| \-\-verbose \|]
+.RB [\| \-\-no\-dbus \|]
+.BI \-\-set\  SOURCE
+.\"
+.\" ======================================================================
+.\"
+.SH DESCRIPTION
+\fBsocranop\-ctl\fR allows controlling a Soundcraft Notepad series
+mixer from the command line.
+.\"
+.\" ======================================================================
+.\"
+.SH OPTIONS
+.TP
+.B \-\-help
+Print command line help and exit.
+.TP
+.B \-\-version
+Print the program version and exit.
+.TP
+.B \-\-no\-dbus
+Access the USB directly without going through the
+.B socranop\-session\-service
+D-Bus service.
+.TP
+.RB (\| \-v | \-\-verbose \|)
+Make the program output more information. Helpful for debugging.
+.TP
+.RB (\| \-l | \-\-list \|)
+List the available source routing options. This includes the current routing, if known.
+.TP
+.RB (\| \-s | \-\-set \|) \ \fIN\fR
+Set the source \fIN\fR to route to the USB capture input.
+.\"
+.\" ======================================================================
+.\"
+.SH EXIT STATUS
+If successful, returns 0. Non-0 exit codes indicate an error.
+.\"
+.\" ======================================================================
+.\"
+.SH ENVIRONMENT
+.TP
+.B XDG_CONFIG_HOME
+Used when \fBscoranop\-ctl\fR is run with \-\-no\-dbus. See the state file description in the FILES section below.
+.\"
+.\" ======================================================================
+.\"
+.SH FILES
+.TP
+.B ~/.config/${PACKAGE}/state/*.state
+The state file keeps track of the state the device has been set to.
+.IP
+If \fBsocranop\-ctl\fR is run without \fB\-\-no\-dbus\fR, see the \fBsocranop\-session\-service\fR(1) FILES section as \fBsocranop\-session\-service\fR will handle the state file including its location on behalf of \fBsocranop\-ctl\fR.
+.IP
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, \fBsocranop\-ctl\fR handles the state file itself. If the \fBXDG_CONFIG_HOME\fR environment variable is set, its value will replace the \fB~/.config\fR part of the state file name.
+.\"
+.\" ======================================================================
+.\"
+.\" .SH NOTES
+.\"
+.\" ======================================================================
+.\"
+.SH BUGS
+For reading about known bugs and for filing new bugs, please go visit
+.UR https://github.com/socratools/socranop/issues
+.UE .
+.\"
+.\" ======================================================================
+.\"
+.SH EXAMPLES
+.PP
+.\" Note that the actual program output contains trailing spaces.
+ \" We have removed those for a nicer man page.
+    [user@host ~]$$ socranop-ctl --list
+    Detected a Notepad-12FX (fw v1.09)
+    -----------------------------
+    capture_1 <- Mic/Line 1
+    capture_2 <- Mic/Line 2
+    -----------------------------
+                 Mic/Line 3   [0]
+                 Mic/Line 4
+                 Stereo 5/6 L [1]
+                 Stereo 5/6 R
+    capture_3 <- Stereo 7/8 L [2]
+    capture_4 <- Stereo 7/8 R
+                 Mix L        [3]
+                 Mix R
+    -----------------------------
+    [user@host ~]$$ _
+.PP
+    [user@host ~]$$ socranop-ctl --set 3
+    Detected a Notepad-12FX (fw v1.09)
+    -----------------------------
+    capture_1 <- Mic/Line 1
+    capture_2 <- Mic/Line 2
+    -----------------------------
+                 Mic/Line 3   [0]
+                 Mic/Line 4
+                 Stereo 5/6 L [1]
+                 Stereo 5/6 R
+                 Stereo 7/8 L [2]
+                 Stereo 7/8 R
+    capture_3 <- Mix L        [3]
+    capture_4 <- Mix R
+    -----------------------------
+    [user@host ~]$$ _
+.\"
+.\" ======================================================================
+.\"
+.SH SEE ALSO
+.BR socranop\-gui (1),
+.BR socranop\-session\-service (1)
+.\"
+.\" ======================================================================
+.\"
+.\" THE END (of this man page).
+.\"
+.\" ======================================================================
+.\"

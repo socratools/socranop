@@ -618,6 +618,34 @@ class BashCompletionInstallTool(ResourceInstallTool):
         self.add_file(ResourceFile(dst, fullname))
 
 
+class ManpageInstallTool(ResourceInstallTool):
+    """Subsystem dealing with man pages"""
+
+    def __init__(self):
+        super(ManpageInstallTool, self).__init__()
+        self.template_data = {
+            "PACKAGE": const.PACKAGE,
+            "VERSION": const.VERSION,
+            "APPLICATION_ID": const.APPLICATION_ID,
+            "datadir": get_dirs().datadir,
+            "socranopdir": socranop.__path__[0],
+        }
+        self.walk_resources("man")
+
+    def mandir(self):
+        dirs = get_dirs()
+        return dirs.datadir / "man"
+
+    def add_resource(self, fullname):
+        mansrc = Path(fullname)
+        if fullname.endswith(".1"):
+            mandst = self.mandir() / "man1" / mansrc.name
+            manfile = TemplateFile(mandst, fullname, template_data=self.template_data)
+            self.add_file(manfile)
+        else:
+            raise UnhandledResource(fullname)
+
+
 class XDGDesktopInstallTool(ResourceInstallTool):
     """Subsystem dealing with the XDG desktop and icon files"""
 
@@ -851,6 +879,7 @@ def main():
     everything.add(CheckDependencies())
     everything.add(BashCompletionInstallTool())
     everything.add(DBusInstallTool(no_launch=args.no_launch))
+    everything.add(ManpageInstallTool())
     everything.add(XDGDesktopInstallTool())
     everything.add(UdevRulesInstallTool())
 
