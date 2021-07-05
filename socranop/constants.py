@@ -54,7 +54,6 @@ MGRPATH = "/io/github/socratools/socranop"
 
 
 # Helpful for removing remnants of soundcraft-utils 0.4.0 and earlier
-OLD_BASE_EXE_SERVICE = "soundcraft_dbus_service"
 OLD_STATEDIR = "/var/lib/soundcraft-utils"
 
 
