@@ -601,6 +601,23 @@ class DBusInstallTool(ResourceInstallTool):
         print("D-Bus service is unregistered")
 
 
+class BashCompletionInstallTool(ResourceInstallTool):
+    """Subsystem dealing with bash-completion files"""
+
+    def __init__(self):
+        super(BashCompletionInstallTool, self).__init__()
+
+        # TODO: What about /usr/local?
+        self.bc_dir = get_dirs().datadir / "bash-completion" / "completions"
+
+        self.walk_resources("bash-completion")
+
+    def add_resource(self, fullname):
+        src = Path(fullname)
+        dst = self.bc_dir / src.name
+        self.add_file(ResourceFile(dst, fullname))
+
+
 class XDGDesktopInstallTool(ResourceInstallTool):
     """Subsystem dealing with the XDG desktop and icon files"""
 
@@ -832,6 +849,7 @@ def main():
 
     everything = InstallToolEverything()
     everything.add(CheckDependencies())
+    everything.add(BashCompletionInstallTool())
     everything.add(DBusInstallTool(no_launch=args.no_launch))
     everything.add(XDGDesktopInstallTool())
     everything.add(UdevRulesInstallTool())

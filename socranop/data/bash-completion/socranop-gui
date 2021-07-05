@@ -1,0 +1,17 @@
+# bash completion script for the socranop-gui command   -*- shell-script -*-
+
+_socranop_gui()
+{
+    # $1 is the command name
+    # $2 is the word being completed
+    # $3 is the preceding word
+    case "$3" in
+	socranop-gui | */socranop-gui)
+	    # only common completions, other options need to be typed in
+	    COMPREPLY=($(compgen -W "-h --help --help-all --version -v --verbose" -- "$2"))
+	    return
+	    ;;
+    esac
+    return
+} &&
+    complete -F _socranop_gui "socranop-gui"

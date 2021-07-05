@@ -1,0 +1,20 @@
+# bash completion script for the socranop-ctl command   -*- shell-script -*-
+
+_socranop_ctl()
+{
+    # $1 is the command name
+    # $2 is the word being completed
+    # $3 is the preceding word
+    case "$3" in
+	socranop-ctl | */socranop-ctl)
+	    COMPREPLY=($(compgen -W "-h --help --version -v --verbose --no-dbus -l --list -s --set" -- "$2"))
+	    return
+	    ;;
+        -s | --set)
+            COMPREPLY=($(compgen -W "0 1 2 3" -- "$2"))
+            return
+	    ;;
+    esac
+    return
+} &&
+    complete -F _socranop_ctl "socranop-ctl"
