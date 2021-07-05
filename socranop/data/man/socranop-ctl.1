@@ -82,22 +82,25 @@ If successful, returns 0. Non-0 exit codes indicate an error.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME
-Used when \fBscoranop\-ctl\fR is run with \-\-no\-dbus. See the state file description in the FILES section below.
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
 .\"
 .\" ======================================================================
 .\"
 .SH FILES
+.\" The device path is Linux specific
+.BI /dev/bus/usb/ NNN / MMM
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
 .TP
 .B ~/.config/${PACKAGE}/state/*.state
-The state file keeps track of the state the device has been set to.
-.IP
-If \fBsocranop\-ctl\fR is run without \fB\-\-no\-dbus\fR, see the \fBsocranop\-session\-service\fR(1) FILES section as \fBsocranop\-session\-service\fR will handle the state file including its location on behalf of \fBsocranop\-ctl\fR.
-.IP
-When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, \fBsocranop\-ctl\fR handles the state file itself. If the \fBXDG_CONFIG_HOME\fR environment variable is set, its value will replace the \fB~/.config\fR part of the state file name.
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
 .\"
 .\" ======================================================================
 .\"
-.\" .SH NOTES
+.SH NOTES
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, the USB device file must be readable and writable for the \fBsocranop\-ctl\fR process. For more information on permission setup, see the
+.\" FIXME: Substitute the proper path to PERMISSIONS.md here.
+.B PERMISSIONS.md
+file.
 .\"
 .\" ======================================================================
 .\"
@@ -150,7 +153,9 @@ For reading about known bugs and for filing new bugs, please go visit
 .\"
 .SH SEE ALSO
 .BR socranop\-gui (1),
-.BR socranop\-session\-service (1)
+.BR socranop\-session\-service (1),
+.\" FIXME: Substitute the proper path to PERMISSIONS.md here.
+.B PERMISSIONS.md
 .\"
 .\" ======================================================================
 .\"
