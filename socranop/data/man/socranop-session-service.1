@@ -1,0 +1,134 @@
+.\" ======================================================================
+.\"
+.\" The socranop-session-service(1) man page
+.\"
+.\" This man page has been (re)written adhering to the following
+.\" documentation: man(7), man-pages(7), tbl(1)
+.\"
+.\" ======================================================================
+.\"
+.TH SOCRANOP\-SESSION\-SERVICE 1 "2021\-07\-04" "${PACKAGE} ${VERSION}" "User commands"
+.\"
+.\" ======================================================================
+.\"
+.SH NAME
+socranop\-session\-service \- session D\-Bus service for socranop
+.\"
+.\" ======================================================================
+.\"
+.\" usage: socranop-session-service [-h] [--version]
+.\"
+.\" The socranop D-Bus service.
+.\"
+.\" optional arguments:
+.\"   -h, --help     show this help message and exit
+.\"   --version      show program's version number and exit
+.\"   -v, --verbose  Enable more verbose output, largely for debugging
+.\"
+.SH SYNOPSIS
+.B "socranop\-session\-service"
+.RB (\| \-\-help \|| \-\-version \|)
+.br
+.B "socranop\-session\-service"
+.RB [\| \-\-verbose \|]
+.\"
+.\" ======================================================================
+.\"
+.SH DESCRIPTION
+.PP
+The
+.B "socranop\-session\-service"
+D\-Bus service is bus activated, so it does not need to be run
+explicity in normal operation.
+.PP
+The D\-Bus service fulfils two main functions:
+.IP "stand in for the mixer state" 8
+As the Notepad series of mixers does not appear to have a USB command to query the state which can be set with a USB command, the D\-Bus service remembers the hardware state to provide a halfway sane behaviour.
+.IP "notify other processes of mixer state changes"
+If you have e.g. a
+.B "socranop-gui"
+window open, and change the mixer state from the command line with
+.BR "socranop-ctl \-\-set" ,
+the
+.B "socranop-gui"
+window will show that state change immediately.
+.\"
+.\" ======================================================================
+.\"
+.SH OPTIONS
+.PP
+If no options are given on the command line,
+.B socranop\-session\-service
+will just start as a D\-Bus service and keep running until a D\-Bus
+client requests it to shut down.
+.TP
+.BR \-\-help
+Print command line help and exit.
+.TP
+.BR \-\-version
+Print the program version and exit.
+.TP
+.RB (\| \-v | \-\-verbose \|)
+Make the program output more information. Helpful for debugging.
+.\"
+.\" ======================================================================
+.\"
+.SH EXIT STATUS
+If successful, returns 0. Non-0 exit codes indicate an error.
+.\"
+.\" ======================================================================
+.\"
+.SH ENVIRONMENT
+.TP
+.B XDG_CONFIG_HOME
+See the state file description in the FILES section below.
+.\"
+.\" ======================================================================
+.\"
+.SH FILES
+.TP
+.B ~/.config/${PACKAGE}/state/*.state
+The state file is used to keep track of the state the device has been set to.
+.IP
+If the \fBXDG_CONFIG_HOME\fR environment variable is set when \fBsocranop\-session\-service\fR starts, \fBsocranop\-session\-service\fR uses its value instead of the \fB~/.config\fR part of the state file location.
+.IP
+Note that \fBsocranop\-session\-service\fR ignores \fBXDG_CONFIG_HOME\fR values passed via D\-Bus, which means that all D\-Bus clients use the same state file regardless of the D\-Bus clients \fBXDG_CONFIG_HOME\fR value.
+.\"
+.\" ======================================================================
+.\"
+.\" .SH NOTES
+.\"
+.\" ======================================================================
+.\"
+.SH BUGS
+For reading about known bugs and for filing new bugs, please go visit
+.UR https://github.com/socratools/socranop/issues
+.UE .
+.\"
+.\" ======================================================================
+.\"
+.SH EXAMPLES
+Usually, \fBsocranop\-session\-service\fR will be invoked by D\-Bus bus activation. This means you will rarely find yourself explictly running \fBsocranop\-session\-service\fR. The rare exception could be if something behaves weirdly and you want to help debug the problem by having \fBsocranop\-session\-service\fR print a few more messages than usual:
+
+    [user@host ~]$$ socranop\-session\-service \-\-verbose
+    AbstractDirs.__init__ UsrLocalDirs(chroot=None, prefix='/usr/local', datadir='/usr/local/share', statedir='/home/user/.config/socranop/state') chroot=None
+    [... several dozen lines cut ...]
+    <socranop.notepad.Notepad_12fx object at 0x7fadab48abb0> using existing stateFile /home/iser/.config/socranop/state/Notepad-12FX.state
+    Switching USB audio input to MASTER_L_R
+    Sending array('B', [0, 0, 4, 0, 3, 0, 0, 0])
+    self.stateFile PosixPath('/home/user/.config/socranop/state/Notepad-12FX.state')
+    Presenting Notepad-12FX (fw v1.09) on the session bus as /io/github/socratools/socranop/0
+    _
+.\"
+.\" ======================================================================
+.\"
+.SH SEE ALSO
+.BR socranop\-ctl (1),
+.BR socranop\-gui (1)
+.\"
+.\" ======================================================================
+.\"
+.\" THE END (of this man page).
+.\"
+.\" ======================================================================
+.\"

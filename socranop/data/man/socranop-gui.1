@@ -1,0 +1,132 @@
+.\" ======================================================================
+.\"
+.\" The socranop-gui(1) man page
+.\"
+.\" This man page has been (re)written adhering to the following
+.\" documentation: man(7), man-pages(7), tbl(1)
+.\"
+.\" ======================================================================
+.\"
+.TH SOCRANOP-GUI 1 "2021\-07\-04" "${PACKAGE} ${VERSION}" "User commands"
+.\"
+.\" ======================================================================
+.\"
+.SH NAME
+socranop\-gui \- control Soundcraft Notepad series mixer USB audio routing from GUI
+.\"
+.\" ======================================================================
+.\" socranop-gui --help-all | sed 's|^|.\\" |
+.\" ======================================================================
+.\"
+.\" Usage:
+.\"   socranop-gui [OPTION…]
+.\"
+.\" Help Options:
+.\"   -h, --help                 Show help options
+.\"   --help-all                 Show all help options
+.\"   --help-gapplication        Show GApplication options
+.\"   --help-gtk                 Show GTK+ Options
+.\"
+.\" GApplication options
+.\"   --gapplication-service     Enter GApplication service mode (use from D-Bus service files)
+.\"
+.\" GTK+ Options
+.\"   --class=CLASS              Program class as used by the window manager
+.\"   --name=NAME                Program name as used by the window manager
+.\"   --gdk-debug=FLAGS          GDK debugging flags to set
+.\"   --gdk-no-debug=FLAGS       GDK debugging flags to unset
+.\"   --gtk-module=MODULES       Load additional GTK+ modules
+.\"   --g-fatal-warnings         Make all warnings fatal
+.\"   --gtk-debug=FLAGS          GTK+ debugging flags to set
+.\"   --gtk-no-debug=FLAGS       GTK+ debugging flags to unset
+.\"
+.\" Application Options:
+.\"   --version                  Show program's version number and exit
+.\"   -v, --verbose              Enable more verbose output, largely for debugging
+.\"   --display=DISPLAY          X display to use
+.\"
+.SH SYNOPSIS
+.B socranop\-gui
+.RB (\| \-\-help \|| \-\-version \|)
+.br
+.B "socranop\-ctl"
+.RB [\| \-\-verbose \|]
+.\"
+.\" ======================================================================
+.\"
+.SH DESCRIPTION
+.PP
+.B socranop\-gui
+is the GUI interface to change the USB audio routing on a Notepad series mixer. It works by communicating with D-Bus to the (bus activated) D-Bus service
+.B socranop\-session\-service
+which does the actual talking to the USB device.
+.PP
+Note that
+.B socranop\-gui
+is
+.B NOT
+a D-Bus service, so the
+.B \-\-gapplication\-service
+is
+.B unsupported.
+.\"
+.\" ======================================================================
+.\"
+.SH OPTIONS
+In addition to the options shown below, \fBsocranop\-gui\fR supports a large set of Gtk+ and GApplication related options which are documented elsewhere.
+.TP
+.B \-\-help
+Print command line help and exit.
+.TP
+.B \-\-version
+Print the program version and exit.
+.TP
+.RB (\| \-v | \-\-verbose \|)
+Make the program output more information. Helpful for debugging.
+.\"
+.\" ======================================================================
+.\"
+.SH EXIT STATUS
+If successful, returns 0. Non-0 exit codes indicate an error.
+.\"
+.\" ======================================================================
+.\"
+.\" .SH ENVIRONMENT
+.\"
+.\" ======================================================================
+.\"
+.SH FILES
+.TP
+.B ${datadir}/icons/hicolor/256x256/apps/${APPLICATION_ID}.png
+One location where \fBsocranop\-gui\fR looks for its application icon.
+.TP
+.B ${socranopdir}/data/xdg/${APPLICATION_ID}.256.png
+Fallback location where \fBsocranop\-gui\fR looks for its application icon.
+.\"
+.\" ======================================================================
+.\"
+.\" .SH NOTES
+.\"
+.\" ======================================================================
+.\"
+.SH BUGS
+For reading about known bugs and for filing new bugs, please go visit
+.UR https://github.com/socratools/socranop/issues
+.UE .
+.\"
+.\" ======================================================================
+.\"
+.\" .SH EXAMPLES
+.\"
+.\" ======================================================================
+.\"
+.SH SEE ALSO
+.BR socranop\-ctl (1),
+.BR socranop\-session\-service (1)
+.\"
+.\" ======================================================================
+.\"
+.\" THE END (of this man page).
+.\"
+.\" ======================================================================
+.\"
