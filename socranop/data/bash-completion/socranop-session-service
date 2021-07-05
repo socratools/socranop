@@ -1,0 +1,16 @@
+# bash completion script for the socranop-session-service command   -*- shell-script -*-
+
+_socranop_session_service()
+{
+    # $1 is the command name
+    # $2 is the word being completed
+    # $3 is the preceding word
+    case "$3" in
+	socranop-session-service | */socranop-session-service)
+	    COMPREPLY=($(compgen -W "-h --help --version -v --verbose" -- "$2"))
+	    return
+	    ;;
+    esac
+    return
+} &&
+    complete -F _socranop_session_service "socranop-session-service"

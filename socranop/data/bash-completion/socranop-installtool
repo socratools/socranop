@@ -1,0 +1,67 @@
+# bash completion script for the socranop-installtool command   -*- shell-script -*-
+
+_socranop_installtool()
+{
+    # $1 is the command name
+    # $2 is the word being completed
+    # $3 is the preceding word
+    local i word
+    local ALL_OPTIONS REMAINING_OPTIONS
+    declare -A REMAINING_OPTIONS
+
+    ALL_OPTIONS=(-h --help --version -v --verbose --post-install --pre-uninstall --no-launch --chroot --sudo-script)
+
+    case "$3" in
+	# socranop-installtool | */socranop-installtool)
+	#     COMPREPLY=($(compgen -W "${ALL_OPTIONS[*]}" -- "$2"))
+	#     return 0
+	#     ;;
+	--chroot)
+	    COMPREPLY=($(compgen -A directory -- "$2"))
+	    return 0
+	    ;;
+	--sudo-script)
+	    COMPREPLY=($(compgen -A file -- "$2"))
+	    return 0
+	    ;;
+    esac
+
+    for word in "${ALL_OPTIONS[@]}"
+    do
+	REMAINING_OPTIONS["$word"]=moo
+    done
+
+    for i in $(seq 0 "$(( $COMP_CWORD - 1 ))")
+    do
+	word="${COMP_WORDS[$i]}"
+	case "$word" in
+	    -h | --help | --version)
+		COMPREPLY=()
+		return 0
+		;;
+	    -v | --verbose)
+		unset REMAINING_OPTIONS["-v"]
+		unset REMAINING_OPTIONS["--verbose"]
+		;;
+	    --post-install)
+		unset REMAINING_OPTIONS["$word"]
+		unset REMAINING_OPTIONS["--pre-uninstall"]
+		;;
+	    --pre-uninstall)
+		unset REMAINING_OPTIONS["$word"]
+		unset REMAINING_OPTIONS["--post-install"]
+		;;
+	    --chroot)
+		unset REMAINING_OPTIONS["$word"]
+		unset REMAINING_OPTIONS["--no-launch"]
+		;;
+	    *)
+		unset REMAINING_OPTIONS["$word"]
+		;;
+	esac
+    done
+
+    COMPREPLY=($(compgen -W "${!REMAINING_OPTIONS[*]}" -- "$2"))
+    return 0
+} &&
+    complete -F _socranop_installtool "socranop-installtool"
