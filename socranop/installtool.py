@@ -468,6 +468,8 @@ class ResourceInstallTool(FileInstallTool):
                 if resource_isdir(RESOURCE_MODULE, full_name):
                     walk_resource_subdir(f"{subdir}/{name}")
                 else:
+                    if full_name.endswith("~"):
+                        continue  # ignore editor backup files
                     self.add_resource(full_name)
 
         walk_resource_subdir(resdir)
