@@ -54,6 +54,22 @@ FIXME05: You can start the D-Bus service by running
 
   Our pre-commit hooks run this automatically.
 
+### Changing setup.py, setup.cfg, etc.
+
+After changing any of the setup config files, it is advisable to run
+
+```sh
+python3 setup.py clean --all
+```
+
+before the next
+
+```sh
+python3 setup.py bdist_wheel
+```
+
+packaging test.
+
 ### Things to avoid in code
 
 For compatibility with all versions of Python >= 3.6, avoid the

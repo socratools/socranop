@@ -14,7 +14,7 @@ A `socranop` installation consists basically of four parts:
 The following describes the basic principles of the steps which build
 my Fedora package, but they should be similar on other distributions.
 
-  * Take the source code from the pypi tarball.
+  * Take the source code from the pypi tarball. FIXME: Wheel?!
 
   * Build, and install to `/usr` in a chroot `${chroot}`:
 

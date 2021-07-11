@@ -42,7 +42,10 @@ socranop as outlined below.
 Installation
 ------------
 
-Note: This covers manual installation of the pypi package via pip.  For distro-specific packages see [the section below](#distro-specific-packages)
+Note: This covers manual installation of the pypi package via pip.  For
+distro-specific packages see [the section below](#distro-specific-packages)
+
+### Overview
 
 `socranop` is written in Python and interfaces to Linux
 systems in a few ways. This means that the Python code itself is very
@@ -75,85 +78,99 @@ following three installation locations:
     The location probably used for user-local installations from pypi
     or github sources.
 
-In all three cases, the `udev` rules to set the USB device permissions
-for the user need to be installed as well. Again, distro packages
-should already have done that for you.
+In all three cases, the `udev` rules to set the USB device permissions for the
+user need to be installed as well. Again, distro packages should already have
+done that for you, but if you're installing via pip this step needs to be done
+as root.  The `socranop-installtool` will generate the script for you but will
+not automatically run it - This allows you to inspect the script first to make
+sure it's only doing what you intend.
 
 ### Prerequisites
 
 The D-Bus service and GTK GUI both rely on
 [PyGObject](https://pygobject.readthedocs.io/en/latest/index.html) which is not
 available via pypi without a lot of dev libraries for it to compile against.
-It is usually easier to install separately using your distribution's package
-installation tools:
+
+
+It is usually easier to install `PyGObject` separately using your
+system's package installation tools (first line in the install
+examples below). And while you're at it, you could also install the
+system's Python dbus and usb packages and save a bit more of compiling
+(second line in the install examples below):
+
+Debian:
+
+``` sh
+sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-gudev-1.0
+sudo apt install python3-pydbus python3-usb
+```
 
 Ubuntu:
-```bash
-sudo apt install python3-gi
+```sh
+sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-gudev-1.0
+sudo apt install python3-pydbus python3-usb
 ```
 
 Fedora:
-```bash
-sudo dnf install python3-gobject
+```sh
+sudo dnf install python3-gobject gtk3 libgudev
+sudo dnf install python3-dbus python3-pyusb
 ```
 
-### Installation
+### Installation and Configuration
+
+The installation may be done as root to install system-wide, or as a normal
+user to install in ~/.local.  Regardless of how it's installed,
+`socranop-installtool --post-install` needs to be run to configure the D-Bus
+service, XDG desktop entry, man pages, etc.  However, it can only do part of
+the work on its own and relies on a manual invocation of a script as root to
+finish setting up the UDEV rules.
+
+See [PERMISSIONS.md](PERMISSIONS.md) for a more in-depth discussion about the
+udev permission requirements, and alternative ways of granting the required
+privileges.
+
+#### Example
 
 ```bash
 pip install socranop
-```
-
-It is fine to run this command as your non-root user to install just for the
-local user, or as root to install system-wide.
-
-Next, set up the D-Bus service, XDG desktop entry, man pages, and other things
-pip can't do on its own:
-
-```bash
 socranop-installtool --post-install --sudo-script ./socranop-sudo.sh
 # Inspect ./socranop-sudo.sh to make sure it's safe to run as root
 sudo ./socranop-sudo.sh
 rm ./socranop-sudo.sh
 ```
 
-Again, this can be run as non-root to setup just for the current user, or as
-root to setup system-wide.  How you run this should match the user you used to
-run `pip`.
-
-Alternatively, you can ask `socranop-installtool` to write the script contents
-to stdout instead of a file, by omitting the `--sudo-script` option.
-
-See [PERMISSIONS.md](PERMISSIONS.md) for a more in-depth discussion about the
-udev permission requirements, and alternative ways of granting the required
-privileges.
-
 ### Upgrading
 
-Simply update your package from pip, and rerun the 'setup' to ensure
-the D-Bus service is upgraded to the latest version:
+Simply update your package from pip, and rerun `socranop-installer
+--post-install` to ensure the D-Bus service, XDG desktop entry, man pages, etc.
+are upgraded to the latest version.
+
+It is not normally required to update the udev rules after an upgrade, but if
+changes need to be made, they need to be run manually as root, and the script
+will guide you through.
+
+#### Example
 
 ```bash
 pip install -U socranop
 socranop-installtool --post-install
 ```
 
-It is not normally required to update the udev rules after an upgrade.
-
 ### Uninstallation
 
-You can remove the D-Bus, XDG desktop entry, man pages, and other things
-installed by `--post-install`, then remove the pip package by running:
+`socranop-installtool` can take care of undoing what it did in `--post-install`
+via the `--pre-uninstall` flag, removing the D-Bus, XDG desktop entry, man
+pages, etc.  Any actions that would need to be taken by root, such as removing
+the udev rules, are again placed in a script that needs to be run manually.
+
+#### Example
 
 ```bash
 socranop-installtool --pre-uninstall --sudo-script ./socranop-sudo.sh
 # Inspect ./socranop-sudo.sh to make sure it's safe to run as root
 sudo ./socranop-sudo.sh
 rm ./socranop-sudo.sh
-```
-
-Finally, remove the socranop package:
-
-```bash
 pip uninstall socranop
 ```
 
