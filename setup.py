@@ -63,5 +63,5 @@ setup(
         ],
         "gui_scripts": [f"{const.BASE_EXE_GUI}=socranop.gui:main"],
     },
-    package_data={"socranop": ["data/*/*/*", "data/*/*"]},
+    include_package_data=True,
 )
