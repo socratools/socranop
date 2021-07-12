@@ -1,0 +1,7 @@
+# https://packaging.python.org/guides/using-manifest-in/
+global-include *.md
+prune .github
+prune .pytest_cache
+prune .tox
+recursive-include socranop/data *
+global-exclude *~
