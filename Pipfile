@@ -17,6 +17,7 @@ tox = "*"
 tox-pyenv = "*"
 pipenv-setup = "*"
 pre-commit = "*"
+chardet = "*"
 
 [pipenv]
 allow_prereleases = true
