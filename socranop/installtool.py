@@ -62,7 +62,7 @@ class ScriptCommand:
     """
 
     def __init__(self, cmd, skip_if=False, comment=None):
-        # print("ScriptCommand.__init__", repr(cmd))
+        common.debug("ScriptCommand.__init__", repr(cmd))
         assert type(cmd) == str
         self.cmd = cmd
         self.skip_if = skip_if
@@ -99,10 +99,10 @@ class SudoScript:
         """Add a command to the sudo script"""
         if skip_if:
             c = ScriptCommand(cmd, skip_if=True, comment=comment)
-            print(f"    [skip] {c.cmd!r}")
+            common.debug(f"    [skip] {c.cmd!r}")
         else:
             c = ScriptCommand(cmd, skip_if=False, comment=comment)
-            print(f"    [q'ed] {c.cmd!r}")
+            common.debug(f"    [q'ed] {c.cmd!r}")
         self.sudo_commands.append(c)
 
     def needs_to_run(self):
@@ -330,8 +330,12 @@ class CheckDependencies(AbstractInstallTool):
             print("Installing to chroot, skipping module import checks.")
             return
 
+        print("Checking installed packages:")
         try:
+            print(f"  [load] gi: ", end="")
             import gi  # noqa: F401 'gi' imported but unused
+
+            print("OK")
         except ModuleNotFoundError:
             print(
                 "The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar."
@@ -362,8 +366,9 @@ class CheckDependencies(AbstractInstallTool):
                     raise
 
             try:
-                print(f"Trying to import {mod_name}")
+                print(f"  [load] {mod_name}: ", end="")
                 importlib.import_module(mod_name)  # import must work; discard retval
+                print("OK")
             except ImportError:
                 print(
                     f"Error importing module '{mod_name}'. Make sure the package providing the '{typelib}' file is installed with its required dependencies."
@@ -372,7 +377,10 @@ class CheckDependencies(AbstractInstallTool):
 
         # pydbus internally requires gi and GLib, Gio, GObject
         try:
+            print(f"  [load] pydbus: ", end="")
             import pydbus  # noqa: F401 'pydbus' imported but unused
+
+            print("OK")
         except Exception:
             print(
                 "Error importing module pydbus. Make sure the pydbus package is installed."
@@ -380,7 +388,10 @@ class CheckDependencies(AbstractInstallTool):
             raise
 
         try:
+            print(f"  [load] pydbus: ", end="")
             import usb.core  # noqa: F401 'usb.core' imported but unused
+
+            print("OK")
         except ModuleNotFoundError:
             print(
                 f"Module 'usb.core' not found. Make sure the 'pyusb' package is installed."
@@ -390,13 +401,12 @@ class CheckDependencies(AbstractInstallTool):
             # check that finding any USB device works
             usb_devices = usb.core.find(find_all=True)
             if len(list(usb_devices)) == 0:
-                raise
                 raise ValueError("No USB devices found")
         except ValueError:
             print("Error: No USB devices found. Something is broken here.")
             raise
 
-        print("Checking installed packages: Good.")
+        print("Checking installed packages: OK")
 
     def pre_uninstall(self):
         pass  # CheckDependencies.pre_uninstall() does not need to do anything
@@ -440,7 +450,7 @@ class FileInstallTool(AbstractInstallTool):
         self.files = []
 
     def add_file(self, file):
-        print("Adding file", self, file)
+        common.debug("Adding file", self, file)
         self.files.append(file)
 
     def post_install(self):
@@ -456,7 +466,7 @@ class ResourceInstallTool(FileInstallTool):
     """A subsystem which iterates through resources in data/"""
 
     def walk_resources(self, resdir):
-        print("walk_through_data_files", self, resdir)
+        common.debug("walk_through_data_files", self, resdir)
         assert resource_isdir(RESOURCE_MODULE, "data")
 
         def walk_resource_subdir(subdir):
@@ -464,7 +474,7 @@ class ResourceInstallTool(FileInstallTool):
             assert resource_isdir(RESOURCE_MODULE, full_subdir)
             for name in resource_listdir(RESOURCE_MODULE, full_subdir):
                 full_name = f"{full_subdir}/{name}"
-                print("res fullname", full_name)
+                common.debug("res fullname", full_name)
                 if resource_isdir(RESOURCE_MODULE, full_name):
                     walk_resource_subdir(f"{subdir}/{name}")
                 else:
@@ -499,12 +509,10 @@ class DBusInstallTool(ResourceInstallTool):
     def __init__(self, no_launch):
         super(DBusInstallTool, self).__init__()
         self.no_launch = no_launch
-
-        print("DBusInstallTool walk_through_data_files")
         self.walk_resources("dbus-1")
 
     def add_resource(self, fullname):
-        print("add_resource", self, fullname)
+        common.debug("add_resource", self, fullname)
         if fullname.endswith(".service"):
             dirs = get_dirs()
             templateData = {
@@ -543,7 +551,7 @@ class DBusInstallTool(ResourceInstallTool):
         dbus_service = bus.get(".DBus")
 
         if not dbus_service.NameHasOwner(const.BUSNAME):
-            print("Old D-Bus service not running")
+            common.debug("Old D-Bus service not running")
         else:
             service = bus.get(const.BUSNAME)
             service_version = service.version
@@ -762,6 +770,15 @@ done""",
             comment="Trigger udev rules which run when adding existing mixer devices",
         )
 
+    def debug_content(self, old_content, new_content):
+        if common.VERBOSE:
+            from pprint import pprint
+
+            print("OLD")
+            pprint(old_content)
+            print("NEW")
+            pprint(new_content)
+
     def post_install(self):
         # Populate with the files installed pre installation
         old_content = {}
@@ -773,14 +790,7 @@ done""",
         # Populate with the files which we (should/will) have installed
         new_content = {}
         new_content[self.udev_rules_dst] = self.udev_rules_content
-
-        from pprint import pprint
-
-        print("OLD")
-        pprint(old_content)
-        print("NEW")
-        pprint(new_content)
-
+        self.debug_content(old_content, new_content)
         self.emit_code_for_rule_change(skip_if=(new_content == old_content))
 
     def pre_uninstall(self):
@@ -798,14 +808,7 @@ done""",
         new_content = dict(old_content)
         if self.udev_rules_dst in new_content:
             del new_content[self.udev_rules_dst]
-
-        from pprint import pprint
-
-        print("OLD")
-        pprint(old_content)
-        print("NEW")
-        pprint(new_content)
-
+        self.debug_content(old_content, new_content)
         self.emit_code_for_rule_change(skip_if=(new_content == old_content))
 
 
@@ -887,7 +890,7 @@ def main():
     # calls to get_dirs() will yield an object which uses the same
     # chroot value.
     dirs = init_dirs(chroot=args.chroot)
-    print("Using dirs", dirs)
+    common.debug("Using dirs", dirs)
 
     everything = InstallToolEverything()
     everything.add(CheckDependencies())
