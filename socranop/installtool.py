@@ -523,63 +523,74 @@ class DBusInstallTool(ResourceInstallTool):
             raise UnhandledResource(fullname)
 
     def post_install(self):
-        if not self.no_launch:
-            import pydbus
-
-            bus = pydbus.SessionBus()
-            dbus_service = bus.get(".DBus")
-
-            if not dbus_service.NameHasOwner(const.BUSNAME):
-                print("Old D-Bus service not running")
-            else:
-                service = bus.get(const.BUSNAME)
-                service_version = service.version
-                print(f"Shutting down old D-Bus service version {service_version}")
-                service.Shutdown()
-                print("Old session D-Bus service stopped")
+        self.shutdown_old_service()
 
         super(DBusInstallTool, self).post_install()
 
-        if not self.no_launch:
-            print(f"Starting D-Bus service {const.BUSNAME} as a test...")
-            print(f"Installtool version: {const.VERSION}")
-
-            # CheckDependencies.post_install() has already checked this import works
-            import gi.repository.GLib
-
-            # Give the D-Bus a few seconds to notice the new service file
-            timeout = 5
-            while True:
-                try:
-                    dbus_service.StartServiceByName(const.BUSNAME, 0)
-                    break  # service has been started, no need to try again
-                except gi.repository.GLib.Error:
-                    # If the bus has not recognized the service config file
-                    # yet, the service is not bus activatable yet and thus the
-                    # GLibError will happen.
-                    if timeout == 0:
-                        raise
-
-                    print(f"Retrying {timeout}...")
-                    timeout = timeout - 1
-
-                    time.sleep(1)
-                    continue  # starting service has failed, but try again
-
-            our_service = bus.get(const.BUSNAME)
-            service_version = our_service.version
-            print(f"Service     version: {service_version}")
-
-            print("Shutting down session D-Bus service...")
-            # As the service should either be running at this time or
-            # at the very least be bus activatable, we do not catch
-            # any exceptions while shutting it down because we want to
-            # see any exceptions if they happen.
-            our_service.Shutdown()
-            print("Session D-Bus service has been shut down")
+        self.verify_install()
 
         print("D-Bus installation is complete")
         print(f"Run {const.BASE_EXE_GUI} or {const.BASE_EXE_CLI} as a regular user")
+
+    def shutdown_old_service(self, force=False):
+        if self.no_launch and not force:
+            common.debug("no_launch is set; not shutting down old service")
+            return
+
+        import pydbus
+
+        bus = pydbus.SessionBus()
+        dbus_service = bus.get(".DBus")
+
+        if not dbus_service.NameHasOwner(const.BUSNAME):
+            print("Old D-Bus service not running")
+        else:
+            service = bus.get(const.BUSNAME)
+            service_version = service.version
+            print(f"Shutting down old D-Bus service version {service_version}")
+            service.Shutdown()
+            print("Old session D-Bus service stopped")
+
+    def verify_install(self, force=False):
+        if self.no_launch and not force:
+            common.debug("no_launch is set; not verifying our dbus service")
+            return
+
+        import pydbus
+
+        bus = pydbus.SessionBus()
+        dbus_service = bus.get(".DBus")
+
+        print("Reloading dbus to register the new service")
+        # An explicit reload is required in case dbus isn't
+        # smart enough to see us drop in the service file
+        # (dbus-broker, for example, if we just created
+        # ~/.local/share/dbus-1/services)
+        dbus_service.ReloadConfig()
+
+        (attempt, max_attempt) = (0, 5)
+        while const.BUSNAME not in dbus_service.ListActivatableNames():
+            attempt += 1
+            if attempt > max_attempt:
+                raise RuntimeError(
+                    f"The dbus service we just installed is not yet detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop)"
+                )
+            print(f"Waiting for our service to appear ({attempt}/{max_attempt})...")
+            time.sleep(1)
+
+        print(f"Starting D-Bus service {const.BUSNAME} as a test...")
+        # Just using it proves auto-start works:
+        our_service = bus.get(const.BUSNAME)
+        service_version = our_service.version
+        print(f"Installtool version: {const.VERSION}")
+        print(f"Service     version: {service_version}")
+
+        # Shut down the service now, in case there are
+        # other steps that need to take place (ie udev
+        # permissions) before the service can really be used
+        print("Shutting down session D-Bus service...")
+        our_service.Shutdown()
+        print("Session D-Bus service has been shut down")
 
     def pre_uninstall(self):
         if not self.no_launch:
