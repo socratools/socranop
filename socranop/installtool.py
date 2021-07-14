@@ -51,6 +51,21 @@ import socranop.common as common
 from socranop.dirs import get_dirs, init_dirs
 
 
+def print_step(tag, details, **printopts):
+    """Standardized output for all install/uninstall actions"""
+    print(f"  [{tag}] {details}", **printopts)
+
+
+def step_start(tag, details):
+    """Standardized output for all 2-part install/uninstall actions (start)"""
+    print_step(tag, details, end=": ")
+
+
+def step_end(result="OK"):
+    """Standardized output for all 2-part install/uninstall actions (end)"""
+    print(result)
+
+
 class ScriptCommand:
     """A single command which may need to be run in a sudo script
 
@@ -128,6 +143,34 @@ class SudoScript:
         else:
             file.write("\n# No commands to run.\n")
 
+    def finalize(self, sudo_script):
+        if (sudo_script is None) or (sudo_script in ["", "-"]):
+            sudo_script_file = io.StringIO()
+        else:
+            sudo_script_file = open(sudo_script, "w")
+            p = Path(sudo_script)
+            p.chmod(0o0755)
+
+        self.write(sudo_script_file)
+
+        print()
+        if not self.needs_to_run():
+            print("No commands left over to run with sudo. Good.")
+        elif isinstance(sudo_script_file, io.StringIO):
+            print("You should probably run the following commands with sudo:")
+            print("-" * 50)
+            sys.stdout.write(sudo_script_file.getvalue())
+            print("-" * 50)
+        else:
+            sudo_script_file.close()
+            print(
+                "You should probably run this script with sudo (example command below):"
+            )
+            print("-" * 50)
+            sys.stdout.write(p.read_text())
+            print("-" * 50)
+            print("Suggested command:", "sudo", p.absolute())
+
 
 SUDO_SCRIPT = SudoScript()
 
@@ -192,8 +235,8 @@ class AbstractFile(metaclass=abc.ABCMeta):
         pass  # AbstractFile.shell_install()
 
     def _install(self):
-        print(f"  [inst] {self.dst}")
         """Install this file (either directly from python or via sudo script)"""
+        print_step("inst", self.dst)
         try:
             self.chroot_dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
             self.direct_install()
@@ -207,7 +250,7 @@ class AbstractFile(metaclass=abc.ABCMeta):
         Like many other install/uninstall tools, we just remove the
         file and leave the directory tree around.
         """
-        print(f"  [rm] {self.dst}")
+        print_step("rm", self.dst)
         try:
             self.chroot_dst.unlink()
         except FileNotFoundError:
@@ -295,6 +338,13 @@ class TemplateFile(AbstractFile):
 class AbstractInstallTool(metaclass=abc.ABCMeta):
     """Things common to subsystem installtools"""
 
+    def __init__(self, heading):
+        self.heading = heading
+
+    def _print_heading(self, reason):
+        if self.heading is not None:
+            print(f"{self.heading}: {reason}")
+
     @abc.abstractmethod
     def post_install(self):
         pass  # AbstractInstallTool.post_install()
@@ -316,6 +366,9 @@ class CheckDependencies(AbstractInstallTool):
     the GUI or CLI programs.
     """
 
+    def __init__(self):
+        super(CheckDependencies, self).__init__(heading="Python library dependencies")
+
     def post_install(self):
         # Note that re-raising the exception after printing our own
         # error message is useful: It gives the user the hint about
@@ -327,17 +380,17 @@ class CheckDependencies(AbstractInstallTool):
         # is installed in that chroot environment, and therefore skip
         # the checks.
         if get_dirs().chroot:
-            print("Installing to chroot, skipping module import checks.")
+            self._print_heading("Skipping")
             return
 
-        print("Checking installed packages:")
+        self._print_heading("Checking")
         try:
-            print(f"  [load] gi: ", end="")
+            step_start("load", "module gi")
             import gi  # noqa: F401 'gi' imported but unused
 
-            print("OK")
+            step_end()
         except ModuleNotFoundError:
-            print(
+            step_end(
                 "The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar."
             )
             raise
@@ -357,43 +410,43 @@ class CheckDependencies(AbstractInstallTool):
 
             if version:
                 try:
-                    print(f"Trying to require module {module} version {version}")
+                    step_start("find", f"module {module} version {version}")
                     gi.require_version(module, version)
+                    step_end()
                 except ValueError:
-                    print(
+                    step_end(
                         f"Error: module '{mod_name}' not available in version %{version}. Make sure the package providing the '{typelib}' file is installed with the required dependencies."
                     )
                     raise
 
             try:
-                print(f"  [load] {mod_name}: ", end="")
+                step_start("load", f"module {mod_name}")
                 importlib.import_module(mod_name)  # import must work; discard retval
-                print("OK")
+                step_end()
             except ImportError:
-                print(
+                step_end(
                     f"Error importing module '{mod_name}'. Make sure the package providing the '{typelib}' file is installed with its required dependencies."
                 )
                 raise
 
         # pydbus internally requires gi and GLib, Gio, GObject
         try:
-            print(f"  [load] pydbus: ", end="")
+            step_start("load", f"module pydbus")
             import pydbus  # noqa: F401 'pydbus' imported but unused
 
-            print("OK")
+            step_end()
         except Exception:
-            print(
+            step_end(
                 "Error importing module pydbus. Make sure the pydbus package is installed."
             )
             raise
 
         try:
-            print(f"  [load] pydbus: ", end="")
+            step_start("load", f"module usb.core")
             import usb.core  # noqa: F401 'usb.core' imported but unused
 
-            print("OK")
         except ModuleNotFoundError:
-            print(
+            step_end(
                 f"Module 'usb.core' not found. Make sure the 'pyusb' package is installed."
             )
             raise
@@ -403,10 +456,11 @@ class CheckDependencies(AbstractInstallTool):
             if len(list(usb_devices)) == 0:
                 raise ValueError("No USB devices found")
         except ValueError:
-            print("Error: No USB devices found. Something is broken here.")
+            step_end("Error: No USB devices found. Something is broken here.")
             raise
+        step_end()
 
-        print("Checking installed packages: OK")
+        self._print_heading("OK")
 
     def pre_uninstall(self):
         pass  # CheckDependencies.pre_uninstall() does not need to do anything
@@ -445,25 +499,38 @@ class FileInstallTool(AbstractInstallTool):
             for s in path.parts
         )
 
-    def __init__(self):
-        super(FileInstallTool, self).__init__()
+    def __init__(self, heading):
+        super(FileInstallTool, self).__init__(heading)
         self.files = []
 
     def add_file(self, file):
         common.debug("Adding file", self, file)
         self.files.append(file)
 
-    def post_install(self):
+    def _do_install(self):
         for file in sorted(self.files, key=FileInstallTool.destfile_key):
             file._install()
 
-    def pre_uninstall(self):
+    def _do_uninstall(self):
         for file in sorted(self.files, key=FileInstallTool.destfile_key, reverse=True):
             file._uninstall()
+
+    def post_install(self):
+        self._print_heading("Installing files")
+        self._do_install()
+        self._print_heading("Install completed")
+
+    def pre_uninstall(self):
+        self._print_heading("Uninstalling files")
+        self._do_uninstall()
+        self._print_heading("Uninstall completed")
 
 
 class ResourceInstallTool(FileInstallTool):
     """A subsystem which iterates through resources in data/"""
+
+    def __init__(self, heading):
+        super(ResourceInstallTool, self).__init__(heading)
 
     def walk_resources(self, resdir):
         common.debug("walk_through_data_files", self, resdir)
@@ -507,9 +574,17 @@ class DBusInstallTool(ResourceInstallTool):
     """Subsystem dealing with the D-Bus configuration files"""
 
     def __init__(self, no_launch):
-        super(DBusInstallTool, self).__init__()
+        super(DBusInstallTool, self).__init__(heading="Dbus service")
         self.no_launch = no_launch
         self.walk_resources("dbus-1")
+        self.__session_bus = None
+
+    def _service(self, service_name):
+        if self.__session_bus is None:
+            import pydbus
+
+            self.__session_bus = pydbus.SessionBus()
+        return self.__session_bus.get(service_name)
 
     def add_resource(self, fullname):
         common.debug("add_resource", self, fullname)
@@ -531,100 +606,83 @@ class DBusInstallTool(ResourceInstallTool):
             raise UnhandledResource(fullname)
 
     def post_install(self):
-        self.shutdown_old_service()
+        self.shutdown_service("Stopping old service")
 
         super(DBusInstallTool, self).post_install()
 
         self.verify_install()
 
-        print("D-Bus installation is complete")
-        print(f"Run {const.BASE_EXE_GUI} or {const.BASE_EXE_CLI} as a regular user")
+        self._print_heading("Complete")
 
-    def shutdown_old_service(self, force=False):
-        if self.no_launch and not force:
-            common.debug("no_launch is set; not shutting down old service")
+    def shutdown_service(self, reason):
+        if self.no_launch:
+            common.debug("Not shutting down old service (no_launch is set)")
             return
 
-        import pydbus
-
-        bus = pydbus.SessionBus()
-        dbus_service = bus.get(".DBus")
-
+        dbus_service = self._service(".DBus")
         if not dbus_service.NameHasOwner(const.BUSNAME):
-            common.debug("Old D-Bus service not running")
+            common.debug("D-Bus service not running")
         else:
-            service = bus.get(const.BUSNAME)
+            self._print_heading(reason)
+            service = self._service(const.BUSNAME)
             service_version = service.version
-            print(f"Shutting down old D-Bus service version {service_version}")
+            step_start("stop", f"Shutting down version {service_version}")
             service.Shutdown()
-            print("Old session D-Bus service stopped")
+            step_end()
 
     def verify_install(self, force=False):
         if self.no_launch and not force:
             common.debug("no_launch is set; not verifying our dbus service")
             return
 
-        import pydbus
+        self._print_heading("Verifying")
 
-        bus = pydbus.SessionBus()
-        dbus_service = bus.get(".DBus")
-
-        print("Reloading dbus to register the new service")
-        # An explicit reload is required in case dbus isn't
-        # smart enough to see us drop in the service file
-        # (dbus-broker, for example, if we just created
-        # ~/.local/share/dbus-1/services)
+        dbus_service = self._service(".DBus")
+        step_start("verify", "Reload dbus to register the new service")
+        # An explicit reload is required in case dbus isn't smart enough to see
+        # us drop in the service file (dbus-broker, for example, if we just
+        # created ~/.local/share/dbus-1/services)
         dbus_service.ReloadConfig()
+        step_end("OK")
 
+        step_start("verify", "Checking for registered service")
         (attempt, max_attempt) = (0, 5)
         while const.BUSNAME not in dbus_service.ListActivatableNames():
             attempt += 1
             if attempt > max_attempt:
-                raise RuntimeError(
-                    f"The dbus service we just installed is not yet detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop)"
-                )
-            print(f"Waiting for our service to appear ({attempt}/{max_attempt})...")
+                message = f"The dbus service we just installed is not yet detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop)"
+                step_end(f"ERROR: {message}")
+                raise RuntimeError(message)
+            step_end(f"Waiting for our service to appear ({attempt}/{max_attempt})")
             time.sleep(1)
+            step_start("verify", "Checking for registered service")
+        step_end()
 
-        print(f"Starting D-Bus service {const.BUSNAME} as a test...")
         # Just using it proves auto-start works:
-        our_service = bus.get(const.BUSNAME)
+        step_start("verify", "Starting D-Bus service")
+        our_service = self._service(const.BUSNAME)
         service_version = our_service.version
-        print(f"Installtool version: {const.VERSION}")
-        print(f"Service     version: {service_version}")
+        step_end(service_version)
+        print_step("verify", f"Installtool version: {const.VERSION}")
+        # TODO: Compare versions?  Fail if there's a mismatch?
 
-        # Shut down the service now, in case there are
-        # other steps that need to take place (ie udev
-        # permissions) before the service can really be used
-        print("Shutting down session D-Bus service...")
+        # Shut down the service now, in case there are other steps that need to
+        # take place (ie udev permissions) before the service can really be
+        # used
+        step_start("verify", "Shutting down session D-Bus service")
         our_service.Shutdown()
-        print("Session D-Bus service has been shut down")
+        step_end()
 
     def pre_uninstall(self):
-        if not self.no_launch:
-            import pydbus
-
-            bus = pydbus.SessionBus()
-            dbus_service = bus.get(".DBus")
-            if not dbus_service.NameHasOwner(const.BUSNAME):
-                print("D-Bus service not running")
-            else:
-                print(f"Installtool version: {const.VERSION}")
-                service = bus.get(const.BUSNAME)
-                service_version = service.version
-                print(f"Shutting down D-Bus service version {service_version}")
-                service.Shutdown()
-                print("Session D-Bus service stopped")
-
+        self.shutdown_service("Stopping service")
         super(DBusInstallTool, self).pre_uninstall()
-        print("D-Bus service is unregistered")
 
 
 class BashCompletionInstallTool(ResourceInstallTool):
     """Subsystem dealing with bash-completion files"""
 
     def __init__(self):
-        super(BashCompletionInstallTool, self).__init__()
+        super(BashCompletionInstallTool, self).__init__(heading="Bash completion")
 
         # TODO: What about /usr/local?
         self.bc_dir = get_dirs().datadir / "bash-completion" / "completions"
@@ -641,7 +699,7 @@ class ManpageInstallTool(ResourceInstallTool):
     """Subsystem dealing with man pages"""
 
     def __init__(self):
-        super(ManpageInstallTool, self).__init__()
+        super(ManpageInstallTool, self).__init__(heading="Man pages")
         self.template_data = {
             "PACKAGE": const.PACKAGE,
             "VERSION": const.VERSION,
@@ -672,7 +730,7 @@ class XDGDesktopInstallTool(ResourceInstallTool):
     #          must be run after all. Fedora Packaging docs suggest so.
 
     def __init__(self):
-        super(XDGDesktopInstallTool, self).__init__()
+        super(XDGDesktopInstallTool, self).__init__("XDG application launcher")
         self.walk_resources("xdg")
 
     def add_resource(self, fullname):
@@ -697,14 +755,6 @@ class XDGDesktopInstallTool(ResourceInstallTool):
         else:
             raise UnhandledResource(fullname)
 
-    def post_install(self):
-        super(XDGDesktopInstallTool, self).post_install()
-        print("Installed all XDG application launcher files")
-
-    def pre_uninstall(self):
-        super(XDGDesktopInstallTool, self).pre_uninstall()
-        print("Removed all XDG application launcher files")
-
     def icondir(self, size=None):
         dirs = get_dirs()
         if size is None:
@@ -719,7 +769,7 @@ class UdevRulesInstallTool(FileInstallTool):
     # FIXME: udev is Linux-only. What about non-Linux systems?
 
     def __init__(self):
-        super(UdevRulesInstallTool, self).__init__()
+        super(UdevRulesInstallTool, self).__init__(heading="Udev rules")
 
         # Generate the file contents in Python so we can install it
         # from Python in case we do have write permissions.
@@ -770,15 +820,6 @@ done""",
             comment="Trigger udev rules which run when adding existing mixer devices",
         )
 
-    def debug_content(self, old_content, new_content):
-        if common.VERBOSE:
-            from pprint import pprint
-
-            print("OLD")
-            pprint(old_content)
-            print("NEW")
-            pprint(new_content)
-
     def post_install(self):
         # Populate with the files installed pre installation
         old_content = {}
@@ -790,7 +831,15 @@ done""",
         # Populate with the files which we (should/will) have installed
         new_content = {}
         new_content[self.udev_rules_dst] = self.udev_rules_content
-        self.debug_content(old_content, new_content)
+
+        if common.VERBOSE:
+            from pprint import pprint
+
+            print("OLD")
+            pprint(old_content)
+            print("NEW")
+            pprint(new_content)
+
         self.emit_code_for_rule_change(skip_if=(new_content == old_content))
 
     def pre_uninstall(self):
@@ -808,7 +857,15 @@ done""",
         new_content = dict(old_content)
         if self.udev_rules_dst in new_content:
             del new_content[self.udev_rules_dst]
-        self.debug_content(old_content, new_content)
+
+        if common.VERBOSE:
+            from pprint import pprint
+
+            print("OLD")
+            pprint(old_content)
+            print("NEW")
+            pprint(new_content)
+
         self.emit_code_for_rule_change(skip_if=(new_content == old_content))
 
 
@@ -816,19 +873,39 @@ class InstallToolEverything(AbstractInstallTool):
     """Groups all subsystem installtools"""
 
     def __init__(self):
-        super(InstallToolEverything, self).__init__()
+        super(InstallToolEverything, self).__init__(heading=None)
         self.everything = []
 
     def add(self, thing):
         self.everything.append(thing)
 
     def post_install(self):
+        print("Socranop Installation")
+        print("=====================")
+        print()
         for thing in self.everything:
             thing.post_install()
+        print()
+        print(f"Socranop installation has completed successfully")
+
+    def post_install_footer(self):
+        print()
+        print(
+            f"Finally, run `{const.BASE_EXE_GUI}` or `{const.BASE_EXE_CLI}` as a regular user"
+        )
 
     def pre_uninstall(self):
+        print("Socranop Uninstallation Preparation")
+        print("===================================")
+        print()
         for thing in reversed(self.everything):
             thing.pre_uninstall()
+        print()
+        print(f"Socranop uninstallation preparation has completed successfully")
+
+    def pre_uninstall_footer(self):
+        print()
+        print(f"Finally, run `pip uninstall socranop` to complete uninstallation")
 
 
 def main():
@@ -908,29 +985,9 @@ def main():
     if args.chroot:
         return
 
-    if (args.sudo_script is None) or (args.sudo_script in ["", "-"]):
-        sudo_script_file = io.StringIO()
-    else:
-        sudo_script_file = open(args.sudo_script, "w")
-        p = Path(args.sudo_script)
-        p.chmod(0o0755)
+    SUDO_SCRIPT.finalize(args.sudo_script)
 
-    if not SUDO_SCRIPT.needs_to_run():
-        print("No commands left over to run with sudo. Good.")
-        SUDO_SCRIPT.write(sudo_script_file)
-        sys.exit(0)
-
-    SUDO_SCRIPT.write(sudo_script_file)
-
-    if isinstance(sudo_script_file, io.StringIO):
-        print("You should probably run the following commands with sudo:")
-        print()
-        sys.stdout.write(sudo_script_file.getvalue())
-        print()
-    else:
-        sudo_script_file.close()
-        print("You should probably run this script with sudo (example command below):")
-        print()
-        sys.stdout.write(p.read_text())
-        print()
-        print("Suggested command:", "sudo", p.absolute())
+    if args.post_install:
+        everything.post_install_footer()
+    elif args.pre_uninstall:
+        everything.pre_uninstall_footer()
