@@ -56,20 +56,90 @@ def print_step(tag, details, **printopts):
     print(f"  [{tag}] {details}", **printopts)
 
 
-def step_start(tag, details):
-    """Standardized output for all 2-part install/uninstall actions (start)"""
-    print_step(tag, details, end=": ")
+class Step:
 
+    """\
+    Allow easy printing of checks similar to the following:
 
-def step_success(success_msg="OK"):
-    """Standardized output for all 2-part install/uninstall actions (successful outcome)"""
-    print(success_msg)
+        Some checks:
+          [load] module pydbus: OK
+          [load] module pydbus: ERROR
+        Error: Cannot import module 'pydbus'. Make sure the 'pydbus' package is installed.
+        Traceback (most recent call last):
+          File ...
+        ModuleNotFoundError: No module named 'pydbus'
 
+    by writing the following three liner:
 
-def step_failure(error_msg):
-    """Standardized output for all 2-part install/uninstall actions (failure case)"""
-    print("ERROR")
-    print("Error:", error_msg)
+        with Step("load", "module pydbus",
+                  error_msg="Cannot import module 'pydbus'. Make sure the 'pydbus' package is installed."):
+            importlib.import_module("pydbus")  # import must work; discard retval
+    """
+
+    def __init__(self, tag, details, success_word=None, error_msg=None):
+        super(Step, self).__init__()
+        self.tag = tag
+        self.details = details
+        self.error_msg = error_msg
+        self.success_word = success_word
+        self.has_repeated = None
+
+    @staticmethod
+    def __step_start(tag, details):
+        """Standardized output for all 2-part install/uninstall actions (start)"""
+        print_step(tag, details, end=": ")
+
+    @staticmethod
+    def __step_success(success_word=None, postfix=None, **print_kwargs):
+        """Standardized output for all 2-part install/uninstall actions (successful outcome)"""
+        if postfix is None:
+            print(success_word or "OK", **print_kwargs)
+        else:
+            print(success_word or "OK", postfix, **print_kwargs)
+
+    @staticmethod
+    def __step_failure(error_msg, postfix=None):
+        """Standardized output for all 2-part install/uninstall actions (failure case)"""
+        if postfix is None:
+            print("ERROR")
+        else:
+            print("ERROR", postfix)
+        print("Error:", error_msg)
+
+    def set_success_word(self, success_word):
+        self.success_word = success_word
+
+    def try_again(self, attempt, max_attempt):
+        self.has_repeated = (attempt, max_attempt)
+        self.__step_success(
+            "not yet", postfix=f"(attempt {attempt}/{max_attempt})", end="\r"
+        )
+        self.__step_start(self.tag, self.details)
+
+    def __enter__(self):
+        self.__step_start(self.tag, self.details)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            if self.has_repeated is None:
+                self.__step_success(self.success_word)
+            else:
+                (attempt, max_attempt) = self.has_repeated
+                self.__step_success(
+                    self.success_word,
+                    postfix=f"(successful attempt {attempt}/{max_attempt})",
+                )
+        else:
+            error_msg = self.error_msg or str(exc_value)
+            if self.has_repeated is None:
+                self.__step_failure(error_msg)
+            else:
+                (attempt, max_attempt) = self.has_repeated
+                self.__step_failure(
+                    error_msg, postfix=f"(final attempt {attempt}/{max_attempt})"
+                )
+        return False
 
 
 class ScriptCommand:
@@ -390,15 +460,12 @@ class CheckDependencies(AbstractInstallTool):
             return
 
         self._print_heading("Checking")
-        try:
-            step_start("load", "module gi")
+        with Step(
+            "load",
+            "module gi",
+            error_msg="Cannot import module 'gi'. The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar.",
+        ):
             importlib.import_module("gi")  # import must work; discard retval
-            step_success()
-        except ModuleNotFoundError:
-            step_failure(
-                "Cannot import module 'gi'. The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar."
-            )
-            raise
 
         import gi
 
@@ -416,59 +483,46 @@ class CheckDependencies(AbstractInstallTool):
                 typelib = f"{module}-*.typelib"
 
             if version:
-                try:
-                    step_start("find", f"gi module {module} version {version}")
+                with Step(
+                    "find",
+                    f"gi module {module} version {version}",
+                    error_msg=f"Cannot find gi module '{mod_name}' in version {version}. Make sure the package providing the '{typelib}' file is installed with the required dependencies.",
+                ):
                     gi.require_version(module, version)
-                    step_success()
-                except ValueError:
-                    step_failure(
-                        f"Cannot find gi module '{mod_name}' in version {version}. Make sure the package providing the '{typelib}' file is installed with the required dependencies."
-                    )
-                    raise
 
-            try:
-                step_start("load", f"gi module {module}")
+            with Step(
+                "load",
+                f"gi module {module}",
+                error_msg=f"Cannot import gi module '{mod_name}'. Make sure the package providing the '{typelib}' file is installed with its required dependencies.",
+            ):
                 importlib.import_module(mod_name)  # import must work; discard retval
-                step_success()
-            except ImportError:
-                step_failure(
-                    f"Cannot import gi module '{mod_name}'. Make sure the package providing the '{typelib}' file is installed with its required dependencies."
-                )
-                raise
 
         # pydbus internally requires gi and GLib, Gio, GObject
-        try:
-            step_start("load", f"module pydbus")
+        with Step(
+            "load",
+            "module pydbus",
+            error_msg="Cannot import module 'pydbus'. Make sure the 'pydbus' package is installed.",
+        ):
             importlib.import_module("pydbus")  # import must work; discard retval
-            step_success()
-        except Exception:
-            step_failure(
-                "Cannot import module 'pydbus'. Make sure the 'pydbus' package is installed."
-            )
-            raise
 
-        try:
-            step_start("load", f"module usb.core")
+        with Step(
+            "load",
+            "module usb.core",
+            error_msg="Cannot import module 'usb.core'. Make sure the 'pyusb' package is installed.",
+        ):
             importlib.import_module("usb.core")  # import must work; discard retval
-        except ModuleNotFoundError:
-            step_failure(
-                f"Cannot import module 'usb.core'. Make sure the 'pyusb' package is installed."
-            )
-            raise
 
         import usb.core
 
-        try:
-            # check that finding any USB device works
+        # check that finding any USB device works
+        with Step(
+            "check",
+            "finding any usb device",
+            error_msg="Have not found a single USB device. Something is broken here.",
+        ):
             usb_devices = usb.core.find(find_all=True)
             if len(list(usb_devices)) == 0:
                 raise ValueError("No USB devices found")
-        except ValueError:
-            step_failure(
-                "Have not found a single USB device. Something is broken here."
-            )
-            raise
-        step_success()
 
         self._print_heading("OK")
 
@@ -636,9 +690,8 @@ class DBusInstallTool(ResourceInstallTool):
             self._print_heading(reason)
             service = self._service(const.BUSNAME)
             service_version = service.version
-            step_start("stop", f"Shutting down version {service_version}")
-            service.Shutdown()
-            step_success()
+            with Step("stop", f"Shutting down version {service_version}"):
+                service.Shutdown()
 
     def verify_install(self, force=False):
         if self.no_launch and not force:
@@ -648,42 +701,42 @@ class DBusInstallTool(ResourceInstallTool):
         self._print_heading("Verifying")
 
         dbus_service = self._service(".DBus")
-        step_start("verify", "Reload dbus to register the new service")
-        # An explicit reload is required in case dbus isn't smart enough to see
-        # us drop in the service file (dbus-broker, for example, if we just
-        # created ~/.local/share/dbus-1/services)
-        dbus_service.ReloadConfig()
-        step_success()
+        with Step("verify", "Reload dbus to register the new service"):
+            # An explicit reload is required in case dbus isn't smart enough to see
+            # us drop in the service file (dbus-broker, for example, if we just
+            # created ~/.local/share/dbus-1/services)
+            dbus_service.ReloadConfig()
 
-        step_start("verify", "Checking for registered service")
-        (attempt, max_attempt) = (0, 5)
-        while const.BUSNAME not in dbus_service.ListActivatableNames():
-            attempt += 1
-            if attempt > max_attempt:
-                message = f"The dbus service we just installed is not yet detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop)"
-                step_failure(message)
-                raise RuntimeError(message)
-            step_success(f"not available yet (attempt {attempt}/{max_attempt})")
-            time.sleep(1)
-            step_start("verify", "Checking for registered service")
-        step_success()
+        max_attempt = 5
+        with Step(
+            "verify",
+            "Checking for registered service",
+            error_msg=f"The dbus service we just installed has not yet been detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop).",
+        ) as step:
+            attempt = 0
+            while const.BUSNAME not in dbus_service.ListActivatableNames():
+                attempt += 1
+                if attempt > max_attempt:
+                    raise Exception("exceeded maximum number of attempts")
+                step.try_again(attempt, max_attempt)
+                time.sleep(1)
 
         # Just using the service proves auto-start works:
-        step_start("verify", "Starting D-Bus service")
-        our_service = self._service(const.BUSNAME)
-        service_version = our_service.version
-        step_success(service_version)
+        with Step("verify", "Starting D-Bus service") as step:
+            our_service = self._service(const.BUSNAME)
+            service_version = our_service.version
+            step.set_success_word(service_version)
 
-        step_start("verify", "Installtool version")
-        step_success(const.VERSION)
+        with Step("verify", "Installtool version", success_word=const.VERSION):
+            pass
+
         # TODO: Compare versions?  Fail if there's a mismatch?
 
         # Shut down the service now, in case there are other steps
         # that need to take place (i.e. udev permissions) before the
         # service can really be used.
-        step_start("verify", "Shutting down session D-Bus service")
-        our_service.Shutdown()
-        step_success()
+        with Step("verify", "Shutting down session D-Bus service"):
+            our_service.Shutdown()
 
     def pre_uninstall(self):
         self.shutdown_service("Stopping service")
