@@ -891,7 +891,7 @@ class InstallToolEverything(AbstractInstallTool):
     def post_install_footer(self):
         print()
         print(
-            f"Finally, run `{const.BASE_EXE_GUI}` or `{const.BASE_EXE_CLI}` as a regular user"
+            f"Finally, run `{const.BASE_EXE_GUI}` or `{const.BASE_EXE_CLI}` as a regular user."
         )
 
     def pre_uninstall(self):
