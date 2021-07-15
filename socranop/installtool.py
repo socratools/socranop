@@ -666,9 +666,9 @@ class DBusInstallTool(ResourceInstallTool):
         print_step("verify", f"Installtool version: {const.VERSION}")
         # TODO: Compare versions?  Fail if there's a mismatch?
 
-        # Shut down the service now, in case there are other steps that need to
-        # take place (ie udev permissions) before the service can really be
-        # used
+        # Shut down the service now, in case there are other steps
+        # that need to take place (i.e. udev permissions) before the
+        # service can really be used.
         step_start("verify", "Shutting down session D-Bus service")
         our_service.Shutdown()
         step_end()
