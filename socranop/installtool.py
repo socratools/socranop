@@ -660,7 +660,7 @@ class DBusInstallTool(ResourceInstallTool):
             step_start("verify", "Checking for registered service")
         step_end()
 
-        # Just using it proves auto-start works:
+        # Just using the service proves auto-start works:
         step_start("verify", "Starting D-Bus service")
         our_service = self._service(const.BUSNAME)
         service_version = our_service.version
