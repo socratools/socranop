@@ -390,7 +390,7 @@ class CheckDependencies(AbstractInstallTool):
             step_end()
         except ModuleNotFoundError:
             step_end(
-                "The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar."
+                "Cannot import module 'gi'. The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar."
             )
             raise
 
@@ -411,22 +411,22 @@ class CheckDependencies(AbstractInstallTool):
 
             if version:
                 try:
-                    step_start("find", f"module {module} version {version}")
+                    step_start("find", f"gi module {module} version {version}")
                     gi.require_version(module, version)
                     step_end()
                 except ValueError:
                     step_end(
-                        f"Error: module '{mod_name}' not available in version %{version}. Make sure the package providing the '{typelib}' file is installed with the required dependencies."
+                        f"Cannot find gi module '{mod_name}' in version {version}. Make sure the package providing the '{typelib}' file is installed with the required dependencies."
                     )
                     raise
 
             try:
-                step_start("load", f"module {mod_name}")
+                step_start("load", f"gi module {module}")
                 importlib.import_module(mod_name)  # import must work; discard retval
                 step_end()
             except ImportError:
                 step_end(
-                    f"Error importing module '{mod_name}'. Make sure the package providing the '{typelib}' file is installed with its required dependencies."
+                    f"Cannot import gi module '{mod_name}'. Make sure the package providing the '{typelib}' file is installed with its required dependencies."
                 )
                 raise
 
@@ -437,7 +437,7 @@ class CheckDependencies(AbstractInstallTool):
             step_end()
         except Exception:
             step_end(
-                "Error importing module pydbus. Make sure the pydbus package is installed."
+                "Cannot import module 'pydbus'. Make sure the 'pydbus' package is installed."
             )
             raise
 
@@ -446,7 +446,7 @@ class CheckDependencies(AbstractInstallTool):
             importlib.import_module("usb.core")  # import must work; discard retval
         except ModuleNotFoundError:
             step_end(
-                f"Module 'usb.core' not found. Make sure the 'pyusb' package is installed."
+                f"Cannot import module 'usb.core'. Make sure the 'pyusb' package is installed."
             )
             raise
 
