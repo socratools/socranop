@@ -663,7 +663,7 @@ class DBusInstallTool(ResourceInstallTool):
                 message = f"The dbus service we just installed is not yet detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop)"
                 step_failure(message)
                 raise RuntimeError(message)
-            step_success(f"Waiting for our service to appear ({attempt}/{max_attempt})")
+            step_success(f"not available yet (attempt {attempt}/{max_attempt})")
             time.sleep(1)
             step_start("verify", "Checking for registered service")
         step_success()
