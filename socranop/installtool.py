@@ -673,7 +673,9 @@ class DBusInstallTool(ResourceInstallTool):
         our_service = self._service(const.BUSNAME)
         service_version = our_service.version
         step_success(service_version)
-        print_step("verify", f"Installtool version: {const.VERSION}")
+
+        step_start("verify", "Installtool version")
+        step_success(const.VERSION)
         # TODO: Compare versions?  Fail if there's a mismatch?
 
         # Shut down the service now, in case there are other steps
