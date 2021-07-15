@@ -386,14 +386,15 @@ class CheckDependencies(AbstractInstallTool):
         self._print_heading("Checking")
         try:
             step_start("load", "module gi")
-            import gi  # noqa: F401 'gi' imported but unused
-
+            importlib.import_module("gi")  # import must work; discard retval
             step_end()
         except ModuleNotFoundError:
             step_end(
                 "The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar."
             )
             raise
+
+        import gi
 
         for module, version in [
             ("GLib", None),
@@ -432,8 +433,7 @@ class CheckDependencies(AbstractInstallTool):
         # pydbus internally requires gi and GLib, Gio, GObject
         try:
             step_start("load", f"module pydbus")
-            import pydbus  # noqa: F401 'pydbus' imported but unused
-
+            importlib.import_module("pydbus")  # import must work; discard retval
             step_end()
         except Exception:
             step_end(
@@ -443,13 +443,15 @@ class CheckDependencies(AbstractInstallTool):
 
         try:
             step_start("load", f"module usb.core")
-            import usb.core  # noqa: F401 'usb.core' imported but unused
-
+            importlib.import_module("usb.core")  # import must work; discard retval
         except ModuleNotFoundError:
             step_end(
                 f"Module 'usb.core' not found. Make sure the 'pyusb' package is installed."
             )
             raise
+
+        import usb.core
+
         try:
             # check that finding any USB device works
             usb_devices = usb.core.find(find_all=True)
