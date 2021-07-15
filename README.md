@@ -110,8 +110,8 @@ socranop-gui
 - Instead of applying the selection, clicking "Reset" (ALT+R) will set the
   selection back to the current state of the mixer (if known)
 
-![GUI Window](gui-screenshot.png)
-![GUI Window with dropdown open](gui-screenshot-with-dropdown.png)
+![GUI Window](images/gui-screenshot.png)
+![GUI Window with dropdown open](images/gui-screenshot-with-dropdown.png)
 
 ### CLI
 
