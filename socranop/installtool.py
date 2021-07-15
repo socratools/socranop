@@ -158,17 +158,17 @@ class SudoScript:
             print("No commands left over to run with sudo. Good.")
         elif isinstance(sudo_script_file, io.StringIO):
             print("You should probably run the following commands with sudo:")
-            print("-" * 50)
+            print("-" * 72)
             sys.stdout.write(sudo_script_file.getvalue())
-            print("-" * 50)
+            print("-" * 72)
         else:
             sudo_script_file.close()
             print(
                 "You should probably run this script with sudo (example command below):"
             )
-            print("-" * 50)
+            print("-" * 72)
             sys.stdout.write(p.read_text())
-            print("-" * 50)
+            print("-" * 72)
             print("Suggested command:", "sudo", p.absolute())
 
 
