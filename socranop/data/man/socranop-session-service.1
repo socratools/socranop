@@ -89,10 +89,8 @@ See the state file description in the FILES section below.
 .TP
 .\" The device path is Linux specific
 .BI /dev/bus/usb/ NNN / MMM
-The USB device file corresponding to the Notepad mixer. \fINNN\fR and \fIMMM\fR are decimal numbers. For more information on device permission setup, see the
-.\" FIXME: Substitute the proper path to PERMISSIONS.md here.
-.B PERMISSIONS.md
-file.
+The USB device file corresponding to the Notepad mixer. \fINNN\fR and \fIMMM\fR are decimal numbers. For more information on device permission setup, see
+.B https://github.com/socratools/socranop/blob/main/PERMISSIONS.md
 .TP
 .B ~/.config/${PACKAGE}/state/*.state
 The state file is used to keep track of the state the device has been set to.
@@ -104,10 +102,8 @@ Note that \fBsocranop\-session\-service\fR ignores \fBXDG_CONFIG_HOME\fR values 
 .\" ======================================================================
 .\"
 .SH NOTES
-The USB device file must be readable and writable for the \fBsocranop\-session\-service\fR process. For more information on permission setup, see the
-.\" FIXME: Substitute the proper path to PERMISSIONS.md here.
-.B PERMISSIONS.md
-file.
+The USB device file must be readable and writable for the \fBsocranop\-session\-service\fR process. For more information on permission setup, see
+.B https://github.com/socratools/socranop/blob/main/PERMISSIONS.md
 .\"
 .\" ======================================================================
 .\"
@@ -136,8 +132,7 @@ Usually, \fBsocranop\-session\-service\fR will be invoked by D\-Bus bus activati
 .SH SEE ALSO
 .BR socranop\-ctl (1),
 .BR socranop\-gui (1),
-.\" FIXME: Substitute the proper path to PERMISSIONS.md here.
-.B PERMISSIONS.md
+.B https://github.com/socratools/socranop/blob/main/PERMISSIONS.md
 .\" ======================================================================
 .\"
 .\" THE END (of this man page).
