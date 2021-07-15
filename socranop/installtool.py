@@ -61,9 +61,15 @@ def step_start(tag, details):
     print_step(tag, details, end=": ")
 
 
-def step_end(result="OK"):
-    """Standardized output for all 2-part install/uninstall actions (end)"""
-    print(result)
+def step_success(success_msg="OK"):
+    """Standardized output for all 2-part install/uninstall actions (successful outcome)"""
+    print(success_msg)
+
+
+def step_failure(error_msg):
+    """Standardized output for all 2-part install/uninstall actions (failure case)"""
+    print("ERROR")
+    print("Error:", error_msg)
 
 
 class ScriptCommand:
@@ -387,9 +393,9 @@ class CheckDependencies(AbstractInstallTool):
         try:
             step_start("load", "module gi")
             importlib.import_module("gi")  # import must work; discard retval
-            step_end()
+            step_success()
         except ModuleNotFoundError:
-            step_end(
+            step_failure(
                 "Cannot import module 'gi'. The PyGI library must be installed from your distribution; usually called python-gi, python-gobject, python3-gobject, pygobject, or something similar."
             )
             raise
@@ -413,9 +419,9 @@ class CheckDependencies(AbstractInstallTool):
                 try:
                     step_start("find", f"gi module {module} version {version}")
                     gi.require_version(module, version)
-                    step_end()
+                    step_success()
                 except ValueError:
-                    step_end(
+                    step_failure(
                         f"Cannot find gi module '{mod_name}' in version {version}. Make sure the package providing the '{typelib}' file is installed with the required dependencies."
                     )
                     raise
@@ -423,9 +429,9 @@ class CheckDependencies(AbstractInstallTool):
             try:
                 step_start("load", f"gi module {module}")
                 importlib.import_module(mod_name)  # import must work; discard retval
-                step_end()
+                step_success()
             except ImportError:
-                step_end(
+                step_failure(
                     f"Cannot import gi module '{mod_name}'. Make sure the package providing the '{typelib}' file is installed with its required dependencies."
                 )
                 raise
@@ -434,9 +440,9 @@ class CheckDependencies(AbstractInstallTool):
         try:
             step_start("load", f"module pydbus")
             importlib.import_module("pydbus")  # import must work; discard retval
-            step_end()
+            step_success()
         except Exception:
-            step_end(
+            step_failure(
                 "Cannot import module 'pydbus'. Make sure the 'pydbus' package is installed."
             )
             raise
@@ -445,7 +451,7 @@ class CheckDependencies(AbstractInstallTool):
             step_start("load", f"module usb.core")
             importlib.import_module("usb.core")  # import must work; discard retval
         except ModuleNotFoundError:
-            step_end(
+            step_failure(
                 f"Cannot import module 'usb.core'. Make sure the 'pyusb' package is installed."
             )
             raise
@@ -458,9 +464,11 @@ class CheckDependencies(AbstractInstallTool):
             if len(list(usb_devices)) == 0:
                 raise ValueError("No USB devices found")
         except ValueError:
-            step_end("Error: No USB devices found. Something is broken here.")
+            step_failure(
+                "Have not found a single USB device. Something is broken here."
+            )
             raise
-        step_end()
+        step_success()
 
         self._print_heading("OK")
 
@@ -630,7 +638,7 @@ class DBusInstallTool(ResourceInstallTool):
             service_version = service.version
             step_start("stop", f"Shutting down version {service_version}")
             service.Shutdown()
-            step_end()
+            step_success()
 
     def verify_install(self, force=False):
         if self.no_launch and not force:
@@ -645,7 +653,7 @@ class DBusInstallTool(ResourceInstallTool):
         # us drop in the service file (dbus-broker, for example, if we just
         # created ~/.local/share/dbus-1/services)
         dbus_service.ReloadConfig()
-        step_end("OK")
+        step_success()
 
         step_start("verify", "Checking for registered service")
         (attempt, max_attempt) = (0, 5)
@@ -653,18 +661,18 @@ class DBusInstallTool(ResourceInstallTool):
             attempt += 1
             if attempt > max_attempt:
                 message = f"The dbus service we just installed is not yet detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop)"
-                step_end(f"ERROR: {message}")
+                step_failure(message)
                 raise RuntimeError(message)
-            step_end(f"Waiting for our service to appear ({attempt}/{max_attempt})")
+            step_success(f"Waiting for our service to appear ({attempt}/{max_attempt})")
             time.sleep(1)
             step_start("verify", "Checking for registered service")
-        step_end()
+        step_success()
 
         # Just using the service proves auto-start works:
         step_start("verify", "Starting D-Bus service")
         our_service = self._service(const.BUSNAME)
         service_version = our_service.version
-        step_end(service_version)
+        step_success(service_version)
         print_step("verify", f"Installtool version: {const.VERSION}")
         # TODO: Compare versions?  Fail if there's a mismatch?
 
@@ -673,7 +681,7 @@ class DBusInstallTool(ResourceInstallTool):
         # service can really be used.
         step_start("verify", "Shutting down session D-Bus service")
         our_service.Shutdown()
-        step_end()
+        step_success()
 
     def pre_uninstall(self):
         self.shutdown_service("Stopping service")
