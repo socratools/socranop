@@ -16,7 +16,7 @@ socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from 
 .\"
 .\" ======================================================================
 .\"
-.\" usage: socranop-ctl [-h] [--version] [--no-dbus] [-l] [-s SET]
+,\" usage: socranop-ctl [-h] [--version] [-v] [--no-dbus] [-w] [-l] [-s SET]
 .\"
 .\" optional arguments:
 .\"   -h, --help         show this help message and exit
@@ -24,6 +24,7 @@ socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from 
 .\"   -v, --verbose      Enable more verbose output, largely for debugging
 .\"   --no-dbus          Use direct USB device access instead of D-Bus service
 .\"                      access
+.\"   -w, --wait         If no compatible device is found, wait for one to appear
 .\"   -l, --list         List the available source routing options
 .\"   -s SET, --set SET  Set the specified source to route to the USB capture
 .\"                      input
@@ -35,11 +36,13 @@ socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from 
 .B "socranop\-ctl"
 .RB [\| \-\-verbose \|]
 .RB [\| \-\-no\-dbus \|]
+.RB [\| \-\-wait \|]
 .B \-\-list
 .br
 .B "socranop\-ctl"
 .RB [\| \-\-verbose \|]
 .RB [\| \-\-no\-dbus \|]
+.RB [\| \-\-wait \|]
 .BI \-\-set\  SOURCE
 .\"
 .\" ======================================================================
@@ -62,6 +65,9 @@ Print the program version and exit.
 Access the USB directly without going through the
 .B socranop\-session\-service
 D-Bus service.
+.TP
+.RB (\| \-w | \-\-wait \|)
+If no compatible device is found, wait for one to appear
 .TP
 .RB (\| \-v | \-\-verbose \|)
 Make the program output more information. Helpful for debugging.
