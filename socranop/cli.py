@@ -26,16 +26,19 @@ import sys
 import socranop.common as common
 
 
-def autodetect(dbus=True):
+def autodetect(dbus=True, wait=False):
     if dbus:
         try:
             from socranop.dbus import Client, DbusInitializationError
 
             client = Client()
             result = client.autodetect()
-            if result is None:
+            if result is None and wait:
                 print("No devices found... waiting for one to appear")
-                result = client.waitForDevice()
+                try:
+                    result = client.waitForDevice()
+                except KeyboardInterrupt:
+                    pass
             return result
         except DbusInitializationError as e:
             print(e)
@@ -97,6 +100,12 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "-w",
+        "--wait",
+        help="If no compatible device is found, wait for one to appear",
+        action="store_true",
+    )
+    parser.add_argument(
         "-l",
         "--list",
         help="List the available source routing options",
@@ -108,7 +117,7 @@ def main():
     args = parser.parse_args()
     common.VERBOSE = args.verbose
     if args.list or args.set:
-        dev = autodetect(dbus=not args.no_dbus)
+        dev = autodetect(dbus=not args.no_dbus, wait=args.wait)
         if dev is None:
             print("No compatible device detected")
             sys.exit(1)
