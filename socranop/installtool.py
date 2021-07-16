@@ -868,9 +868,9 @@ class UdevRulesInstallTool(FileInstallTool):
         )
 
     def emit_code_for_rule_change(self, skip_if):
-        # udev is supposed to be picking up changed rules "for years"
-        # (relative to 2016), so manually triggering a reload does not
-        # appear to be called for any more.
+        # udev is supposed to have been picking up changed rules "for
+        # years" (relative to 2016), so manually triggering a reload
+        # does not appear to be called for any more.
         #
         # SUDO_SCRIPT.add_cmd(
         #     "udevadm control --reload",
