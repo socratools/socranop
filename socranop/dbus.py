@@ -193,7 +193,7 @@ class Service:
     def uevent(self, observer, action, device):
         if action == "add":
             idVStr = device.get_property("ID_VENDOR_ID")
-            idPStr = device.get_property("ID_PRODUCT_ID")
+            idPStr = device.get_property("ID_MODEL_ID")
             common.debug(f"Device added (idVendor={idVStr!r}, idProduct={idPStr!r})")
             idVendor = int(idVStr, 16)
             idProduct = int(idPStr, 16)
