@@ -731,7 +731,7 @@ class DBusInstallTool(ResourceInstallTool):
             service_version = our_service.version
             step.set_success_word(service_version)
 
-        with Step("verify", "Installtool version", success_word=const.VERSION):
+        with Step("verify", "Installtool    version", success_word=const.VERSION):
             pass
 
         # TODO: Compare versions?  Fail if there's a mismatch?
