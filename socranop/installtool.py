@@ -110,7 +110,7 @@ class Step:
     def set_success_word(self, success_word):
         self.success_word = success_word
 
-    def try_again(self, sleep):
+    def try_again(self):
         self.attempt += 1
         if self.attempt > self.max_attempts:
             self.attempt = self.max_attempts
@@ -121,7 +121,7 @@ class Step:
             "not yet", postfix=f"(attempt {self.attempt}/{self.max_attempts})", end="\r"
         )
         self.__step_start(self.tag, self.details)
-        time.sleep(sleep)
+        time.sleep(1)
 
     def __enter__(self):
         self.__step_start(self.tag, self.details)
@@ -702,7 +702,7 @@ class DBusInstallTool(ResourceInstallTool):
                 service.Shutdown()
                 # Wait until the shutdown clears the service off the bus
                 while dbus_service.NameHasOwner(const.BUSNAME):
-                    step.try_again(sleep=1)
+                    step.try_again()
 
     def verify_install(self, force=False):
         if self.no_launch and not force:
@@ -723,7 +723,7 @@ class DBusInstallTool(ResourceInstallTool):
             max_attempts=5,
         ) as step:
             while const.BUSNAME not in dbus_service.ListActivatableNames():
-                step.try_again(sleep=1)
+                step.try_again()
 
         # Just using the service proves auto-start works:
         with Step("verify", "Starting D-Bus service") as step:
