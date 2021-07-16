@@ -46,7 +46,12 @@ def autodetect(dbus=True, wait=False):
     else:
         import socranop.notepad
 
-        return socranop.notepad.autodetect()
+        result = socranop.notepad.autodetect()
+        if result is None and wait:
+            print(
+                "Warning: '--wait' only works with D-Bus.  Exiting immediately instead."
+            )
+        return result
 
 
 def max_lengths(dev):
@@ -102,7 +107,7 @@ def main():
     parser.add_argument(
         "-w",
         "--wait",
-        help="If no compatible device is found, wait for one to appear",
+        help="If no compatible device is found, wait for one to appear (D-Bus mode only)",
         action="store_true",
     )
     parser.add_argument(
