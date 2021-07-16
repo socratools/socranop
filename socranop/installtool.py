@@ -696,8 +696,13 @@ class DBusInstallTool(ResourceInstallTool):
             self._print_heading(reason)
             service = self._service(const.BUSNAME)
             service_version = service.version
-            with Step("stop", f"Shutting down version {service_version}"):
+            with Step(
+                "stop", f"Shutting down version {service_version}", max_attempts=5
+            ) as step:
                 service.Shutdown()
+                # Wait until the shutdown clears the service off the bus
+                while dbus_service.NameHasOwner(const.BUSNAME):
+                    step.try_again(sleep=1)
 
     def verify_install(self, force=False):
         if self.no_launch and not force:
