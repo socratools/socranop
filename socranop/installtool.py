@@ -76,13 +76,14 @@ class Step:
             importlib.import_module("pydbus")  # import must work; discard retval
     """
 
-    def __init__(self, tag, details, success_word=None, error_msg=None):
+    def __init__(self, tag, details, success_word=None, error_msg=None, max_attempts=0):
         super(Step, self).__init__()
         self.tag = tag
         self.details = details
         self.error_msg = error_msg
         self.success_word = success_word
-        self.has_repeated = None
+        self.attempt = 0
+        self.max_attempts = max_attempts
 
     @staticmethod
     def __step_start(tag, details):
@@ -109,12 +110,18 @@ class Step:
     def set_success_word(self, success_word):
         self.success_word = success_word
 
-    def try_again(self, attempt, max_attempt):
-        self.has_repeated = (attempt, max_attempt)
+    def try_again(self, sleep):
+        self.attempt += 1
+        if self.attempt > self.max_attempts:
+            self.attempt = self.max_attempts
+            raise Exception(
+                f"exceeded maximum number of attempts ({self.max_attempts})"
+            )
         self.__step_success(
-            "not yet", postfix=f"(attempt {attempt}/{max_attempt})", end="\r"
+            "not yet", postfix=f"(attempt {self.attempt}/{self.max_attempts})", end="\r"
         )
         self.__step_start(self.tag, self.details)
+        time.sleep(sleep)
 
     def __enter__(self):
         self.__step_start(self.tag, self.details)
@@ -122,22 +129,21 @@ class Step:
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is None:
-            if self.has_repeated is None:
+            if self.attempt == 0:
                 self.__step_success(self.success_word)
             else:
-                (attempt, max_attempt) = self.has_repeated
                 self.__step_success(
                     self.success_word,
-                    postfix=f"(successful attempt {attempt}/{max_attempt})",
+                    postfix=f"(successful attempt {self.attempt}/{self.max_attempts})",
                 )
         else:
             error_msg = self.error_msg or str(exc_value)
-            if self.has_repeated is None:
+            if self.attempt == 0:
                 self.__step_failure(error_msg)
             else:
-                (attempt, max_attempt) = self.has_repeated
                 self.__step_failure(
-                    error_msg, postfix=f"(final attempt {attempt}/{max_attempt})"
+                    error_msg,
+                    postfix=f"(final attempt {self.attempt}/{self.max_attempts})",
                 )
         return False
 
@@ -707,19 +713,14 @@ class DBusInstallTool(ResourceInstallTool):
             # created ~/.local/share/dbus-1/services)
             dbus_service.ReloadConfig()
 
-        max_attempt = 5
         with Step(
             "verify",
             "Checking for registered service",
-            error_msg=f"The dbus service we just installed has not yet been detected after {max_attempt}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop).",
+            error_msg="The dbus service we just installed has not yet been detected after 5s. You may need to restart your dbus session (for example, by logging out and back in to your desktop).",
+            max_attempts=5,
         ) as step:
-            attempt = 0
             while const.BUSNAME not in dbus_service.ListActivatableNames():
-                attempt += 1
-                if attempt > max_attempt:
-                    raise Exception("exceeded maximum number of attempts")
-                step.try_again(attempt, max_attempt)
-                time.sleep(1)
+                step.try_again(sleep=1)
 
         # Just using the service proves auto-start works:
         with Step("verify", "Starting D-Bus service") as step:
