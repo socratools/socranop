@@ -226,6 +226,8 @@ Set channel routing:
 socranop-ctl --set/-s <number>
 ```
 
+See `socranop-ctl --help` or `man socranop-ctl` for more details.
+
 #### Sample Output
 
 ```
