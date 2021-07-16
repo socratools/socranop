@@ -25,6 +25,7 @@ socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from 
 .\"   --no-dbus          Use direct USB device access instead of D-Bus service
 .\"                      access
 .\"   -w, --wait         If no compatible device is found, wait for one to appear
+.\"                      (D-Bus mode only)
 .\"   -l, --list         List the available source routing options
 .\"   -s SET, --set SET  Set the specified source to route to the USB capture
 .\"                      input
@@ -67,7 +68,7 @@ Access the USB directly without going through the
 D-Bus service.
 .TP
 .RB (\| \-w | \-\-wait \|)
-If no compatible device is found, wait for one to appear
+If no compatible device is found, wait for one to appear (D-Bus mode only)
 .TP
 .RB (\| \-v | \-\-verbose \|)
 Make the program output more information. Helpful for debugging.
