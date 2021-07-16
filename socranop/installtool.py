@@ -956,7 +956,7 @@ class InstallToolEverything(AbstractInstallTool):
         for thing in self.everything:
             thing.post_install()
         print()
-        print(f"Socranop installation has completed successfully")
+        print(f"Socranop installation has completed successfully.")
 
     def post_install_footer(self):
         print()
@@ -971,11 +971,11 @@ class InstallToolEverything(AbstractInstallTool):
         for thing in reversed(self.everything):
             thing.pre_uninstall()
         print()
-        print(f"Socranop uninstallation preparation has completed successfully")
+        print(f"Socranop uninstallation preparation has completed successfully.")
 
     def pre_uninstall_footer(self):
         print()
-        print(f"Finally, run `pip uninstall socranop` to complete uninstallation")
+        print(f"Finally, run `pip uninstall socranop` to complete uninstallation.")
 
 
 def main():
