@@ -286,3 +286,5 @@ What's Next
 
 To submit ideas or bugs, and see what we're working on next, see the [socranop
 issues page](https://github.com/socratools/socranop/issues)
+
+Or come meet us on IRC: [libera.chat](https://libera.chat) [#socratools](https://web.libera.chat/?channel=#socratools)
