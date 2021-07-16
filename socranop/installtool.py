@@ -148,6 +148,9 @@ class Step:
         return False
 
 
+MAX_ATTEMPTS = 5
+
+
 class ScriptCommand:
     """A single command which may need to be run in a sudo script
 
@@ -697,7 +700,9 @@ class DBusInstallTool(ResourceInstallTool):
             service = self._service(const.BUSNAME)
             service_version = service.version
             with Step(
-                "stop", f"Shutting down version {service_version}", max_attempts=5
+                "stop",
+                f"Shutting down running service version {service_version}",
+                max_attempts=MAX_ATTEMPTS,
             ) as step:
                 service.Shutdown()
                 # Wait until the shutdown clears the service off the bus
@@ -719,8 +724,8 @@ class DBusInstallTool(ResourceInstallTool):
         with Step(
             "verify",
             "Checking for registered service",
-            error_msg="The dbus service we just installed has not yet been detected after 5s. You may need to restart your dbus session (for example, by logging out and back in to your desktop).",
-            max_attempts=5,
+            error_msg=f"The dbus service we just installed has not yet been detected after {MAX_ATTEMPTS}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop).",
+            max_attempts=MAX_ATTEMPTS,
         ) as step:
             while const.BUSNAME not in dbus_service.ListActivatableNames():
                 step.try_again()
