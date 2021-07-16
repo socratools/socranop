@@ -676,9 +676,10 @@ class DBusInstallTool(ResourceInstallTool):
             raise UnhandledResource(fullname)
 
     def post_install(self):
+        self._print_heading("Configuring")
         self.shutdown_service("Stopping old service")
 
-        super(DBusInstallTool, self).post_install()
+        super(DBusInstallTool, self)._do_install()
 
         self.verify_install()
 
@@ -693,7 +694,6 @@ class DBusInstallTool(ResourceInstallTool):
         if not dbus_service.NameHasOwner(const.BUSNAME):
             common.debug("D-Bus service not running")
         else:
-            self._print_heading(reason)
             service = self._service(const.BUSNAME)
             service_version = service.version
             with Step(
@@ -708,8 +708,6 @@ class DBusInstallTool(ResourceInstallTool):
         if self.no_launch and not force:
             common.debug("no_launch is set; not verifying our dbus service")
             return
-
-        self._print_heading("Verifying")
 
         dbus_service = self._service(".DBus")
         with Step("verify", "Reload dbus to register the new service"):
@@ -745,8 +743,10 @@ class DBusInstallTool(ResourceInstallTool):
             our_service.Shutdown()
 
     def pre_uninstall(self):
+        self._print_heading("Configuring")
         self.shutdown_service("Stopping service")
-        super(DBusInstallTool, self).pre_uninstall()
+        super(DBusInstallTool, self)._do_uninstall()
+        self._print_heading("Complete")
 
 
 class BashCompletionInstallTool(ResourceInstallTool):
