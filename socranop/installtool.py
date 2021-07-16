@@ -455,12 +455,6 @@ class CheckDependencies(AbstractInstallTool):
         super(CheckDependencies, self).__init__(heading="Python library dependencies")
 
     def post_install(self):
-        # Note that re-raising the exception after printing our own
-        # error message is useful: It gives the user the hint about
-        # which packages need to be installed, but still shows the
-        # backtrace in case of an exception occuring which we had not
-        # foreseen might happen.
-
         # If installing to a chroot environment, we cannot check what
         # is installed in that chroot environment, and therefore skip
         # the checks.
