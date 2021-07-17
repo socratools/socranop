@@ -7,7 +7,7 @@
 .\"
 .\" ======================================================================
 .\"
-.TH SOCRANOP-GUI 1 "2021\-07\-04" "${PACKAGE} ${VERSION}" "User commands"
+.TH SOCRANOP-GUI 1 "2021\-07\-17" "${PACKAGE} ${VERSION}" "User commands"
 .\"
 .\" ======================================================================
 .\"
@@ -57,17 +57,17 @@ socranop\-gui \- control Soundcraft Notepad series mixer USB audio routing from 
 .SH DESCRIPTION
 .PP
 .B socranop\-gui
-is the GUI interface to change the USB audio routing on a Notepad series mixer. It works by communicating with D-Bus to the (bus activated) D-Bus service
+is the GUI interface to change the USB audio routing on a Notepad series mixer. It communicates via D-Bus to the (bus activated) D-Bus service
 .B socranop\-session\-service
-which does the actual talking to the USB device.
+which actually interfaces to the USB device.
 .PP
 Note that
 .B socranop\-gui
-is
+itself is
 .B NOT
 a D-Bus service, so the
 .B \-\-gapplication\-service
-is
+option is
 .B unsupported.
 .\"
 .\" ======================================================================

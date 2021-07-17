@@ -7,7 +7,7 @@
 .\"
 .\" ======================================================================
 .\"
-.TH SOCRANOP\-SESSION\-SERVICE 1 "2021\-07\-04" "${PACKAGE} ${VERSION}" "User commands"
+.TH SOCRANOP\-SESSION\-SERVICE 1 "2021\-07\-17" "${PACKAGE} ${VERSION}" "User commands"
 .\"
 .\" ======================================================================
 .\"
@@ -89,11 +89,11 @@ See the state file description in the FILES section below.
 .TP
 .\" The device path is Linux specific
 .BI /dev/bus/usb/ NNN / MMM
-The USB device file corresponding to the Notepad mixer. \fINNN\fR and \fIMMM\fR are decimal numbers. For more information on device permission setup, see
+The USB device file corresponding to the Notepad mixer. \fINNN\fR and \fIMMM\fR are decimal numbers padded with \fI0\fR which change every time the mixer is plugged in. For more information on device permission setup, see
 .B https://github.com/socratools/socranop/blob/main/PERMISSIONS.md
 .TP
 .B ~/.config/${PACKAGE}/state/*.state
-The state file is used to keep track of the state the device has been set to.
+The state file is used to keep track of the state the mixer device has been set to.
 .IP
 If the \fBXDG_CONFIG_HOME\fR environment variable is set when \fBsocranop\-session\-service\fR starts, \fBsocranop\-session\-service\fR uses its value instead of the \fB~/.config\fR part of the state file location.
 .IP
