@@ -7,7 +7,7 @@
 .\"
 .\" ======================================================================
 .\"
-.TH SOCRANOP\-CTL 1 "2021\-07\-04" "${PACKAGE} ${VERSION}" "User commands"
+.TH SOCRANOP\-CTL 1 "2021\-07\-17" "${PACKAGE} ${VERSION}" "User commands"
 .\"
 .\" ======================================================================
 .\"
@@ -16,7 +16,7 @@ socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from 
 .\"
 .\" ======================================================================
 .\"
-,\" usage: socranop-ctl [-h] [--version] [-v] [--no-dbus] [-w] [-l] [-s SET]
+.\" usage: socranop-ctl [-h] [--version] [-v] [--no-dbus] [-w] [-l] [-s SET]
 .\"
 .\" optional arguments:
 .\"   -h, --help         show this help message and exit
@@ -89,7 +89,7 @@ If successful, returns 0. Non-0 exit codes indicate an error.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME
-When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, \fBsocranop\-ctl\fR takes over handling device files and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
 .\"
 .\" ======================================================================
 .\"
