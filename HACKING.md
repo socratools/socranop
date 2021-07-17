@@ -6,10 +6,9 @@ First of all, thank you!  I appreciate all feedback, pull requests, and gentle c
 Development Environment
 -----------------------
 
-To ensure homogeneity of development environments, I recommend
-using `pipenv` and python 3.8 (though python 3.6 is the minimum
-supported version).  pipenv can be installed via pip in the usual
-ways.
+To ensure homogeneity of development environments, I recommend using
+`pipenv` and python 3.8 (though python 3.6 is the minimum supported
+version).  `pipenv` can be installed via `pip` in the usual ways.
 
 ### Set up and use pipenv
 
@@ -40,7 +39,7 @@ FIXME05: You can start the D-Bus service by running
 
 `pre-commit install` (inside of pipenv shell)
 - Set up git hooks management so every commit gets checked/fixed
-- Only needs to be done once after cloning this repo
+- Only needs to be done once after cloning the `socranop` repo
 
 ### Adding new dependencies
 
@@ -50,9 +49,9 @@ FIXME05: You can start the D-Bus service by running
   dependencies.
 
 `pipenv-setup sync --pipfile`
-- Syncs any run-time dependencies from pipenv to setup.py
+- Syncs any run-time dependencies from `pipenv` to `setup.py`.
 
-  Our pre-commit hooks run this automatically.
+  The `socranop` pre-commit hooks run this automatically.
 
 ### Changing setup.py, setup.cfg, etc.
 
@@ -72,7 +71,7 @@ packaging test.
 
 ### Things to avoid in code
 
-For compatibility with all versions of Python >= 3.6, avoid the
+For compatibility with all versions of Python >= 3.6, avoid the
 following:
 
   * The `missing_ok` parameter to several `pathlib.Path` methods
@@ -94,17 +93,18 @@ Submitting Changes
   eventually.
 
   Try to test new code thoroughly.  I'm working on increasing code
-  coverage as I go as well.  Use 'pytest' or 'tox' to test.
+  coverage as I go as well.  Use `pytest` or `tox` to test.
 
-  Our pre-commit hooks ensure pytest is passing on every commit, too.
+  The `pre-commit` hooks ensure `pytest` is passing on every commit, too.
 
 - Run `flake8` and `black` to format your code.
 
-  The socranop source code is written to conform to stock `flake8`
-  without any extra plugins installed.  Using pipenv (see above) should make
-  sure you have the right set of flake8 plugins installed.
+  The `socranop` source code is written to conform to stock `flake8`
+  without any extra plugins installed.  Using `pipenv` (see above)
+  should make sure you have the right set of `flake8` plugins
+  installed.
 
-  Our pre-commit hooks will do this for you automatically.
+  The `pre-commit` hooks will do this for you automatically.
 
 - If your Python code adds or touches a very short line which is also
   in other places in the same source file (e.g. `try:`, `pass`,
@@ -117,18 +117,19 @@ Submitting Changes
   want, but if you do, please also run `tools/contrib_to_about` to
   synchronize the changes in there to the GUI about screen.
 
-  Our pre-commit hooks will do this for you automatically.
+  The `pre-commit` hooks will update the GUI about screen for you
+  automatically.
 
 - If you have been git rebasing and had to fix a lot of conflicts, it
-  is possible that a source tree which does not pass the pre-commit
-  checks is committed anyway.
+  is possible that a source tree which does not pass the `pre-commit`
+  checks has been committed anyway.
 
   You can make sure that all the commits in your `my-local-branch`
   branch after `main` pass the pre-commit checks by running
 
       $ git rebase --exec 'pre-commit run -a' -i main my-local-branch
 
-  which will then stop at whatever commit that failed the pre-commit
+  which will then stop at whatever commit that failed the `pre-commit`
   run. Then you can fix it until `pre-commit run -a` succeeds, amend
   the commit and `git rebase --continue`. Repeat fixing, amending, and
   continuing until the interactive rebase has completed successfully.
