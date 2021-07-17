@@ -7,7 +7,8 @@ A `socranop` installation consists basically of four parts:
 
   * Configuration files to configure D-Bus and the XDG Desktop menu
 
-  * A udev rules file to allow non-root users access to the USB device
+  * A udev rules file to allow unpriviledged users access to the USB
+    device
 
   * Documentation files
 
