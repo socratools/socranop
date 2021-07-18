@@ -291,10 +291,13 @@ Because both the GUI and CLI perform their operations via the D-Bus service,
 any changes made through any client are immediately visible to all other
 clients.
 
-What's Next
------------
+
+Contact us
+----------
 
 To submit ideas or bugs, and see what we're working on next, see the [socranop
 issues page](https://github.com/socratools/socranop/issues)
 
-Or come meet us on IRC: [libera.chat](https://libera.chat) [#socratools](https://web.libera.chat/?channel=#socratools)
+To chat with us on IRC, join the
+[#socratools](https://web.libera.chat/?channel=#socratools) channel on
+[libera.chat](https://libera.chat).
