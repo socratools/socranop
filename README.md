@@ -301,3 +301,24 @@ issues page](https://github.com/socratools/socranop/issues)
 To chat with us on IRC, join the
 [#socratools](https://web.libera.chat/?channel=#socratools) channel on
 [libera.chat](https://libera.chat).
+
+
+Related web links
+-----------------
+
+  * https://github.com/socratools/socranop
+
+    The GitHub `socranop` project page.
+
+  * https://pypi.org/project/socranop/
+
+    The pypi `socranop` project page.
+
+  * https://socratools.github.io/
+
+    The `socratools` project page.
+
+  * https://github.com/socratools/socradoc
+
+    The GitHub `socradoc` project page. `socradoc` documents the USB
+    protocol used to control the Notepad series of mixers.
