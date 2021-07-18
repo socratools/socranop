@@ -14,19 +14,45 @@ socranop-permissions - setting up USB device permissions for use with
 socranop
 .SH DESCRIPTION
 .PP
-The \f[C]socranop\f[R] D-Bus session changes the mixer audio routing
-opening and writing to the device special file connected to the mixer,
-which is called something like \f[C]/dev/bus/usb/006/004\f[R].
-By default, this cannot be written to by ordinary users and since our
-D-Bus service runs as an ordinary user, we need to open up the
-permissions a bit for it to function.
+The \f[C]socranop-session-service\f[R] D-Bus service and the
+\f[C]socranop-ctl --dbus\f[R] CLI skipping the D-Bus service change the
+mixer audio routing by opening and writing to the device special file
+corresponding to the mixer.
 .PP
-There are many ways to do this, but the following are the most
-commonly-used mechanisms:
+By default, the device special file cannot be written by unpriviledged
+users and since the \f[C]socranop-session-service\f[R] D-Bus service and
+the \f[C]socranop-ctl --dbus\f[R] CLI run as an unpriviledged user, the
+device special files\[cq]s permission must be opened up to allow write
+access to \f[C]socranop-session-service\f[R].
+.PP
+A new device special file is created every time the mixer device is
+connected to the host, so changing the device file\[cq]s permissions by
+running commands like \f[B]chown\f[R](1), \f[B]chgrp\f[R](1),
+\f[B]chmod\f[R](1), \f[B]setfacl\f[R](1) will only be temporary.
+.PP
+The operating system has a set of rules which change device file
+permissions whenever a device file is created.
+There are many ways to do this, but the following are some of the most
+commonly-used mechanisms.
+.SH Linux/udev
+.PP
+On Linux, the device special file is called something like something
+like \f[C]/dev/bus/usb/006/014\f[R], and the the device permissions are
+set by \f[B]udev\f[R](7) which can be configured by dropping rule files
+into a special location in the filesystem.
+.PP
+The rule files are typically named something like
+\f[C]/etc/udev/rules.d/70-socranop.rules\f[R].
+.PP
+Every rule consists of a part to match a particular type of device (with
+comparison operators such as \f[C]==\f[R]), and a part which does
+something about that device, such as modifying or setting a variable
+(e.g.\ \f[C]+=\f[R] or \f[C]=\f[R]), changing its file mode or ownership
+or file ACL.
 .SS Allow all local users
 .PP
-Setting \f[C]TAG+=\[dq]uaccess\[dq]\f[R], which allows access to users
-with a local login session.
+Setting \f[C]TAG+=\[dq]uaccess\[dq]\f[R] allows access to users with a
+local login session.
 .IP
 .nf
 \f[C]
@@ -36,10 +62,15 @@ ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq]
 ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq], ATTRS{idProduct}==\[dq]0032\[dq], TAG+=\[dq]uaccess\[dq]
 \f[R]
 .fi
-.SS Restrict access to the audio group
+.SS Allow access for all members of the audio group
 .PP
-Setting the device file\[cq]s group to \f[C]audio\f[R] to allow all
-users in the \f[C]audio\f[R] group access
+Setting the device file\[cq]s group to \f[I]audio\f[R] allows all users
+in the \f[I]audio\f[R] group access.
+.PP
+This is useful if you are for example remotely logging in via ssh and
+want to run \f[B]socranop-ctl\f[R](1).
+You could also choose to create a new group for this purpose instead of
+reusing the operating system\[cq]s default \f[I]audio\f[R] group.
 .IP
 .nf
 \f[C]
@@ -50,18 +81,22 @@ ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq]
 \f[R]
 .fi
 .SH FILES
+.SS Linux/udev
 .TP
 /dev/bus/usb/NNN/MMM
-device file
+The USB device file
 .TP
 /etc/udev/rules.d/
-local administrative udev rules directory
+This is where the local system\[cq]s administrator write their udev rule
+files.
 .TP
 /usr/lib/udev/rules.d/
-system udev rules directory
+This is where operating system packages typically install their udev
+rule files.
 .TP
 /usr/local/lib/udev/rules.d/
-alternate system udev rules directory
+This is where installations to /usr/local packages typically install
+their udev rule files.
 .SH BUGS
 .PP
 For reading about known bugs and for filing new bugs, please go visit
