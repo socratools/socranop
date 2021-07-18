@@ -12,7 +12,9 @@
 
 import socranop.constants as const
 
+from base64 import b64encode
 from pathlib import Path
+from re import compile as compile_re
 from setuptools import find_packages, setup
 
 # Make sure we have imported the correct `socranop.constants`. The
@@ -27,7 +29,28 @@ if not topdir_from_setup.samefile(topdir_from_const):
     )
 
 readme_md_path = topdir_from_setup / "README.md"
-long_description = readme_md_path.read_text("utf-8")
+
+# replace repo relative image URLs with data: URLs containing embedded data
+readme_text = readme_md_path.read_text("utf-8")
+filtered_lines = []
+re = compile_re(r"^!\[(?P<label>[^\]]*)]\((?P<imgurl>[^\)]*\.(?P<ext>png))\)$")
+for line in readme_text.splitlines():
+    m = re.match(line)
+    if m:
+        label = m.group("label")
+        imgurl = m.group("imgurl")
+        ext = m.group("ext")
+        if imgurl.startswith("/") or ("://" in imgurl):
+            pass
+        else:
+            mime_type = {"png": "image/png"}[ext]
+            img_bytes = Path(imgurl).read_bytes()
+            b64data = b64encode(img_bytes).decode("ascii")
+            line = f"![{label}](data:{mime_type};base64,{b64data})"
+    filtered_lines.append(line)
+
+long_description = "".join([f"{line}\n" for line in filtered_lines])
+
 
 setup(
     name=const.PACKAGE,
