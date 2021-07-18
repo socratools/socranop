@@ -202,14 +202,12 @@ The GUI can also be started manually via:
 socranop-gui
 ```
 
-#### Usage Tips
+Some usage tips:
 
 - Select the desired input using the up and down arrow keys or using the mouse
 - Apply the selection by clicking "Apply" (ALT+A)
 - Instead of applying the selection, clicking "Reset" (ALT+R) will set the
   selection back to the current state of the mixer (if known)
-
-#### Screenshots
 
 ![GUI Window](images/gui-screenshot.png)
 ![GUI Window with drop-down open](images/gui-screenshot-with-dropdown.png)
