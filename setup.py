@@ -27,7 +27,12 @@ if not topdir_from_setup.samefile(topdir_from_const):
     )
 
 readme_md_path = topdir_from_setup / "README.md"
-long_description = readme_md_path.read_text("utf-8")
+readme_text = readme_md_path.read_text("utf-8")
+
+# Filter out screenshot images which do work on github, but not on pypi
+long_description = "".join(
+    [f"{line}\n" for line in readme_text.splitlines() if not line.startswith("![")]
+)
 
 setup(
     name=const.PACKAGE,
