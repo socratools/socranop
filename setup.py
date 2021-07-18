@@ -10,6 +10,8 @@
 # software package itself. Unfortunately, importlib.metadata is only
 # available in Python >= 3.8, but we want to support Python 3.6.
 
+import re
+
 import socranop.constants as const
 
 from pathlib import Path
@@ -27,7 +29,70 @@ if not topdir_from_setup.samefile(topdir_from_const):
     )
 
 readme_md_path = topdir_from_setup / "README.md"
-long_description = readme_md_path.read_text("utf-8")
+readme_text = readme_md_path.read_text("utf-8")
+
+
+########################################################################
+# Replace repo relative URLs in README.md with absolute URLs pointing
+# to github.com. To test this locally, try something like the
+# following:
+#
+#   $ python3 setup.py --long-description > README-pypi.md
+#   $ diff -u README.md README-pypi.md | cdiff
+#   $ pandoc -s --metadata title=README-pypi README-pypi.md -o README-pypi.html
+#   $ firefox README-pypi.html
+#
+########################################################################
+
+git_ref = f"v{const.VERSION}"
+git_ref = "v0.4.92a2"
+git_ref = "main"
+
+base_url = "https://github.com/socratools/socranop/"
+blob_url = f"{base_url}blob/{git_ref}/"
+raw_url = f"{base_url}raw/{git_ref}/"
+
+# pypi does not give a fragment id to headings, so relative links like
+# #foo do not work on pypi.
+if git_ref == "main":
+    # Link to github.com repo page instead.
+    text1, n_subs1 = re.subn(
+        r"(?<=[^!])\[(?P<label>[^\]]*)\]\((?P<url>#[^\)]*)\)",
+        f"[\\g<label>]({base_url}\\g<url>)",
+        readme_text,
+        flags=re.MULTILINE,
+    )
+else:
+    # Link to github.com README.md page instead.
+    text1, n_subs1 = re.subn(
+        r"(?<=[^!])\[(?P<label>[^\]]*)\]\((?P<url>#[^\)]*)\)",
+        f"[\\g<label>]({blob_url}README.md\\g<url>)",
+        readme_text,
+        flags=re.MULTILINE,
+    )
+
+# pypi does not provide other files, so relative links like
+# PERMISSIONS.md do not work on pypi. Link to github.com repo blob
+# page instead.
+text2, n_subs1 = re.subn(
+    r"(?<=[^!])\[(?P<label>[^\]]*)\]\((?P<url>(?!((data|http|https):|/))[^\)]*)\)",
+    f"[\\g<label>]({blob_url}\\g<url>)",
+    text1,
+    flags=re.MULTILINE,
+)
+
+# pypi does not provide links to working images unless we encode them
+# as data: URLs for pypi. Linking to github.com repo raw URL is
+# easier.
+text3, n_subs2 = re.subn(
+    r"(?<=!)\[(?P<label>[^\]]*)\]\((?P<url>(?!((data|http|https):|/|#))[^\)]*)\)",
+    f"[\\g<label>]({raw_url}\\g<url>)",
+    text2,
+    flags=re.MULTILINE,
+)
+
+long_description = text3
+
 
 setup(
     name=const.PACKAGE,
