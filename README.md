@@ -42,8 +42,10 @@ socranop as outlined below.
 Installation
 ------------
 
-Note: This covers manual installation of the pypi package via pip.  For
-distro-specific packages see [the section below](#distro-specific-packages)
+Note: This covers manual installation of the pypi package via pip.
+For distro-specific packages see [the section
+below](#distro-specific-packages).  For installing from source code,
+see [the HACKING.md file](HACKING.md).
 
 ### Overview
 

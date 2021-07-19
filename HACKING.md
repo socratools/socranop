@@ -10,6 +10,14 @@ To ensure homogeneity of development environments, I recommend using
 `pipenv` and python 3.8 (though python 3.6 is the minimum supported
 version).  `pipenv` can be installed via `pip` in the usual ways.
 
+
+### Get a git clone of the source repository
+
+    [user@host ~]$ git clone https://github.com/socratools/socranop.git
+    [user@host ~]$ cd socranop
+    [user@host socranop]$ _
+
+
 ### Set up and use pipenv
 
 `pipenv install --dev`
