@@ -18,6 +18,19 @@ version).  `pipenv` can be installed via `pip` in the usual ways.
     [user@host socranop]$ _
 
 
+### Install some tools
+
+Some tools are outside of the realm of pipenv, and are therefore
+probably best installed using operating system packages:
+
+  * pandoc: The pandoc command is required when you modify some parts
+    of the documentation.
+
+        [user@host ~]$ sudo apt install pandoc   # Debian, Ubuntu
+        [user@host ~]$ sudo dnf install pandoc   # Fedora
+        [user@host ~]$ _
+
+
 ### Set up and use pipenv
 
 `pipenv install --dev`

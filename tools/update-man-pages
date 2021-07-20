@@ -1,0 +1,96 @@
+#!/bin/sh
+# Update some man page files from the original *.md markdown files
+#
+########################################################################
+# Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+########################################################################
+#
+# Update some man page files from their original *.md markdown files.
+#
+# This uses pandoc, so the results are intended to be committed to the
+# git source tree, so that normal build systems do not require pandoc.
+#
+# There is no guarantee that the generated files are bit by bit
+# identical when this script runs different versions of pandoc and the
+# libraries it depends on.
+
+set -e
+
+# Allow the user to set PANDOC to whatever path and command they need.
+if test "x$PANDOC" = x
+then
+    PANDOC=pandoc
+fi
+
+# Make sure the given pandoc is present and can be run
+${PANDOC} --version
+
+# And the same procedure for diff
+if test "x$DIFF" = x
+then
+    DIFF=diff
+fi
+${DIFF} --version
+${DIFF} -u /dev/null /dev/null
+
+# Change to top source directory
+cd "$(dirname "$(dirname "$0")")"
+
+# File locations
+man_dir="socranop/data/man"
+
+markdown2man() {
+    local src dst
+    src="$1"
+    shift
+    dst="$1"
+    shift
+    local meta opts
+    meta="$(dirname "$src")/$(basename "$src" .md).meta"
+    opts=""
+    if test -f "$meta"; then
+	opts="$opts --metadata-file=$meta"
+    fi
+    local new inc
+    new="${dst}.$$.new"
+    inc="pandoc-manpage-header.$$"
+    trap "rm -f '$inc' '$new'" EXIT
+    cat>"$inc"<<EOF
+.\"
+.\" ====================================================================
+.\" DO NOT MODIFY THIS GENERATED FILE:  ${dst}
+.\" MODIFY THIS INSTEAD AND REGENERATE: ${src}
+.\" ====================================================================
+.\"
+EOF
+    ${PANDOC} --standalone --to man -o "$new" ${opts} "$@" --include-in-header "$inc" --from markdown "$src"
+    if test -f "$dst" && ${DIFF} -u "$dst" "$new"
+    then
+	rm -f "$new"
+    else
+	mv -f "$new" "$dst"
+    fi
+    rm -f "$inc"
+}
+
+set -x
+
+markdown2man PERMISSIONS.md "${man_dir}/socranop-permissions.7"
