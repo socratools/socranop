@@ -1,5 +1,10 @@
-Device permission setup using udev
-==================================
+NAME
+====
+
+socranop\-permissions \- setting up USB device permissions for use with socranop
+
+DESCRIPTION
+===========
 
 The `socranop` D-Bus session changes the mixer audio routing opening and
 writing to the device special file connected to the mixer, which is called
@@ -8,7 +13,6 @@ by ordinary users and since our D-Bus service runs as an ordinary user, we need
 to open up the permissions a bit for it to function.
 
 There are many ways to do this, but the following are the most commonly-used mechanisms:
-
 
 Allow all local users
 ---------------------
@@ -22,7 +26,6 @@ ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="003
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0032", TAG+="uaccess"
 ```
 
-
 Restrict access to the audio group
 ----------------------------------
 
@@ -34,3 +37,36 @@ ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="003
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0031", GROUP="audio"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0032", GROUP="audio"
 ```
+
+
+FILES
+=====
+
+/dev/bus/usb/NNN/MMM
+
+: device file
+
+/etc/udev/rules.d/
+
+: local administrative udev rules directory
+
+/usr/lib/udev/rules.d/
+
+: system udev rules directory
+
+/usr/local/lib/udev/rules.d/
+
+: alternate system udev rules directory
+
+
+BUGS
+====
+
+For reading about known bugs and for filing new bugs, please go visit
+[https://github.com/socratools/socranop/issues](https://github.com/socratools/socranop/issues).
+
+
+SEE ALSO
+========
+
+**socranop-ctl(1)**, **socranop-gui(1)**, **socranop-session-service(1)**, [https://github.com/socratools/socranop](https://github.com/socratools/socranop)

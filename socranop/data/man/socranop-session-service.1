@@ -90,7 +90,7 @@ See the state file description in the FILES section below.
 .\" The device path is Linux specific
 .BI /dev/bus/usb/ NNN / MMM
 The USB device file corresponding to the Notepad mixer. \fINNN\fR and \fIMMM\fR are decimal numbers padded with \fI0\fR which change every time the mixer is plugged in. For more information on device permission setup, see
-.B https://github.com/socratools/socranop/blob/main/PERMISSIONS.md
+.BR socranop\-permissions (7).
 .TP
 .B ~/.config/${PACKAGE}/state/*.state
 The state file is used to keep track of the state the mixer device has been set to.
@@ -103,7 +103,7 @@ Note that \fBsocranop\-session\-service\fR ignores \fBXDG_CONFIG_HOME\fR values 
 .\"
 .SH NOTES
 The USB device file must be readable and writable for the \fBsocranop\-session\-service\fR process. For more information on permission setup, see
-.B https://github.com/socratools/socranop/blob/main/PERMISSIONS.md
+.BR socranop\-permissions (7).
 .\"
 .\" ======================================================================
 .\"
@@ -132,7 +132,9 @@ Usually, \fBsocranop\-session\-service\fR will be invoked by D\-Bus bus activati
 .SH SEE ALSO
 .BR socranop\-ctl (1),
 .BR socranop\-gui (1),
-.B https://github.com/socratools/socranop/blob/main/PERMISSIONS.md
+.BR socranop\-permissions (7),
+.UR https://github.com/socratools/socranop
+.UE
 .\" ======================================================================
 .\"
 .\" THE END (of this man page).
