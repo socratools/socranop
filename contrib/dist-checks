@@ -19,7 +19,7 @@ ${PYTHON} setup.py bdist_wheel
 tgz_file="dist/${fullname}.tar.gz"
 test -f "$tgz_file"
 
-tar tvfz "$tgz_file" | grep '~$' > "dist/${fullname}.tgz-backup-files" ||:
+tar tvfz "$tgz_file" | grep -e '~$' -e '#$' > "dist/${fullname}.tgz-backup-files" ||:
 if test -s "dist/${fullname}.tgz-backup-files"; then
     cat "dist/${fullname}.tgz-backup-files"
     exit 2
@@ -29,7 +29,7 @@ fi
 whl_file="$(for f in dist/${fullname}-py3-*.whl; do if test -f "$f"; then echo "$f"; break; fi; done)"
 test -f "$whl_file"
 
-unzip -l "$whl_file" | grep '~$' > "dist/${fullname}.whl-backup-files" ||:
+unzip -l "$whl_file" | grep -e '~$' -e '#$' > "dist/${fullname}.whl-backup-files" ||:
 if test -s "dist/${fullname}.whl-backup-files"; then
     cat "dist/${fullname}.whl-backup-files"
     exit 2
