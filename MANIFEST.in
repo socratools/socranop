@@ -5,3 +5,4 @@ prune .pytest_cache
 prune .tox
 recursive-include socranop/data *
 global-exclude *~
+global-exclude \#*\#
