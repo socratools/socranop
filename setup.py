@@ -48,6 +48,30 @@ git_ref = f"v{const.VERSION}"
 git_ref = "v0.4.92a2"
 git_ref = "main"
 
+try:
+    import pygit2
+    import urllib.request
+
+    # If we can find out the current git HEAD SHA...
+    repo = pygit2.Repository(Path(__file__).parent)
+    commit = repo.revparse_single("HEAD")
+    test_url = (
+        f"https://raw.githubusercontent.com/socratools/socranop/{commit.hex}/README.md"
+    )
+    # ...and if we can download the raw README.md for that git SHA
+    #    from github.com...
+    with urllib.request.urlopen(test_url) as response:
+        if response.getheader("Content-type") == "text/plain; charset=utf-8":
+            github_readme_text = response.read().decode("utf-8")
+            # ...and if the content from github.com matches the local
+            #    README.md...
+            if readme_text == github_readme_text:
+                # ...then use the git HEAD SHA to rewrite the links in
+                #    README.md for long_description
+                git_ref = commit.hex
+except Exception:
+    pass  # fall back onto the old value of git_ref
+
 base_url = "https://github.com/socratools/socranop/"
 blob_url = f"{base_url}blob/{git_ref}/"
 raw_url = f"{base_url}raw/{git_ref}/"

@@ -19,6 +19,7 @@ pipenv-setup = "*"
 pre-commit = "*"
 chardet = "*"
 twine = "*"
+pygit2 = "*"
 
 [pipenv]
 allow_prereleases = true
