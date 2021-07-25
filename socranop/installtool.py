@@ -954,9 +954,6 @@ class AppstreamInstallTool(ResourceInstallTool):
 class XDGDesktopInstallTool(ResourceInstallTool):
     """Deal with the XDG .desktop and PNG/SVG icon files"""
 
-    # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
-    #          must be run after all. Fedora Packaging docs suggest so.
-
     def __init__(self, dry_run):
         super(XDGDesktopInstallTool, self).__init__(
             dry_run=dry_run, heading="XDG application launcher"
