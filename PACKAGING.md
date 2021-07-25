@@ -48,14 +48,17 @@ for another Linux distribution.
 
     See [PERMISSIONS.md](PERMISSIONS.md) for more details.
 
-  * [optional] Remove the `${chroot}/usr/bin/socranop-installtool`
-    script file and from the `.../site-packages` directory remove the
-    `socranop/installtool.py` file and the `socranop/data` directory
-    tree (FIXME: Remove the complete data/ tree? Really?)
+  * [optional] Remove the files related to installtool:
+
+      * `${chroot}/usr/bin/socranop-installtool`
+      * `${chroot}/usr/share/bash-completion/completions/socranop-installtool`
+	  * `.../site-packages/socranop/installtool.py`
+	  * `.../site-packages/socranop/__pycache__/installtool.*.pyc`
+	  * `.../site-packages/socranop/data` directory tree
 
     Those files will not be needed in the distro package, as those
     files were only needed to install files into the `${chroot}` which
-    we have just done in the previous step.
+    we have just completed in the previous step.
 
     The uninstallation will be taken over by the package manager, so
     there is no need for running `socranop-installtool
