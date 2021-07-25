@@ -94,7 +94,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
     def chroot(self):
         return self._chroot
 
-    def __remove_chroot(self, path):
+    def remove_chroot(self, path):
         if self.chroot is None:
             return path
         else:
@@ -112,12 +112,12 @@ class AbstractDirs(metaclass=abc.ABCMeta):
     @property
     def guiExePath(self):
         """Full path to the gui script executable"""
-        return self.__remove_chroot(self.exePath.parent / const.BASE_EXE_GUI)
+        return self.remove_chroot(self.exePath.parent / const.BASE_EXE_GUI)
 
     @property
     def serviceExePath(self):
         """Full path to the service script executable"""
-        return self.__remove_chroot(self.exePath.parent / const.BASE_EXE_SERVICE)
+        return self.remove_chroot(self.exePath.parent / const.BASE_EXE_SERVICE)
 
     def __detect(self):
         """Detect whether the current installation matches this class.

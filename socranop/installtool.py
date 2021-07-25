@@ -770,12 +770,13 @@ class ManpageInstallTool(ResourceInstallTool):
 
     def __init__(self):
         super(ManpageInstallTool, self).__init__(heading="Man pages")
+        dirs = get_dirs()
         self.template_data = {
             "PACKAGE": const.PACKAGE,
             "VERSION": const.VERSION,
             "APPLICATION_ID": const.APPLICATION_ID,
-            "datadir": get_dirs().datadir,
-            "socranopdir": socranop.__path__[0],
+            "datadir": dirs.datadir,
+            "socranopdir": dirs.remove_chroot(Path(socranop.__path__[0])),
         }
         self.walk_resources("man")
 
