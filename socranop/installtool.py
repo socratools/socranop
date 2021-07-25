@@ -800,9 +800,6 @@ class ManpageInstallTool(ResourceInstallTool):
 class XDGDesktopInstallTool(ResourceInstallTool):
     """Subsystem dealing with the XDG desktop and icon files"""
 
-    # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
-    #          must be run after all. Fedora Packaging docs suggest so.
-
     def __init__(self):
         super(XDGDesktopInstallTool, self).__init__("XDG application launcher")
         self.walk_resources("xdg")
