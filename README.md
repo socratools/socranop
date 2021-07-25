@@ -39,6 +39,108 @@ that it's worth uninstalling the soundcraft-utils and doing a fresh install of
 socranop as outlined below.
 
 
+Usage
+-----
+
+### GUI
+
+The XDG desktop launcher should be installed by default, and most XDG-aware
+application launchers should allow launching via a beautiful technicolor icon
+alongside all your other favorite GUI applications.
+
+The GUI can also be started manually via:
+
+```bash
+socranop-gui
+```
+
+#### Usage Tips
+
+- Select the desired input using the up and down arrow keys or using the mouse
+- Apply the selection by clicking "Apply" (ALT+A)
+- Instead of applying the selection, clicking "Reset" (ALT+R) will set the
+  selection back to the current state of the mixer (if known)
+- See the "About socranop" dialog from the burger menu or app menu (CTRL+B)
+- Quit the socranop GUI by closing the window (or CTRL+Q)
+
+
+#### Screenshots
+
+![GUI Window](doc/img/gui-screenshot-notepad-12fx.png)
+![GUI Window with drop-down open](doc/img/gui-screenshot-notepad-12fx-with-dropdown.png)
+![GUI Window without device](doc/img/gui-screenshot-no-device-found.png)
+
+
+### CLI
+
+List possible channel routing choices:
+
+```bash
+socranop-ctl --list/-l
+```
+
+Set channel routing:
+
+```bash
+socranop-ctl --set/-s <number>
+```
+
+See `socranop-ctl --help` or `man socranop-ctl` for more details.
+
+#### Sample Output
+
+```
+[user@host ~]$ socranop-ctl --list
+Detected a Notepad-12FX (fw v1.09)
+-----------------------------
+capture_1 <- Mic/Line 1
+capture_2 <- Mic/Line 2
+-----------------------------
+             Mic/Line 3   [0]
+             Mic/Line 4
+             Stereo 5/6 L [1]
+             Stereo 5/6 R
+capture_3 <- Stereo 7/8 L [2]
+capture_4 <- Stereo 7/8 R
+             Mix L        [3]
+             Mix R
+-----------------------------
+[user@host ~]$ _
+[user@host ~]$ socranop-ctl --set 3
+Detected a Notepad-12FX (fw v1.09)
+-----------------------------
+capture_1 <- Mic/Line 1
+capture_2 <- Mic/Line 2
+-----------------------------
+             Mic/Line 3   [0]
+             Mic/Line 4
+             Stereo 5/6 L [1]
+             Stereo 5/6 R
+             Stereo 7/8 L [2]
+             Stereo 7/8 R
+capture_3 <- Mix L        [3]
+capture_4 <- Mix R
+-----------------------------
+[user@host ~]$ _
+```
+
+### D-Bus Service
+
+The D-Bus service runs on the user's session bus unprivileged, and relies on
+he proper udev device permissions to access the USB device to make changes.
+See [PERMISSIONS.md](PERMISSIONS.md) for a more in-depth discussion about the
+udev permission requirements, and alternative ways of granting the required
+privileges.
+
+You can access the D-Bus service directly if you like; see
+[contrib/dbus/access-dbus-service.sh](contrib/dbus/access-dbus-service.sh) for
+an example using busctl, but any D-Bus client can do it.
+
+Because both the GUI and CLI perform their operations via the D-Bus service,
+any changes made through any client are immediately visible to all other
+clients.
+
+
 Installation
 ------------
 
@@ -190,106 +292,6 @@ Distro-specific packages will not require the user to run
 `socranop-installtool` and should instead install everything
 system-wide with appropriate udev permissions.  See
 [PACKAGING.md](PACKAGING.md) for details.
-
-
-Usage
------
-
-### GUI
-
-The XDG desktop launcher should be installed by default, and most XDG-aware
-application launchers should allow launching via a beautiful technicolor icon
-alongside all your other favorite GUI applications.
-
-The GUI can also be started manually via:
-
-```bash
-socranop-gui
-```
-
-#### Usage Tips
-
-- Select the desired input using the up and down arrow keys or using the mouse
-- Apply the selection by clicking "Apply" (ALT+A)
-- Instead of applying the selection, clicking "Reset" (ALT+R) will set the
-  selection back to the current state of the mixer (if known)
-- See the "About socranop" dialog from the burger menu or app menu (CTRL+B)
-- Quit the socranop GUI by closing the window (or CTRL+Q)
-
-#### Screenshots
-
-![GUI Window](doc/img/gui-screenshot-notepad-12fx.png)
-![GUI Window with drop-down open](doc/img/gui-screenshot-notepad-12fx-with-dropdown.png)
-![GUI Window without device](doc/img/gui-screenshot-no-device-found.png)
-
-### CLI
-
-List possible channel routing choices:
-
-```bash
-socranop-ctl --list/-l
-```
-
-Set channel routing:
-
-```bash
-socranop-ctl --set/-s <number>
-```
-
-See `socranop-ctl --help` or `man socranop-ctl` for more details.
-
-#### Sample Output
-
-```
-[user@host ~]$ socranop-ctl --list
-Detected a Notepad-12FX (fw v1.09)
------------------------------
-capture_1 <- Mic/Line 1
-capture_2 <- Mic/Line 2
------------------------------
-             Mic/Line 3   [0]
-             Mic/Line 4
-             Stereo 5/6 L [1]
-             Stereo 5/6 R
-capture_3 <- Stereo 7/8 L [2]
-capture_4 <- Stereo 7/8 R
-             Mix L        [3]
-             Mix R
------------------------------
-[user@host ~]$ _
-[user@host ~]$ socranop-ctl --set 3
-Detected a Notepad-12FX (fw v1.09)
------------------------------
-capture_1 <- Mic/Line 1
-capture_2 <- Mic/Line 2
------------------------------
-             Mic/Line 3   [0]
-             Mic/Line 4
-             Stereo 5/6 L [1]
-             Stereo 5/6 R
-             Stereo 7/8 L [2]
-             Stereo 7/8 R
-capture_3 <- Mix L        [3]
-capture_4 <- Mix R
------------------------------
-[user@host ~]$ _
-```
-
-### D-Bus Service
-
-The D-Bus service runs on the user's session bus unprivileged, and relies on
-he proper udev device permissions to access the USB device to make changes.
-See [PERMISSIONS.md](PERMISSIONS.md) for a more in-depth discussion about the
-udev permission requirements, and alternative ways of granting the required
-privileges.
-
-You can access the D-Bus service directly if you like; see
-[contrib/dbus/access-dbus-service.sh](contrib/dbus/access-dbus-service.sh) for
-an example using busctl, but any D-Bus client can do it.
-
-Because both the GUI and CLI perform their operations via the D-Bus service,
-any changes made through any client are immediately visible to all other
-clients.
 
 
 Contact us
