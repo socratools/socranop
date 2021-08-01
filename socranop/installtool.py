@@ -861,7 +861,7 @@ class BashCompletionInstallTool(ResourceInstallTool):
             dry_run=dry_run, heading="Bash completion"
         )
 
-        # TODO: What about /usr/local?
+        # This works for /usr/local/share, /usr/share, ~/.local/share
         self.bc_dir = get_dirs().datadir / "bash-completion" / "completions"
 
         self.walk_resources("bash-completion")
