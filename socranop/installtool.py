@@ -754,7 +754,7 @@ class BashCompletionInstallTool(ResourceInstallTool):
     def __init__(self):
         super(BashCompletionInstallTool, self).__init__(heading="Bash completion")
 
-        # TODO: What about /usr/local?
+        # This works for /usr/local/share, /usr/share, ~/.local/share
         self.bc_dir = get_dirs().datadir / "bash-completion" / "completions"
 
         self.walk_resources("bash-completion")
@@ -799,9 +799,6 @@ class ManpageInstallTool(ResourceInstallTool):
 
 class XDGDesktopInstallTool(ResourceInstallTool):
     """Subsystem dealing with the XDG desktop and icon files"""
-
-    # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
-    #          must be run after all. Fedora Packaging docs suggest so.
 
     def __init__(self):
         super(XDGDesktopInstallTool, self).__init__("XDG application launcher")
