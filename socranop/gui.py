@@ -124,7 +124,7 @@ class Main(Gtk.ApplicationWindow):
         self.row = 0
         self.addHeading(self.dev.name)
         self.addSep()
-        for (targets, sources) in self.dev.fixedRouting:
+        for targets, sources in self.dev.fixedRouting:
             self.addRow(targets, sources)
             self.addSep()
         sourceData = Gtk.ListStore(str, str)
@@ -224,7 +224,7 @@ class Main(Gtk.ApplicationWindow):
         self.setActionsEnabled(False)
 
     def reset(self, button=None, *args, **kwargs):
-        for (i, source) in enumerate(self.dev.sources.items()):
+        for i, source in enumerate(self.dev.sources.items()):
             if self.dev.routingSource == source[0]:
                 self.sourceCombo.set_active(i)
         self.setActionsEnabled(False)
@@ -291,7 +291,6 @@ class App(Gtk.Application):
         return 0
 
     def do_command_line(self, command_line):
-
         # Caution: If you change the command line parser in any way,
         #          update the man pages and bash completions accordingly.
 
