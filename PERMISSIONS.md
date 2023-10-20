@@ -7,13 +7,13 @@ DESCRIPTION
 ===========
 
 The `socranop-session-service` D-Bus service and the `socranop-ctl
---dbus` CLI skipping the D-Bus service change the mixer audio routing
+--no-dbus` CLI skipping the D-Bus service change the mixer audio routing
 by opening and writing to the device special file corresponding to the
 mixer.
 
 By default, the device special file cannot be written by unpriviledged
 users and since the `socranop-session-service` D-Bus service and the
-`socranop-ctl --dbus` CLI run as an unpriviledged user, the device
+`socranop-ctl --no-dbus` CLI run as an unpriviledged user, the device
 special files's permission must be opened up to allow write access to
 `socranop-session-service`.
 
