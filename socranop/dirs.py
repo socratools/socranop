@@ -111,7 +111,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
 
     @property
     def guiExePath(self):
-        """Full path to the gui script executable"""
+        """Full path to the GUI script executable"""
         return self.remove_chroot(self.exePath.parent / const.BASE_EXE_GUI)
 
     @property

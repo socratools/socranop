@@ -1,0 +1,11 @@
+#!/bin/sh
+# Spellcheck the code comments
+#
+# This requires at least pylint and python-enchant to be installed.
+
+set -ex
+
+cd "$(dirname "$0")/../.."
+
+pylint --rcfile=.pylintrc --disable all --enable spelling setup.py socranop/*.py
+

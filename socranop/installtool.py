@@ -277,7 +277,7 @@ def findDataFiles(subdir):
 
 
 class AbstractFile(metaclass=abc.ABCMeta):
-    """Common behaviour for different types of files defined as Subclasses"""
+    """Common behavior for different types of files defined as subclasses"""
 
     def __init__(self, dst, comment=None):
         super(AbstractFile, self).__init__()
@@ -419,7 +419,7 @@ class TemplateFile(AbstractFile):
 
 
 class AbstractInstallTool(metaclass=abc.ABCMeta):
-    """Things common to subsystem installtools"""
+    """Things common to subsystem InstallTool classes"""
 
     def __init__(self, heading):
         self.heading = heading
@@ -618,7 +618,7 @@ class ResourceInstallTool(FileInstallTool):
 
     @abc.abstractmethod
     def add_resource(self, fullname):
-        """Examine src file and decide what to do about it
+        """Examine source file and decide what to do about it
 
         Examine the given source resource ``fullname`` and then
         decide whether to
@@ -942,7 +942,7 @@ done""",
 
 
 class InstallToolEverything(AbstractInstallTool):
-    """Groups all subsystem installtools"""
+    """Groups all subsystem InstallTool objects into one"""
 
     def __init__(self):
         super(InstallToolEverything, self).__init__(heading=None)

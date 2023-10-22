@@ -2,7 +2,7 @@
 #
 # As we are lazy in defining possibly redundant information, we have
 # put a lot of information into the socranop.constants module and
-# import that module both from this setup.py and whzen the actual
+# import that module both from this setup.py and when the actual
 # software package is running.
 #
 # If we were to use importlib.metadata, we could move from setup.py to
