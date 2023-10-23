@@ -43,7 +43,7 @@ probably best installed using operating system packages:
   the virtualenv will actually use the source files from this source
   directory.
 
-  If you are getting the black version subdependency problem on Debian
+  If you are getting the `black` version subdependency problem on Debian
   or Ubuntu, `pipenv lock --pre --clear` might help.
 
 `tools/link_system_libs`
