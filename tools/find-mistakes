@@ -17,6 +17,10 @@ patterns=()
 # I mistype socranop-installtool from time to time
 patterns['socranop(-|\\-)install(?!tool)']=
 
+# Make sure all references to former installtool options are gone
+patterns['(--|\\-\\-)post(-|\\-)install']=
+patterns['(--|\\-\\-)pre(-|\\-)uninstall']=
+
 # Not a mistake any more with Python >= 3.8
 # patterns['missing_ok']='*.py'
 # patterns['cached_property']='*.py'

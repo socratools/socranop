@@ -229,7 +229,7 @@ class VersionIncompatibilityError(DbusInitializationError):
 class DbusServiceSetupError(DbusInitializationError):
     def __init__(self):
         super().__init__(
-            f"No D-Bus service found for {const.BUSNAME}. Maybe run '{const.BASE_EXE_INSTALLTOOL} --post-install' to enable it?"
+            f"No D-Bus service found for {const.BUSNAME}. Maybe run '{const.BASE_EXE_INSTALLTOOL} post-pip-install' to enable it?"
         )
 
 

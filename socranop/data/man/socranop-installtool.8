@@ -1,0 +1,286 @@
+.\" ======================================================================
+.\"
+.\" The socranop-installtool(8) man page
+.\"
+.\" This man page has been (re)written adhering to the following
+.\" documentation: man(7), man-pages(7), tbl(1)
+.\"
+.\" ======================================================================
+.\"
+.TH "SOCRANOP\-INSTALLTOOL" "8" "2023\-11\-06" "${PACKAGE} ${VERSION}" "System administration commands"
+.\"
+.\" ======================================================================
+.\"
+.SH NAME
+socranop\-installtool - Hook socranop into the system post-install (or do the reverse)
+.\"
+.\" ======================================================================
+.\"
+.\" usage: socranop-installtool [-h] [--version] [-v] [-n] COMMAND ...
+.\"
+.\" Hook socranop into the system post-install (or do the reverse).
+.\"
+.\" options:
+.\"   -h, --help            show this help message and exit
+.\"   --version             show program's version number and exit
+.\"   -v, --verbose         Enable more verbose output, largely for debugging
+.\"   -n, --dry-run         Do not actually do anything, just show what would be
+.\"                         done.
+.\"
+.\" Commands:
+.\"   What kind of installation related action to perform.
+.\"
+.\"   COMMAND
+.\"     post-pip-install    install and setup after 'pip install socranop'
+.\"     pre-pip-uninstall   uninstall and undo setup before a 'pip uninstall
+.\"                         socranop'
+.\"     package-build-install
+.\"                         while building a socranop package, run in the install
+.\"                         step
+.\"
+.\" usage: socranop-installtool post-pip-install [-h] [--no-launch]
+.\"                                              [--sudo-script FILENAME]
+.\"
+.\" options:
+.\"   -h, --help            show this help message and exit
+.\"   --no-launch           when installing, do not test launching the service
+.\"   --sudo-script FILENAME
+.\"                         write the script of sudo commands to the given
+.\"                         FILENAME
+.\"
+.\" usage: socranop-installtool pre-pip-uninstall [-h] [--sudo-script FILENAME]
+.\"
+.\" options:
+.\"   -h, --help            show this help message and exit
+.\"   --sudo-script FILENAME
+.\"                         write the script of sudo commands to the given
+.\"                         FILENAME
+.\"
+.\" usage: socranop-installtool package-build-install [-h] --chroot CHROOT
+.\"
+.\" options:
+.\"   -h, --help       show this help message and exit
+.\"   --chroot CHROOT  package build root chroot directory
+.\"
+.\"
+.\" ======================================================================
+.\"
+.SH SYNOPSIS
+.B socranop\-installtool
+.RB (\| \-\-help \|| \-\-version \|)
+.br
+.B socranop\-installtool
+.RB [\| \-v \|]
+.RB [\| \-n \|]
+.I COMMAND
+.RI [\| cmd-options... \|]
+.\" .br
+.\" .B socranop\-installtool
+.\" .RB [\| \-v \|]
+.\" .RB [\| \-n \|]
+.\" .B package\-build\-install
+.\" .BI \-\-chroot\  CHROOT
+.\" .br
+.\" .B socranop\-installtool
+.\" .RB [\| \-v \|]
+.\" .RB [\| \-n \|]
+.\" .B post\-pip\-install
+.\" .RB [\| \-\-no-launch \|]
+.\" .RB [\| \-\-sudo\-script\  \fIFILENAME\fR \|]
+.\" .br
+.\" .B socranop\-installtool
+.\" .RB [\| \-v \|]
+.\" .RB [\| \-n \|]
+.\" .B pre\-pip\-uninstall
+.\" .RB [\| \-\-sudo\-script\  \fIFILENAME\fR \|]
+.\"
+.\" ======================================================================
+.\"
+.SH DESCRIPTION
+.PP
+Help with the steps of the socranop installation and setup which pip, pipenv, etc. do not handle, and also with reversing those steps.
+.PP
+Integrating socranop with the operating system requires installing configuration and resource files into well-known system directories where system services will notice them.
+
+Unfortunately, the stock Python packaging infrastructure (both classic setuptools and new PEP518) has between no and limited support for that.
+\fIsocranop\-installtool\fR installing configuration and resource files into well-known system directories where they can configure system services to integrate a python application like socranop with the system.
+.RS 4
+.IP \[bu] 3
+Check library dependencies upon installation:
+GObject introspection (gi) with GLib, Gtk 3.0, Gio, GUdev 1.0 and related libraries, pydbus, usb.core
+.IP \[bu]
+bash completion files for for all executables
+.IP \[bu]
+D-Bus session service \fI.service\fR file
+.IP \[bu]
+man pages for all executables
+.IP \[bu]
+XDG \fI.desktop\fR file and icon files (PNG and SVG)
+.IP \[bu]
+udev rules allowing unprivileged users access to the Notepad mixer devices
+.RE
+.PP
+For \fIsocranop\-installtool\fR, there are two types of configuration and resource files:
+.TP
+Files installed verbatim (partial support by setuptools)
+We need to install Bash completion files and XDG icon files unchanged, into locations inside the data directory (\fI$${prefix}/share\fR or \fI${datadir}\fR).
+
+The \fBsetuptools\fR support for installing data files does not work for editable development installs.
+.TP
+Files needing adaptation (zero support by setuptools)
+Some configuration and resource files need some adaptation (D-Bus \fB.service\fR file: installation path, man pages: installation path and package version, XDG \fB.desktop\fR file: installation path).
+\fBsetuptools\fR does not help there at all.
+.PP
+After installing or uninstalling files, there might be tasks left which require running some commands. \fIsocranop\-installtool\fR will print those commands so the user can review them.
+.\"
+.PP
+The three scenarios where \fIsocranop\-installtool\fR needs to run are implemented by one \fIsocranop\-installtool\fR \fICOMMAND\fR each.
+.\"
+.\"
+.SS \fIsocranop\-installtool post\-pip\-install\fR command
+.\"
+After running \fIpip install socranop\fR or \fIpip install \-e .\fR or \fIpipenv install \-\-dev\fR, call \fIsocranop\-installtool post\-pip\-install\fR.
+This completes the installation and the system setup, and also checks that the required libraries are available and the socranop D-Bus session service runs.
+
+If \fI\-\-sudo\-script\fR is not given, prints the sudo script to stdout as information for the calling user. This gives the user the opportunity to review the suggested steps and determine which ones to perform by themselves and how.
+.\"
+.\"
+.SS \fIsocranop\-installtool pre\-pip\-uninstall\fR command
+.\"
+Call \fIsocranop\-installtool pre\-pip\-install\fR before a \fIpip uninstall socranop\fR to prepare for uninstalling and cleaning the system setup from \fBsocranop\fR.
+
+If \fI\-\-sudo\-script\fR is not given, prints the sudo script to stdout as information for the calling user. This gives the user the opportunity to review the suggested steps and determine which ones to perform by themselves and how.
+.\"
+.\"
+.SS \fIsocranop\-installtool package\-build\-install\fR command
+Call \fIsocranop\-installtool package\-build\-install\fR from your package build script when you are \fIbuilding\fR an OS binary package like \fI*.rpm\fR, \fI*.deb\fR, AUR \fI*.tar.zstd\fR, etc.
+
+This installs the configuration and resource files into the \fICHROOT\fR, prints some commands to \fIstdout\fR so that the packager can decide whether and where to write package hook scripts running those commands (e.g. \fIudevadm trigger\fR for ONLY the Notepad devices), and finally removes \fIsocranop\-installtool\fR related files  from the \fICHROOT\fR.
+
+As uninstalling an OS package is handled by the package manager (\fIdnf\fR/\fIrpm\fR, \fIapt\fR/\fIdpkg\fR, \fIpacman\fR, etc.), \fIsocranop\-installtool\fR only needs to care about installing, not about uninstalling. However, the packager may want to put some of the command suggestions printed by \fIsocranop\-installtool package\-build\-install\fR into some uninstall hook scripts.
+.\"
+.\"
+.\" ======================================================================
+.\"
+.SH OPTIONS
+There are some common options before the \fICOMMAND\fR, and some command specific options after the \fICOMMAND\fR.
+.SS Common options
+.TP
+.BR \-h\| |\| \-\-help
+Show a help message and exit.
+.TP
+.B \-\-version
+Show program's version number and exit.
+.TP
+.RB [\| \-n\| |\| \-\-dry\-run\| ]\|
+Do not actually change anything on the system. Only show what \fIwould\fR be done.
+.TP
+.RB [\| \-v\| |\| \-\-verbose\| ]\|
+Make the \fIsocranop\-installtool\fR output more verbose. This is mostly useful for debugging.
+.\"
+.SS Options for \fIpost\-pip\-install\fR command
+.TP
+.B \-\-no\-launch
+Do not launch the D-Bus service after installation.
+.TP
+.BI \-\-sudo\-script\  SUDO_SCRIPT
+If there are privileged operations to perform like writing files to special places or calling commands to tell the system about changes, write those operations into a shell script called \fISUDO_SCRIPT\fR. This gives the user the opportunity to review \fISUDO_SCRIPT_FILENAME\fR before deciding to run
+.B sudo sh SUDO_SCRIPT
+to execute those privileged operations.
+.\"
+.\"
+.SS Options for \fIpre\-pip\-uninstall\fR command
+.TP
+.BI \-\-sudo\-script\  SUDO_SCRIPT
+If there are privileged operations to perform like removing files from special places or calling commands to tell the system about changes, write those operations into a shell script called \fISUDO_SCRIPT\fR. This gives the user the opportunity to review \fISUDO_SCRIPT\fR before deciding to run
+
+.B sudo sh SUDO_SCRIPT
+
+to execute those privileged operations after the \fIpip uninstall socranop\fR has finished.
+.\"
+.\"
+.SS Options for \fIpackage\-build\-install\fR command
+.TP
+.BI \-\-chroot\  CHROOT
+Give the package's build chroot \fICHROOT\fR to install to (required argument).
+.\"
+.\" ======================================================================
+.\"
+.SH "EXIT STATUS"
+0 if successfull, non-0 otherwise.
+.\"
+.\" ======================================================================
+.\"
+.\" .SH ENVIRONMENT
+.\"
+.\" .SH FILES
+.\"
+.\" .SH HISTORY
+.\"
+.\" .SH NOTES
+.\"
+.\" .SH CAVEATS
+.\"
+.\" .SH BUGS
+.\"
+.\" ======================================================================
+.\"
+.SH EXAMPLES
+.PP
+Install socranop from a git clone for development using pipenv:
+
+    \fBpipenv install \-\-dev\fR
+    \fBtools/link_system_libs\fR
+    \fBpipenv shell\fR
+    \fBsocranop\-installtool post\-pip\-install\fR
+    \|# read the output and manually execute the needed commands
+
+Uninstall socranop git clone for development using pipenv:
+
+    \fBpipenv \-\-rm\fR
+
+Install socranop from a git clone for development using pip:
+
+    \fBpip install --user -e .\fR
+    \fBsocranop\-installtool post\-pip\-install\fR
+    \|# read the output and manually execute the needed commands
+
+Uninstall socranop from git clone for development using pip:
+
+    \fBsocranop\-installtool pre\-pip\-uninstall\fR
+    \fBpip uninstall socranop\fR
+    \|# read the socranop-installtool output and manually execute the needed commands
+
+
+.\"
+.\" ======================================================================
+.\"
+.SH "REPORTING BUGS"
+.UR https://github.com/socratools/socranop/issues
+.UE
+.\"
+.\"
+.\" ======================================================================
+.\"
+.SH "SEE ALSO"
+.MR socranop\-ctl 1 ,
+.MR socranop\-gui 1 ,
+.MR socranop\-session\-service 1 ,
+.MR socranop\-permissions 7 ,
+.UR https://github.com/socratools/socranop
+.UE
+.UR https://peps.python.org/pep-0518/
+.UE
+.UR https://pip.pypa.io/
+.UE
+.UR https://pipenv.pypa.io/
+.UE
+.UR https://setuptools.pypa.io/
+.UE
+.\"
+.\" ======================================================================
+.\"
+.\" THE END (of this man page).
+.\"
+.\" ======================================================================
+.\"

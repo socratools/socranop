@@ -37,11 +37,8 @@ set -ex
 
 cd "$abs_topdir"
 
-if grep SUDO_SCRIPT socranop/installtool.py
-then
-    sudo_script_post_install_arg="--sudo-script=sudo-script-post-install.sh"
-    sudo_script_pre_uninstall_arg="--sudo-script=sudo-script-pre_uninstall.sh"
-fi
+sudo_script_post_install_arg="--sudo-script=sudo-script-post-pip-install.sh"
+sudo_script_pre_uninstall_arg="--sudo-script=sudo-script-pre-pip-uninstall.sh"
 
 sudo rm -f  "/usr/local/bin"/socranop-* "/usr/local/share/dbus-1/services"/socranop*
 sudo rm -rf "/usr/local/lib"/python*/{dist,site}-packages/socranop*
@@ -62,8 +59,8 @@ test_install_pipenv() {
     rm -rf "$virtual_env"/lib/python*/{dist,site}-packages/socranop*
     pipenv install -e .
     ./tools/link_system_libs
-    pipenv run "$virtual_env/bin/socranop-installtool" $sudo_script_post_install_arg --post-install
-    cat sudo-script-post-install.sh
+    pipenv run "$virtual_env/bin/socranop-installtool" post-pip-install $sudo_script_post_install_arg
+    cat sudo-script-post-pip-install.sh
     pipenv run "$virtual_env/bin/socranop-ctl" --list
     pipenv run "$virtual_env/bin/socranop-ctl" --set 0
     pipenv run "$virtual_env/bin/socranop-ctl" --list
@@ -72,14 +69,14 @@ test_install_pipenv() {
     pipenv run "$virtual_env/bin/socranop-ctl" --set 2
     pipenv run "$virtual_env/bin/socranop-ctl" --list
     pipenv run "$virtual_env/bin/socranop-ctl" --set 3
-    pipenv run "$virtual_env/bin/socranop-installtool" $sudo_script_pre_uninstall_arg --pre-uninstall
-    cat sudo-script-pre-uninstall.sh
+    pipenv run "$virtual_env/bin/socranop-installtool" pre-pip-uninstall $sudo_script_pre_uninstall_arg
+    cat sudo-script-pre-pip-uninstall.sh
 }
 
 test_install_home() {
     pip install --user "$wheel"
-    socranop-installtool $sudo_script_post_install_arg --post-install
-    if [ -f sudo-script-post-install.sh ]; then cat sudo-script-post-install.sh; fi
+    socranop-installtool post-pip-install $sudo_script_post_install_arg
+    if [ -f sudo-script-post-pip-install.sh ]; then cat sudo-script-post-pip-install.sh; fi
     socranop-ctl --list
     socranop-ctl --set 0
     socranop-ctl --list
@@ -88,8 +85,8 @@ test_install_home() {
     socranop-ctl --set 2
     socranop-ctl --list
     socranop-ctl --set 3
-    socranop-installtool $sudo_script_pre_uninstall_arg --pre-uninstall
-    if [ -f sudo-script-pre-uninstall.sh ]; then cat sudo-script-pre-uninstall.sh; fi
+    socranop-installtool pre-pip-uninstall $sudo_script_pre_uninstall_arg
+    if [ -f sudo-script-pre-pip-uninstall.sh ]; then cat sudo-script-pre-pip-uninstall.sh; fi
     pip --verbose uninstall --yes socranop
 }
 
@@ -105,7 +102,7 @@ test_sudo_usr_local() {
     site_packages="$(ls -1d "$prefix"/lib/python*/{dist,site}-packages | head -n1)"
     PYTHONPATH="$site_packages"
     export PYTHONPATH
-    sudo "$bindir/socranop-installtool" --post-install
+    sudo "$bindir/socranop-installtool" post-pip-install
     socranop-ctl --list
     socranop-ctl --set 0
     socranop-ctl --list
@@ -114,7 +111,7 @@ test_sudo_usr_local() {
     socranop-ctl --set 2
     socranop-ctl --list
     socranop-ctl --set 3
-    sudo "$bindir/socranop-installtool" --pre-uninstall
+    sudo "$bindir/socranop-installtool" pre-pip-uninstall
     sudo pip --verbose uninstall --yes socranop
 
     PATH="$saved_PATH"
@@ -137,7 +134,7 @@ test_chroot_usr() {
     site_packages="$(ls -1d "$chroot$prefix"/lib/python*/{dist,site}-packages | head -n1)"
     PYTHONPATH="$site_packages"
     export PYTHONPATH
-    "$chroot$bindir/socranop-installtool" --chroot="$chroot" --post-install
+    "$chroot$bindir/socranop-installtool" package-build-install --chroot="$chroot"
     # socranop-ctl --list
     # socranop-ctl --set 0
     # socranop-ctl --list
@@ -146,8 +143,6 @@ test_chroot_usr() {
     # socranop-ctl --set 2
     # socranop-ctl --list
     # socranop-ctl --set 3
-    "$chroot$bindir/socranop-installtool" --chroot="$chroot" --pre-uninstall
-    # pip --verbose uninstall --yes socranop
     rm -rf "$chroot"
 
     PATH="$saved_PATH"
@@ -163,9 +158,6 @@ wheel="$(ls -1 dist/socranop-*.whl | head -n1)"
 
 test_install_home
 
-if grep '[-]-chroot' socranop/installtool.py
-then
-    test_chroot_usr
-fi
+test_chroot_usr
 
 test_sudo_usr_local
