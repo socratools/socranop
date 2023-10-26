@@ -6,59 +6,127 @@ _socranop_installtool()
     # $2 is the word being completed
     # $3 is the preceding word
     local i word
-    local ALL_OPTIONS REMAINING_OPTIONS
+    local REMAINING_OPTIONS
     declare -A REMAINING_OPTIONS
 
-    ALL_OPTIONS=(-h --help --version -v --verbose --post-install --pre-uninstall --no-launch --chroot --sudo-script)
-
-    case "$3" in
-	# socranop-installtool | */socranop-installtool)
-	#     COMPREPLY=($(compgen -W "${ALL_OPTIONS[*]}" -- "$2"))
-	#     return 0
-	#     ;;
-	--chroot)
-	    COMPREPLY=($(compgen -A directory -- "$2"))
-	    return 0
-	    ;;
-	--sudo-script)
-	    COMPREPLY=($(compgen -A file -- "$2"))
-	    return 0
-	    ;;
-    esac
-
-    for word in "${ALL_OPTIONS[@]}"
+    local subcommand
+    subcommand=""
+    for word in "${COMP_WORDS[@]}"
     do
-	REMAINING_OPTIONS["$word"]=moo
+	case "$word" in
+	    package-build-install)
+		subcommand="$word"
+		REMAINING_OPTIONS=()
+		for word in --chroot -h --help
+		do
+		    REMAINING_OPTIONS["$word"]=t
+		done
+		break
+		;;
+	    post-pip-install | pre-pip-uninstall)
+		subcommand="$word"
+		REMAINING_OPTIONS=()
+		for word in -h --help --no-launch --sudo-script
+		do
+		    REMAINING_OPTIONS["$word"]=t
+		done
+		break
+		;;
+	    esac
     done
 
-    for i in $(seq 0 "$(( $COMP_CWORD - 1 ))")
+    case "$subcommand" in
+        package-build-install)
+	    case "$3" in
+		--chroot)
+		    COMPREPLY=($(compgen -A directory -- "$2"))
+		    return 0
+		    ;;
+		-h | --help)
+                    COMPREPLY=()
+                    return 0
+                    ;;
+	    esac
+	    for (( i=0; i < COMP_CWORD; i++ ))
+	    do
+		word="${COMP_WORDS[$i]}"
+		case "$word" in
+		    -h | --help)
+			COMPREPLY=()
+			return 0
+			;;
+		    --chroot)
+			unset REMAINING_OPTIONS["--chroot"]
+			;;
+		    *)
+			unset REMAINING_OPTIONS["$word"]
+			;;
+		esac
+	    done
+	    COMPREPLY=($(compgen -W "${!REMAINING_OPTIONS[*]}" -- "$2"))
+	    return 0
+            ;;
+        post-pip-install | pre-pip-uninstall)
+	    case "$3" in
+		-h | --help)
+                    COMPREPLY=()
+                    return 0
+                    ;;
+		--sudo-script)
+		    COMPREPLY=($(compgen -A file -- "$2"))
+		    return 0
+		    ;;
+	    esac
+	    for (( i=0; i < COMP_CWORD; i++ ))
+	    do
+		word="${COMP_WORDS[$i]}"
+		case "$word" in
+		    -h | --help)
+			COMPREPLY=()
+			return 0
+			;;
+		    --no-launch)
+			unset REMAINING_OPTIONS["--no-launch"]
+			;;
+		    --sudo-script)
+			unset REMAINING_OPTIONS["--sudo-script"]
+			;;
+		    *)
+			unset REMAINING_OPTIONS["$word"]
+			;;
+		esac
+	    done
+	    COMPREPLY=($(compgen -W "${!REMAINING_OPTIONS[*]}" -- "$2"))
+	    return 0
+            ;;
+    esac
+
+    REMAINING_OPTIONS=()
+    for word in -h --help --version -v --verbose -n --dry-run package-build-install post-pip-install pre-pip-uninstall
     do
-	word="${COMP_WORDS[$i]}"
-	case "$word" in
-	    -h | --help | --version)
-		COMPREPLY=()
-		return 0
-		;;
-	    -v | --verbose)
-		unset REMAINING_OPTIONS["-v"]
-		unset REMAINING_OPTIONS["--verbose"]
-		;;
-	    --post-install)
-		unset REMAINING_OPTIONS["$word"]
-		unset REMAINING_OPTIONS["--pre-uninstall"]
-		;;
-	    --pre-uninstall)
-		unset REMAINING_OPTIONS["$word"]
-		unset REMAINING_OPTIONS["--post-install"]
-		;;
-	    --chroot)
-		unset REMAINING_OPTIONS["$word"]
-		unset REMAINING_OPTIONS["--no-launch"]
-		;;
-	    *)
-		unset REMAINING_OPTIONS["$word"]
-		;;
-	esac
+        REMAINING_OPTIONS["$word"]=t
+    done
+
+    for (( i=0; i < COMP_CWORD; i++ ))
+    do
+        word="${COMP_WORDS[$i]}"
+        case "$word" in
+            -h | --help | --version)
+                COMPREPLY=()
+                return 0
+                ;;
+            -v | --verbose)
+                unset REMAINING_OPTIONS["-v"]
+                unset REMAINING_OPTIONS["--verbose"]
+                ;;
+            -n | --dry-run)
+                unset REMAINING_OPTIONS["-n"]
+                unset REMAINING_OPTIONS["--dry-run"]
+                ;;
+            *)
+                unset REMAINING_OPTIONS["$word"]
+                ;;
+        esac
     done
 
     COMPREPLY=($(compgen -W "${!REMAINING_OPTIONS[*]}" -- "$2"))

@@ -54,14 +54,16 @@ systems in a few ways. This means that the Python code itself is very
 well handled by Python's default installation methods, but the
 interface to the Linux system is not.
 
-Therefore, at this time, the `socranop-installtool` utility must be called
-in addition to the normal Python tools for installing (`--post-install`)
-and uninstalling (`--pre-uninstall`) the files which hook
-`socranop` up with Linux system components like the D-Bus
-session bus and the XDG Desktop files and specification for
-integration into the desktop environment's list of applications. If
-you are running `socranop` from a distribution package, the
-distro package should do that for you.
+Therefore, at this time, the `socranop-installtool` utility must be
+called in addition to the normal Python tools for installing
+(`socranop-installtool post-pip-install`) and uninstalling
+(`socranop-installtool pre-pip-uninstall`) the files which hook
+`socranop` up with Linux system components like the D-Bus session bus
+and the XDG Desktop files and specification for integration into the
+desktop environment's list of applications.
+
+If you are installing `socranop` from a distribution package, that
+distribution package should do all that for you.
 
 For the D-bus and XDG Desktop interface, `socranop` supports the
 following three installation locations:
@@ -80,12 +82,13 @@ following three installation locations:
     The location probably used for user-local installations from pypi
     or github sources.
 
-In all three cases, the `udev` rules to set the USB device permissions for the
-user need to be installed as well. Again, distro packages should already have
-done that for you, but if you're installing via pip this step needs to be done
-as root.  The `socranop-installtool` will generate the script for you but will
-not automatically run it - This allows you to inspect the script first to make
-sure it's only doing what you intend.
+In all three cases, the `udev` rules to set the USB device permissions
+for the user need to be installed as well.  Again, a distro package
+should already have done that for you, but if you are installing via
+`pip`, this step needs to be done as root.  The `socranop-installtool`
+will generate for you a script with the commands to run as root.  This
+allows you to inspect the script first to make sure it only does
+things you approve of.
 
 ### Prerequisites
 
@@ -121,12 +124,13 @@ sudo dnf install python3-dbus python3-pyusb
 
 ### Installation and Configuration
 
-The installation may be done as root to install system-wide, or as a normal
-user to install in ~/.local.  Regardless of how it's installed,
-`socranop-installtool --post-install` needs to be run to configure the D-Bus
-service, XDG desktop entry, man pages, etc.  However, it can only do part of
-the work on its own and relies on a manual invocation of a script as root to
-finish setting up the UDEV rules.
+The installation may be done as root to install system-wide, or as a
+normal user to install in `~/.local`.  Regardless of how it's
+installed, `socranop-installtool post-pip-install` needs to be run to
+configure the D-Bus service, XDG desktop entry, man pages, etc.
+However, it can only do part of the work on its own and relies on a
+manual invocation of a script as root to finish setting up the UDEV
+rules.
 
 See [PERMISSIONS.md](PERMISSIONS.md) for a more in-depth discussion about the
 udev permission requirements, and alternative ways of granting the required
@@ -136,7 +140,7 @@ privileges.
 
 ```bash
 pip install socranop
-socranop-installtool --post-install --sudo-script ./socranop-sudo.sh
+socranop-installtool post-pip-install --sudo-script ./socranop-sudo.sh
 # Inspect ./socranop-sudo.sh to make sure it's safe to run as root
 sudo ./socranop-sudo.sh
 rm ./socranop-sudo.sh
@@ -145,7 +149,7 @@ rm ./socranop-sudo.sh
 ### Upgrading
 
 Simply update your package from pip, and rerun `socranop-installtool
---post-install` to ensure the D-Bus service, XDG desktop entry, man pages, etc.
+post-pip-install` to ensure the D-Bus service, XDG desktop entry, man pages, etc.
 are upgraded to the latest version.
 
 It is not normally required to update the udev rules after an upgrade, but if
@@ -156,20 +160,20 @@ will guide you through.
 
 ```bash
 pip install -U socranop
-socranop-installtool --post-install
+socranop-installtool post-pip-install
 ```
 
 ### Uninstallation
 
-`socranop-installtool` can take care of undoing what it did in `--post-install`
-via the `--pre-uninstall` flag, removing the D-Bus, XDG desktop entry, man
+`socranop-installtool` can take care of undoing what it did in `post-pip-install`
+via the `pre-pip-uninstall` command, removing the D-Bus, XDG desktop entry, man
 pages, etc.  Any actions that would need to be taken by root, such as removing
 the udev rules, are again placed in a script that needs to be run manually.
 
 #### Example
 
 ```bash
-socranop-installtool --pre-uninstall --sudo-script ./socranop-sudo.sh
+socranop-installtool pre-pip-uninstall --sudo-script ./socranop-sudo.sh
 # Inspect ./socranop-sudo.sh to make sure it's safe to run as root
 sudo ./socranop-sudo.sh
 rm ./socranop-sudo.sh
@@ -182,9 +186,10 @@ The previous version of this software, called `soundcraft-utils` had Arch Linux
 and NixOS packages.  These will have to be re-done with the rename to
 `socranop`.
 
-Distro-specific packages will not require running `socranop-installtool` and
-should instead install everything system-wide with appropriate udev
-permissions.  See [PACKAGING.md](PACKAGING.md) for details.
+Distro-specific packages will not require the user to run
+`socranop-installtool` and should instead install everything
+system-wide with appropriate udev permissions.  See
+[PACKAGING.md](PACKAGING.md) for details.
 
 
 Usage

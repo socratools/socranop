@@ -1,8 +1,9 @@
 # socranop/installtool.py - post-install and pre-uninstall commands
 #
-# Implements post-install (install config files after having installed
-# a wheel), and pre-uninstall (uninstall config files before
-# uninstalling a wheel).
+# Implements post-pip-install (install config files after having
+# installed a wheel), and pre-pip-uninstall (uninstall config files
+# before uninstalling a wheel), and package-build-install (the for
+# install part of building a package).
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
@@ -31,18 +32,13 @@ import argparse
 import base64
 import functools
 import importlib
+import importlib.resources
 import io
 import re
 import sys
 import time
 
 from pathlib import Path
-from pkg_resources import (
-    resource_isdir,
-    resource_string,
-    resource_stream,
-    resource_listdir,
-)
 from string import Template
 
 
@@ -229,8 +225,11 @@ class SudoScript:
         else:
             file.write("\n# No commands to run.\n")
 
-    def finalize(self, sudo_script):
+    def finalize(self, sudo_script, dry_run):
         if (sudo_script is None) or (sudo_script in ["", "-"]):
+            sudo_script_file = io.StringIO()
+        elif dry_run:
+            print(f"would write sudo script to {sudo_script}")
             sudo_script_file = io.StringIO()
         else:
             sudo_script_file = open(sudo_script, "w")
@@ -240,6 +239,7 @@ class SudoScript:
         self.write(sudo_script_file)
 
         print()
+        # TODO: Could be worded more nicely with dry_run==True
         if not self.needs_to_run():
             print("No commands left over to run with sudo. Good.")
         elif isinstance(sudo_script_file, io.StringIO):
@@ -255,7 +255,7 @@ class SudoScript:
             print("-" * 72)
             sys.stdout.write(p.read_text())
             print("-" * 72)
-            print("Suggested command:", "sudo", p.absolute())
+            print("Suggested command:", "sudo", "sh", p.absolute())
 
 
 SUDO_SCRIPT = SudoScript()
@@ -304,26 +304,40 @@ class AbstractFile(metaclass=abc.ABCMeta):
         """Return shell command for the sudo script"""
         pass  # AbstractFile.shell_install()
 
-    def _install(self):
+    def install(self, dry_run):
         """Install this file (either directly from python or via sudo script)"""
-        print_step("inst", self.dst)
+        if dry_run:
+            print_step("would inst", self.dst)
+            return
+
         try:
+            print_step("inst", self.dst)
             self.chroot_dst.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
             self.direct_install()
             self.chroot_dst.chmod(mode=0o0644)
         except PermissionError:
+            print_step("sudo inst", self.dst)
             SUDO_SCRIPT.add_cmd(self.shell_install(), comment=self.comment)
 
-    def _uninstall(self):
+    def uninstall(self, dry_run):
         """Uninstall this file (either directly from python or via sudo script)
 
         Like many other install/uninstall tools, we just remove the
         file and leave the directory tree around.
         """
-        print_step("rm", self.dst)
+        if dry_run:
+            print_step("would rm", self.dst)
+            return
+
+        if not self.chroot_dst.exists():
+            print_step("--", self.dst)
+            return
+
         try:
+            print_step("rm", self.dst)
             self.chroot_dst.unlink(missing_ok=True)
         except PermissionError:
+            print_step("sudo rm", self.dst)
             SUDO_SCRIPT.add_cmd(f"rm -f {self.dst}", comment=self.comment)
 
 
@@ -333,23 +347,21 @@ RESOURCE_MODULE = "socranop"
 class ResourceFile(AbstractFile):
     """This destination file is written from a pkg_resource resource"""
 
-    def __init__(self, dst, resource_name, comment=None):
+    def __init__(self, dst, resource_entry, comment=None):
         super(ResourceFile, self).__init__(dst, comment=comment)
-        self.resource_name = resource_name
+        self.resource_entry = resource_entry
 
     def __str__(self):
-        return f"{self.__class__.__name__}:{self.dst}:resource({self.resource_name})"
+        return f"{self.__class__.__name__}:{self.dst}:resource({self.resource_entry})"
 
     def direct_install(self):
-        self.chroot_dst.write_bytes(
-            resource_string(RESOURCE_MODULE, self.resource_name)
-        )
+        self.chroot_dst.write_bytes(self.resource_entry.read_bytes())
 
     def shell_install(self):
         first_line = f"base64>{self.dst}<<EOF\n"
         bio = io.BytesIO()
-        res_stream = resource_stream(RESOURCE_MODULE, self.resource_name)
-        base64.encode(res_stream, bio).decode("ascii")
+        res_bytes = self.resource_entry.read_binary()
+        bio.write(base64.encodebytes(res_bytes))
         last_line = "EOF\n"
         return f"{first_line}{bio.getvalue()}{last_line}"
 
@@ -373,24 +385,75 @@ class StringToFile(AbstractFile):
         return "\n".join(lines)
 
 
+class FilesToDelete:
+    """Collect all files related to the install tool.
+
+    Collecting a list of all files related to the install tool helps
+    when building a binary OS package (*.rpm, *.deb, etc.), allowing
+    to easily remove those files after use at package build time and
+    before before shipping the files in the package.
+    """
+
+    def __init__(self):
+        self.files = set()
+
+    @property
+    def chroot(self):
+        return get_dirs().chroot
+
+    def add(self, fpath: Path):
+        abs_name = fpath.absolute()
+        if self.chroot is None:
+            return
+        # print("self.chroot", self.chroot)
+        if not abs_name.is_relative_to(self.chroot):
+            return
+        self.files.add(abs_name)
+
+    def remove_all(self):
+        if not self.chroot:
+            return
+        if self.chroot.samefile("/"):
+            return
+        print()
+        print(f"Removing all installed files related to {const.BASE_EXE_INSTALLTOOL}:")
+
+        for e in sorted(list(self.files), reverse=True):
+            if e.is_dir():
+                print(f"  rmdir {e!s}")
+                e.rmdir()
+            else:
+                print(f"  rm    {e!s}")
+                e.unlink()
+
+        print(
+            f"All installed files related to {const.BASE_EXE_INSTALLTOOL} have been removed."
+        )
+
+
+global files_to_delete
+files_to_delete = None
+
+
 class TemplateFile(AbstractFile):
+
     """This destination file is a source file after string template processing"""
 
-    def __init__(self, dst, resource_name, template_data=None, comment=None):
+    def __init__(self, dst, resource_entry, template_data=None, comment=None):
         super(TemplateFile, self).__init__(dst, comment=comment)
 
         if template_data is None:
             template_data = {}
 
-        src_template = Template(
-            resource_string(RESOURCE_MODULE, resource_name).decode("utf-8")
-        )
+        src_template = Template(resource_entry.read_text(encoding="utf-8"))
         self.content = src_template.substitute(template_data)
 
-        self.__resource_name = resource_name
+        self.__resource_entry = resource_entry
 
     def __str__(self):
-        return f"{self.__class__.__name__}:{self.dst}:resource({self.__resource_name})"
+        return (
+            f"{self.__class__.__name__}:{self.dst}:resource({self.__resource_entry!s})"
+        )
 
     def direct_install(self):
         self.chroot_dst.write_text(self.content)
@@ -406,43 +469,64 @@ class TemplateFile(AbstractFile):
 class AbstractInstallTool(metaclass=abc.ABCMeta):
     """Things common to subsystem InstallTool classes"""
 
-    def __init__(self, heading):
-        self.heading = heading
+    def __init__(self, dry_run, heading):
+        self.__dry_run = dry_run
+        self.__heading = heading
 
     def _print_heading(self, reason):
-        if self.heading is not None:
-            print(f"{self.heading}: {reason}")
+        if self.__heading is not None:
+            print(f"{self.__heading}: {reason}")
+
+    @property
+    def dry_run(self):
+        return self.__dry_run
 
     @abc.abstractmethod
-    def post_install(self):
-        pass  # AbstractInstallTool.post_install()
+    def post_pip_install(self):
+        pass  # AbstractInstallTool.post_pip_install()
 
     @abc.abstractmethod
-    def pre_uninstall(self):
-        pass  # AbstractInstallTool.pre_uninstall()
+    def pre_pip_uninstall(self):
+        pass  # AbstractInstallTool.pre_pip_uninstall()
+
+    @abc.abstractmethod
+    def package_build_install(self):
+        pass  # AbstractInstallTool.package_build_install()
 
 
 class CheckDependencies(AbstractInstallTool):
     """Make sure gi and the required typelibs are installed
 
     This checks that all imports of external Python libraries work
-    and if they do not, attempts to show an error message useful
-    to find the software package to install.
+    and if they do not, attempts to show an error message helpful
+    for finding the software package to install.
 
     Ideally, we want to detect missing package dependencies early
     during the setup stage, not at some time when the user is running
     the GUI or CLI programs.
     """
 
-    def __init__(self):
-        super(CheckDependencies, self).__init__(heading="Python library dependencies")
+    def __init__(self, dry_run):
+        super(CheckDependencies, self).__init__(
+            dry_run=dry_run, heading="Python library dependencies"
+        )
 
-    def post_install(self):
+    def post_pip_install(self):
         # If installing to a chroot environment, we cannot check what
         # is installed in that chroot environment, and therefore skip
         # the checks.
         if get_dirs().chroot:
-            self._print_heading("Skipping")
+            self._print_heading("Skipping (due to chroot environment)")
+            return
+
+        if self.dry_run:
+            self._print_heading("Would import gi")
+            self._print_heading("Would import gi.repository.GLib")
+            self._print_heading("Would import gi.repository.Gtk version 3.0")
+            self._print_heading("Would import gi.repository.Gio")
+            self._print_heading("Would import gi.repository.GUdev version 1.0")
+            self._print_heading("Would import pydbus")
+            self._print_heading("Would import usb.core")
             return
 
         self._print_heading("Checking")
@@ -512,8 +596,11 @@ class CheckDependencies(AbstractInstallTool):
 
         self._print_heading("OK")
 
-    def pre_uninstall(self):
-        pass  # CheckDependencies.pre_uninstall() does not need to do anything
+    def pre_pip_uninstall(self):
+        pass  # CheckDependencies.pre_pip_uninstall() does not need to do anything
+
+    def package_build_install(self):
+        pass  # CheckDependencies.package_build_install() does not need to do anything
 
 
 class FileInstallTool(AbstractInstallTool):
@@ -549,63 +636,74 @@ class FileInstallTool(AbstractInstallTool):
             for s in path.parts
         )
 
-    def __init__(self, heading):
-        super(FileInstallTool, self).__init__(heading)
+    def __init__(self, dry_run, heading):
+        super(FileInstallTool, self).__init__(dry_run=dry_run, heading=heading)
         self.files = []
 
     def add_file(self, file):
         common.debug("Adding file", self, file)
         self.files.append(file)
 
-    def _do_install(self):
-        for file in sorted(self.files, key=FileInstallTool.destfile_key):
-            file._install()
-
-    def _do_uninstall(self):
-        for file in sorted(self.files, key=FileInstallTool.destfile_key, reverse=True):
-            file._uninstall()
-
-    def post_install(self):
+    def do_install_files(self):
         self._print_heading("Installing files")
-        self._do_install()
+        for file in sorted(self.files, key=FileInstallTool.destfile_key):
+            file.install(self.dry_run)
         self._print_heading("Install completed")
 
-    def pre_uninstall(self):
+    def do_uninstall_files(self):
         self._print_heading("Uninstalling files")
-        self._do_uninstall()
+        for file in sorted(self.files, key=FileInstallTool.destfile_key, reverse=True):
+            file.uninstall(self.dry_run)
         self._print_heading("Uninstall completed")
+
+    def post_pip_install(self):
+        self.do_install_files()
+
+    def pre_pip_uninstall(self):
+        self.do_uninstall_files()
+
+    def package_build_install(self):
+        self.do_install_files()
 
 
 class ResourceInstallTool(FileInstallTool):
-    """A subsystem which iterates through resources in data/"""
+    """A subsystem which iterates through resource files in data/"""
 
-    def __init__(self, heading):
-        super(ResourceInstallTool, self).__init__(heading)
+    def __init__(self, dry_run, heading):
+        super(ResourceInstallTool, self).__init__(dry_run, heading)
 
-    def walk_resources(self, resdir):
-        common.debug("walk_through_data_files", self, resdir)
-        assert resource_isdir(RESOURCE_MODULE, "data")
+    def walk_resources(self, res_subdir: str):
+        common.debug("walk_resources", self, res_subdir)
 
-        def walk_resource_subdir(subdir):
-            full_subdir = f"data/{subdir}"
-            assert resource_isdir(RESOURCE_MODULE, full_subdir)
-            for name in resource_listdir(RESOURCE_MODULE, full_subdir):
-                full_name = f"{full_subdir}/{name}"
-                common.debug("res fullname", full_name)
-                if resource_isdir(RESOURCE_MODULE, full_name):
-                    walk_resource_subdir(f"{subdir}/{name}")
+        res_data = importlib.resources.files(RESOURCE_MODULE) / "data"
+
+        global files_to_delete
+        files_to_delete.add(res_data)
+
+        td = res_data / res_subdir
+
+        def walk_resource_subdir(topdir):
+            assert topdir.is_dir()
+            global files_to_delete
+            files_to_delete.add(topdir)
+            for entry in topdir.iterdir():
+                full_name = entry.absolute()
+                common.debug(f"entry {entry} res fullname {full_name}")
+                if entry.is_dir():
+                    walk_resource_subdir(entry)
                 else:
-                    if full_name.endswith("~"):
+                    if entry.name.endswith("~"):
                         continue  # ignore editor backup files
-                    self.add_resource(full_name)
+                    self.add_resource(entry)
+                    files_to_delete.add(entry)
 
-        walk_resource_subdir(resdir)
+        walk_resource_subdir(td)
 
     @abc.abstractmethod
-    def add_resource(self, fullname):
+    def add_resource(self, resource_entry):
         """Examine source file and decide what to do about it
 
-        Examine the given source resource ``fullname`` and then
+        Examine the given source resource ``entry`` and then
         decide whether to
 
           * ``self.add_file()`` an instance of ``ResourceToFile``
@@ -621,10 +719,13 @@ class UnhandledResource(Exception):
 
 
 class DBusInstallTool(ResourceInstallTool):
-    """Subsystem dealing with the D-Bus configuration files"""
+    """Deal with D-Bus .service file and the service it defines"""
 
-    def __init__(self, no_launch):
-        super(DBusInstallTool, self).__init__(heading="Dbus service")
+    # FIXME: Only test start the service on unprivileged post-pip-install?
+    #        We *are* shutting down the service after testing in any case...
+
+    def __init__(self, dry_run, no_launch):
+        super(DBusInstallTool, self).__init__(dry_run=dry_run, heading="Dbus service")
         self.no_launch = no_launch
         self.walk_resources("dbus-1")
 
@@ -637,9 +738,9 @@ class DBusInstallTool(ResourceInstallTool):
     def _service(self, service_name):
         return self._session_bus.get(service_name)
 
-    def add_resource(self, fullname):
-        common.debug("add_resource", self, fullname)
-        if fullname.endswith(".service"):
+    def add_resource(self, resource_entry):
+        common.debug("add_resource", self, resource_entry)
+        if resource_entry.name.endswith(".service"):
             dirs = get_dirs()
             templateData = {
                 "dbus_service_bin": str(dirs.serviceExePath),
@@ -650,25 +751,30 @@ class DBusInstallTool(ResourceInstallTool):
             service_dst = service_dir / f"{const.BUSNAME}.service"
 
             service_file = TemplateFile(
-                service_dst, fullname, template_data=templateData
+                service_dst, resource_entry, template_data=templateData
             )
             self.add_file(service_file)
         else:
-            raise UnhandledResource(fullname)
+            raise UnhandledResource(resource_entry)
 
-    def post_install(self):
+    def post_pip_install(self):
         self._print_heading("Configuring")
-        self.shutdown_service("Stopping old service")
+        self._shutdown_service("Stopping old service")
 
-        super(DBusInstallTool, self)._do_install()
+        super(DBusInstallTool, self).do_install_files()
 
-        self.verify_install()
+        self._verify_install()
 
         self._print_heading("Complete")
 
-    def shutdown_service(self, reason):
+    def _shutdown_service(self, reason):
         if self.no_launch:
-            common.debug("Not shutting down old service (no_launch is set)")
+            common.debug("no_launch is set; not shutting down old service")
+            return
+
+        if self.dry_run:
+            with Step("would stop", "would shut down running service"):
+                pass
             return
 
         dbus_service = self._service(".DBus")
@@ -687,9 +793,14 @@ class DBusInstallTool(ResourceInstallTool):
                 while dbus_service.NameHasOwner(const.BUSNAME):
                     step.try_again()
 
-    def verify_install(self, force=False):
-        if self.no_launch and not force:
+    def _verify_install(self):
+        if self.no_launch:
             common.debug("no_launch is set; not verifying our dbus service")
+            return
+
+        if self.dry_run:
+            with Step("would start", "would start and check the service"):
+                pass
             return
 
         dbus_service = self._service(".DBus")
@@ -725,35 +836,41 @@ class DBusInstallTool(ResourceInstallTool):
         with Step("verify", "Shutting down session D-Bus service"):
             our_service.Shutdown()
 
-    def pre_uninstall(self):
+    def pre_pip_uninstall(self):
         self._print_heading("Configuring")
-        self.shutdown_service("Stopping service")
-        super(DBusInstallTool, self)._do_uninstall()
+        self._shutdown_service("Stopping service")
+        super(DBusInstallTool, self).do_uninstall_files()
         self._print_heading("Complete")
 
 
 class BashCompletionInstallTool(ResourceInstallTool):
-    """Subsystem dealing with bash-completion files"""
+    """Deal with bash-completion files"""
 
-    def __init__(self):
-        super(BashCompletionInstallTool, self).__init__(heading="Bash completion")
+    def __init__(self, dry_run):
+        super(BashCompletionInstallTool, self).__init__(
+            dry_run=dry_run, heading="Bash completion"
+        )
 
         # TODO: What about /usr/local?
         self.bc_dir = get_dirs().datadir / "bash-completion" / "completions"
 
         self.walk_resources("bash-completion")
 
-    def add_resource(self, fullname):
-        src = Path(fullname)
-        dst = self.bc_dir / src.name
-        self.add_file(ResourceFile(dst, fullname))
+    def add_resource(self, resource_entry):
+        dst = self.bc_dir / resource_entry.name
+        rf = ResourceFile(dst, resource_entry)
+        if resource_entry.name == const.BASE_EXE_INSTALLTOOL:
+            global files_to_delete
+            files_to_delete.add(resource_entry)
+            files_to_delete.add(rf.chroot_dst)
+        self.add_file(rf)
 
 
 class ManpageInstallTool(ResourceInstallTool):
-    """Subsystem dealing with man pages"""
+    """Deal with man pages"""
 
-    def __init__(self):
-        super(ManpageInstallTool, self).__init__(heading="Man pages")
+    def __init__(self, dry_run):
+        super(ManpageInstallTool, self).__init__(dry_run=dry_run, heading="Man pages")
         dirs = get_dirs()
         self.template_data = {
             "PACKAGE": const.PACKAGE,
@@ -764,35 +881,42 @@ class ManpageInstallTool(ResourceInstallTool):
         }
         self.walk_resources("man")
 
-    def mandir(self):
+    def _mandir(self):
         dirs = get_dirs()
         return dirs.datadir / "man"
 
-    def add_resource(self, fullname):
-        mansrc = Path(fullname)
+    def add_resource(self, resource_entry):
         rexpr = re.compile(r".*\.(?P<section>[1-9])")
-        m = rexpr.fullmatch(fullname)
+        m = rexpr.fullmatch(resource_entry.name)
         if m:
             section = m.group("section")
-            mandst = self.mandir() / f"man{section}" / mansrc.name
-            manfile = TemplateFile(mandst, fullname, template_data=self.template_data)
+            mandst = self._mandir() / f"man{section}" / resource_entry.name
+            manfile = TemplateFile(
+                mandst, resource_entry, template_data=self.template_data
+            )
+            if mandst.stem == const.BASE_EXE_INSTALLTOOL:
+                global files_to_delete
+                files_to_delete.add(manfile.chroot_dst)
+                files_to_delete.add(manfile.chroot_dst.parent)
             self.add_file(manfile)
         else:
-            raise UnhandledResource(fullname)
+            raise UnhandledResource(resource_entry)
 
 
 class XDGDesktopInstallTool(ResourceInstallTool):
-    """Subsystem dealing with the XDG desktop and icon files"""
+    """Deal with the XDG .desktop and PNG/SVG icon files"""
 
     # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
     #          must be run after all. Fedora Packaging docs suggest so.
 
-    def __init__(self):
-        super(XDGDesktopInstallTool, self).__init__("XDG application launcher")
+    def __init__(self, dry_run):
+        super(XDGDesktopInstallTool, self).__init__(
+            dry_run=dry_run, heading="XDG application launcher"
+        )
         self.walk_resources("xdg")
 
-    def add_resource(self, fullname):
-        if fullname.endswith(".desktop"):
+    def add_resource(self, resource_entry):
+        if resource_entry.name.endswith(".desktop"):
             dirs = get_dirs()
             applications_dir = dirs.datadir / "applications"
             dst = applications_dir / f"{const.APPLICATION_ID}.desktop"
@@ -800,20 +924,20 @@ class XDGDesktopInstallTool(ResourceInstallTool):
                 "gui_bin": dirs.guiExePath,
                 "APPLICATION_ID": const.APPLICATION_ID,
             }
-            self.add_file(TemplateFile(dst, fullname, templateData))
-        elif fullname.endswith(".png"):
-            m = len(fullname) - 4
-            n = fullname.rindex(".", 0, m) + 1
-            size = int(fullname[n:m], 10)
-            dst = self.icondir(size) / f"{const.APPLICATION_ID}.png"
-            self.add_file(ResourceFile(dst, fullname))
-        elif fullname.endswith(".svg"):
-            dst = self.icondir() / f"{const.APPLICATION_ID}.svg"
-            self.add_file(ResourceFile(dst, fullname))
+            self.add_file(TemplateFile(dst, resource_entry, templateData))
+        elif resource_entry.name.endswith(".png"):
+            m = len(resource_entry.name) - 4
+            n = resource_entry.name.rindex(".", 0, m) + 1
+            size = int(resource_entry.name[n:m], 10)
+            dst = self._icondir(size) / f"{const.APPLICATION_ID}.png"
+            self.add_file(ResourceFile(dst, resource_entry))
+        elif resource_entry.name.endswith(".svg"):
+            dst = self._icondir() / f"{const.APPLICATION_ID}.svg"
+            self.add_file(ResourceFile(dst, resource_entry))
         else:
-            raise UnhandledResource(fullname)
+            raise UnhandledResource(resource_entry)
 
-    def icondir(self, size=None):
+    def _icondir(self, size=None):
         dirs = get_dirs()
         if size is None:
             return dirs.datadir / "icons/hicolor/scalable/apps"
@@ -822,12 +946,23 @@ class XDGDesktopInstallTool(ResourceInstallTool):
 
 
 class UdevRulesInstallTool(FileInstallTool):
-    """Subsystem dealing with the udev rules"""
+    """Subsystem dealing with the udev rules
+
+    Create and install a udev rules file, and call "udevadm trigger"
+    for each supported device.
+
+    We *could* make the udev rules file a static data file to copy,
+    but as long as it needs a special destination outside of the
+    ${prefix}/share data directory, we cannot use setuptools' handling
+    of data files to help us anyway.
+    """
 
     # FIXME: udev is Linux-only. What about non-Linux systems?
 
-    def __init__(self):
-        super(UdevRulesInstallTool, self).__init__(heading="Udev rules")
+    def __init__(self, dry_run):
+        super(UdevRulesInstallTool, self).__init__(
+            dry_run=dry_run, heading="Udev rules"
+        )
 
         # Generate the file contents in Python so we can install it
         # from Python in case we do have write permissions.
@@ -849,7 +984,7 @@ class UdevRulesInstallTool(FileInstallTool):
             )
         )
 
-    def emit_code_for_rule_change(self, skip_if):
+    def _emit_code_for_rule_change(self, skip_if):
         # udev is supposed to have been picking up changed rules "for
         # years" (relative to 2016), so manually triggering a reload
         # does not appear to be called for any more.
@@ -860,7 +995,7 @@ class UdevRulesInstallTool(FileInstallTool):
         #     comment="Make udev take notice of the updated set of udev rules",
         # )
 
-        # FIXME: In case installtool is running as root, run udevadm directly.
+        # FIXME: In case installtool is running as root, run udevadm directly?
 
         udevadm_trigger_commands = [
             "sleep 5   # wait until udev should have noticed the new rules",
@@ -876,13 +1011,11 @@ class UdevRulesInstallTool(FileInstallTool):
             comment="Trigger the udev rules which run when adding existing mixer devices",
         )
 
-    def post_install(self):
+    def post_pip_install(self):
         # Populate with the files installed pre installation
         old_content = {}
         if self.udev_rules_dst.exists():
             old_content[self.udev_rules_dst] = self.udev_rules_dst.read_text()
-
-        super(UdevRulesInstallTool, self).post_install()
 
         # Populate with the files which we (should/will) have installed
         new_content = {}
@@ -896,9 +1029,12 @@ class UdevRulesInstallTool(FileInstallTool):
             print("NEW")
             pprint(new_content)
 
-        self.emit_code_for_rule_change(skip_if=(new_content == old_content))
+        if old_content != new_content:
+            super(UdevRulesInstallTool, self).post_pip_install()
 
-    def pre_uninstall(self):
+        self._emit_code_for_rule_change(skip_if=(new_content == old_content))
+
+    def pre_pip_uninstall(self):
         # FIXME05: Do we even want to uninstall the udev rules if it
         #          is in /etc/udev/rules.d for a $HOME/.local install?
         #          The next install will just need sudo access again
@@ -908,7 +1044,7 @@ class UdevRulesInstallTool(FileInstallTool):
         if self.udev_rules_dst.exists():
             old_content[self.udev_rules_dst] = self.udev_rules_dst.read_text()
 
-        super(UdevRulesInstallTool, self).pre_uninstall()
+        super(UdevRulesInstallTool, self).pre_pip_uninstall()
 
         new_content = dict(old_content)
         if self.udev_rules_dst in new_content:
@@ -922,46 +1058,91 @@ class UdevRulesInstallTool(FileInstallTool):
             print("NEW")
             pprint(new_content)
 
-        self.emit_code_for_rule_change(skip_if=(new_content == old_content))
+        self._emit_code_for_rule_change(skip_if=(new_content == old_content))
+
+    def package_build_install(self):
+        super().package_build_install()
+        self._emit_code_for_rule_change(skip_if=False)
+
+
+class SudoScriptInstallTool(AbstractInstallTool):
+    """Subsystem dealing with the sudo script"""
+
+    def __init__(self, dry_run, sudo_script=None):
+        super(SudoScriptInstallTool, self).__init__(
+            dry_run=dry_run,
+            heading=None,
+        )
+        self.__sudo_script = sudo_script
+
+    def post_pip_install(self):
+        SUDO_SCRIPT.finalize(sudo_script=self.__sudo_script, dry_run=self.dry_run)
+
+    def pre_pip_uninstall(self):
+        SUDO_SCRIPT.finalize(sudo_script=self.__sudo_script, dry_run=self.dry_run)
+
+    def package_build_install(self):
+        SUDO_SCRIPT.finalize(sudo_script=None, dry_run=self.dry_run)
 
 
 class InstallToolEverything(AbstractInstallTool):
     """Groups all subsystem InstallTool objects into one"""
 
     def __init__(self):
-        super(InstallToolEverything, self).__init__(heading=None)
+        super(InstallToolEverything, self).__init__(dry_run=False, heading=None)
         self.everything = []
 
     def add(self, thing):
         self.everything.append(thing)
 
-    def post_install(self):
+    def post_pip_install(self):
         print("Socranop Installation")
         print("=====================")
         print()
         for thing in self.everything:
-            thing.post_install()
+            thing.post_pip_install()
         print()
-        print(f"Socranop installation has completed successfully.")
-
-    def post_install_footer(self):
+        print(f"Socranop installation and setup completed.")
         print()
         print(
-            f"Finally, run `{const.BASE_EXE_GUI}` or `{const.BASE_EXE_CLI}` as a regular user."
+            f"You can now run `{const.BASE_EXE_GUI}` or `{const.BASE_EXE_CLI}` as a regular user."
         )
 
-    def pre_uninstall(self):
+    def pre_pip_uninstall(self):
         print("Socranop Uninstallation Preparation")
         print("===================================")
         print()
-        for thing in reversed(self.everything):
-            thing.pre_uninstall()
+        for thing in self.everything:
+            thing.pre_pip_uninstall()
         print()
-        print(f"Socranop uninstallation preparation has completed successfully.")
+        print(f"Socranop uninstallation preparation completed.")
+        print()
+        print(
+            f"To complete uninstalling, run `pip uninstall {const.PACKAGE}` and (if needed) the sudo commands."
+        )
 
-    def pre_uninstall_footer(self):
+    def package_build_install(self):
+        print("Socranop Package Build Installation")  # TODO: Improve wording
+        print("===================================")
         print()
-        print(f"Finally, run `pip uninstall socranop` to complete uninstallation.")
+        for thing in self.everything:
+            thing.package_build_install()
+        print()
+        print(f"Package build installation completed.")
+
+
+def command_post_pip_install(everything, args):
+    everything.post_pip_install()
+
+
+def command_pre_pip_uninstall(everything, args):
+    everything.pre_pip_uninstall()
+
+
+def command_package_build_install(everything, args):
+    everything.package_build_install()
+    global files_to_delete
+    files_to_delete.remove_all()
 
 
 def parse_argv(argv=None):
@@ -975,52 +1156,100 @@ def parse_argv(argv=None):
     )
     common.parser_args(parser)
 
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--post-install",
-        help=f"Install and set up {const.PACKAGE} and exit",
-        action="store_true",
-    )
-    group.add_argument(
-        "--pre-uninstall",
-        help="Undo any installation and setup performed by --post-install and exit",
+    parser.add_argument(
+        "-n",
+        "--dry-run",
+        help="Do not actually do anything, just show what would be done.",
+        dest="dry_run",
         action="store_true",
     )
 
-    parser.add_argument(
+    subparsers = parser.add_subparsers(
+        title="Commands",
+        description="What kind of installation related action to perform.",
+        metavar="COMMAND",
+        dest="command",
+        required=True,
+    )
+
+    parser_ppi = subparsers.add_parser(
+        "post-pip-install",
+        help=f"install and setup after 'pip install {const.PACKAGE}'",
+    )
+
+    parser_ppi.add_argument(
         "--no-launch",
         help="when installing, do not test launching the service",
         action="store_true",
     )
 
-    parser.add_argument(
-        "--chroot",
-        metavar="CHROOT",
-        help="chroot dir to (un)install from/into (implies --no-launch)",
-        default=None,
+    parser_ppu = subparsers.add_parser(
+        "pre-pip-uninstall",
+        help=f"uninstall and undo setup before a 'pip uninstall {const.PACKAGE}'",
     )
 
-    parser.add_argument(
-        "--sudo-script",
-        metavar="FILENAME",
-        help="write the script of sudo commands to the given FILENAME",
+    parser_pbi = subparsers.add_parser(
+        "package-build-install",
+        help=f"while building a {const.PACKAGE} package, run in the install step",
+    )
+
+    def add_sudo_script_argument(parser):
+        parser.add_argument(
+            "--sudo-script",
+            metavar="FILENAME",
+            help="write the script of sudo commands to the given FILENAME",
+            default=None,
+        )
+
+    add_sudo_script_argument(parser_ppi)
+    add_sudo_script_argument(parser_ppu)
+
+    parser_pbi.add_argument(
+        "--chroot",
+        metavar="CHROOT",
+        help="package build root chroot directory",
+        type=Path,
         default=None,
+        required=True,
     )
 
     args = parser.parse_args(argv)
+    print("args after parse_args:", args)
+
+    if hasattr(args, "chroot"):
+        # Initialize the dirs object with the chroot given so that later
+        # calls to get_dirs() will yield an object which uses the same
+        # chroot value.
+        dirs = init_dirs(chroot=args.chroot)
+    else:
+        dirs = init_dirs()
+    common.debug("Using dirs", dirs)
+
+    print("args", args)
+
+    # args.dry_run = True
+
     common.VERBOSE = args.verbose
-    if args.chroot:
-        # If chroot is given, the service file is installed inside the chroot
-        # and starting/stopping the service does not make sense.
-        args.no_launch = True
 
-    if args.chroot and args.sudo_script:
-        print("Error: argument --chroot and --sudo-script are mutually exclusive.")
-        sys.exit(2)
-
-    if args.chroot:
+    if args.command == "post-pip-install":
+        pass
+    elif args.command == "pre-pip-uninstall":
+        # Always false for ppu, so there is no --no-launch argument to ppu.
+        setattr(args, "no_launch", False)
+    elif args.command == "package-build-install":
+        if args.chroot == "/":
+            parser.error("The --chroot argument must not be /")
         print("Using chroot", args.chroot)
 
+        # When building a package, we are working inside the package
+        # chroot and starting/stopping the service does not make
+        # sense.
+        setattr(args, "no_launch", True)
+        setattr(args, "sudo_script", None)
+    else:
+        parser.error(f"Unhandled command: {args.command}")
+
+    print("args before return:", args)
     return args
 
 
@@ -1029,31 +1258,39 @@ def main(argv=None):
 
     args = parse_argv(argv)
 
-    # Initialize the dirs object with the chroot given so that later
-    # calls to get_dirs() will yield an object which uses the same
-    # chroot value.
-    dirs = init_dirs(chroot=args.chroot)
-    common.debug("Using dirs", dirs)
+    global files_to_delete
+    files_to_delete = FilesToDelete()
+
+    # In some cases, we can delete the socranop-installtool executable after use
+    files_to_delete.add(Path(sys.argv[0]))
+
+    # Module source file (socranop/installtool.py)
+    files_to_delete.add(Path(__file__))
+
+    # Compiled module source file (socranop/__pycache__/installtool.*.pyc)
+    if "__cached__" in globals():
+        pyc = Path(globals()["__cached__"])
+        # Occasionally, there are two *.pyc files but __cached__ only
+        # points to one. So we use __cached__ to find the directory,
+        # and just remove all installtool.*.pyc files.
+        for p in pyc.parent.glob("installtool.*.pyc"):
+            files_to_delete.add(p)
 
     everything = InstallToolEverything()
-    everything.add(CheckDependencies())
-    everything.add(BashCompletionInstallTool())
-    everything.add(DBusInstallTool(no_launch=args.no_launch))
-    everything.add(ManpageInstallTool())
-    everything.add(XDGDesktopInstallTool())
-    everything.add(UdevRulesInstallTool())
+    everything.add(CheckDependencies(dry_run=args.dry_run))
+    everything.add(BashCompletionInstallTool(dry_run=args.dry_run))
+    everything.add(DBusInstallTool(dry_run=args.dry_run, no_launch=args.no_launch))
+    everything.add(ManpageInstallTool(dry_run=args.dry_run))
+    everything.add(XDGDesktopInstallTool(dry_run=args.dry_run))
+    everything.add(UdevRulesInstallTool(dry_run=args.dry_run))
+    everything.add(
+        SudoScriptInstallTool(dry_run=args.dry_run, sudo_script=args.sudo_script)
+    )
 
-    if args.post_install:
-        everything.post_install()
-    elif args.pre_uninstall:
-        everything.pre_uninstall()
+    cmd_map = {
+        "post-pip-install": command_post_pip_install,
+        "pre-pip-uninstall": command_pre_pip_uninstall,
+        "package-build-install": command_package_build_install,
+    }
 
-    if args.chroot:
-        return
-
-    SUDO_SCRIPT.finalize(args.sudo_script)
-
-    if args.post_install:
-        everything.post_install_footer()
-    elif args.pre_uninstall:
-        everything.pre_uninstall_footer()
+    cmd_map[args.command](everything, args)
