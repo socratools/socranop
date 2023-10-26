@@ -22,7 +22,6 @@ repos:
     name: Update manpages from markdown source files
     language: system
     entry:  tools/update-man-pages
-    args: [--git-add]
     pass_filenames: false
     files: PERMISSIONS.(md|meta)
   - id: pipenv-setup
