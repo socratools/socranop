@@ -337,9 +337,7 @@ class AbstractFile(metaclass=abc.ABCMeta):
         """
         print_step("rm", self.dst)
         try:
-            self.chroot_dst.unlink()
-        except FileNotFoundError:
-            pass  # we do not need to remove a non existant file
+            self.chroot_dst.unlink(missing_ok=True)
         except PermissionError:
             SUDO_SCRIPT.add_cmd(f"rm -f {self.dst}", comment=self.comment)
 

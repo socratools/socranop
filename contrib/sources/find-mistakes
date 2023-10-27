@@ -16,8 +16,10 @@ find_py_mistake() {
 }
 
 patterns=()
-patterns+=('missing_ok')
-patterns+=('cached_property')
+
+# Not a mistake any more with Python >= 3.8
+# patterns+=('missing_ok')
+# patterns+=('cached_property')
 
 for mistake_pattern in "${patterns[@]}"
 do
