@@ -20,6 +20,7 @@ pre-commit = "*"
 chardet = "*"
 twine = "*"
 pygit2 = "*"
+vistir = "< 0.7.0"
 
 [pipenv]
 allow_prereleases = true

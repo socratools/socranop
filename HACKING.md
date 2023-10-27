@@ -33,6 +33,9 @@ probably best installed using operating system packages:
 
 ### Set up and use pipenv
 
+`pipenv run pip install setuptools`
+- Install setuptools (Python 3.12 and later does not come with setuptools).
+
 `pipenv install --dev`
 - Sets up an appropriate virtual environment, installs all appropriate
   development packages, and egg-links to our source directory so that
@@ -89,6 +92,18 @@ python3 setup.py bdist_wheel
 ```
 
 packaging test.
+
+### Reset pipenv and source tree
+
+If you have messed up the pipenv environment, you can remove it
+completely with the following command (DANGER: This removes data):
+
+    pipenv --rm
+
+If you have messed up the source tree and want to reset it to a
+fresh clone by removing potentially anything you have changed
+locally, `git clean` can help.
+
 
 ### Things to avoid in code
 

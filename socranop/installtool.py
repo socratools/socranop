@@ -163,7 +163,7 @@ class ScriptCommand:
 
     def __init__(self, cmd, skip_if=False, comment=None):
         common.debug("ScriptCommand.__init__", repr(cmd))
-        assert type(cmd) == str
+        assert isinstance(cmd, str)
         self.cmd = cmd
         self.skip_if = skip_if
         self.comment = comment

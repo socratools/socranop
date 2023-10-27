@@ -35,7 +35,11 @@ from socranop.common import debug
 
 class NotepadBase:
     def __init__(
-        self, idProduct, routingTarget, stateDir=None, fixedRouting=None,
+        self,
+        idProduct,
+        routingTarget,
+        stateDir=None,
+        fixedRouting=None,
     ):
         if fixedRouting is None:
             fixedRouting = []

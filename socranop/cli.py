@@ -59,7 +59,7 @@ def max_lengths(dev):
     source_len = 0
     for source in dev.sources.values():
         source_len = max(source_len, *[len(x) for x in source])
-    for (target, source) in dev.fixedRouting:
+    for target, source in dev.fixedRouting:
         target_len = max(target_len, *[len(x) for x in target])
         source_len = max(source_len, *[len(x) for x in source])
     return (target_len, source_len)
@@ -69,13 +69,13 @@ def show(dev):
     (target_len, source_len) = max_lengths(dev)
     table_width = target_len + 4 + source_len + 4
     print("-" * table_width)
-    for (target, source) in dev.fixedRouting:
+    for target, source in dev.fixedRouting:
         for i in range(0, len(target)):
             print(f"{target[i]:<{target_len}} <- {source[i]}")
         print("-" * table_width)
     target = [x.ljust(target_len) for x in dev.routingTarget]
     notarget = (" " * target_len, " " * target_len)
-    for (i, source) in enumerate(dev.sources.items()):
+    for i, source in enumerate(dev.sources.items()):
         sep = "  "
         input = [x.ljust(source_len) for x in source[1]]
         if dev.routingSource is None or dev.routingSource == "UNKNOWN":
