@@ -19,7 +19,7 @@ pipenv-setup = "*"
 pre-commit = "*"
 chardet = "*"
 twine = "*"
-pygit2 = "*"
+pygit2 = "< 1.7.0"
 vistir = "< 0.7.0"
 
 [pipenv]
