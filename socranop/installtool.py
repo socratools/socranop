@@ -769,9 +769,9 @@ class ManpageInstallTool(ResourceInstallTool):
     def add_resource(self, fullname):
         mansrc = Path(fullname)
         rexpr = re.compile(r".*\.(?P<section>[1-9])")
-        match = rexpr.fullmatch(fullname)
-        if match:
-            section = match.group("section")
+        m = rexpr.fullmatch(fullname)
+        if m:
+            section = m.group("section")
             mandst = self.mandir() / f"man{section}" / mansrc.name
             manfile = TemplateFile(mandst, fullname, template_data=self.template_data)
             self.add_file(manfile)
