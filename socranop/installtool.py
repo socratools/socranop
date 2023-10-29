@@ -260,22 +260,6 @@ class SudoScript:
 SUDO_SCRIPT = SudoScript()
 
 
-def findDataFiles(subdir):
-    """Walk through data files in the socranop module's ``data`` subdir``"""
-
-    result = {}
-    modulepaths = socranop.__path__
-    for path in modulepaths:
-        path = Path(path)
-        datapath = path / "data" / subdir
-        result[datapath] = []
-        for f in datapath.glob("**/*"):
-            if f.is_dir():
-                continue  # ignore directories
-            result[datapath].append(f.relative_to(datapath))
-    return result
-
-
 class AbstractFile(metaclass=abc.ABCMeta):
     """Common behavior for different types of files defined as subclasses"""
 
