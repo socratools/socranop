@@ -37,8 +37,8 @@ for another Linux distribution.
         env PYTHONPATH=${chroot}/usr/lib/python3.8/site-packages \
         ${chroot}/usr/bin/socranop-installtool --post-install --chroot=${chroot}
 
-    This installs the D-Bus config files, the XDG desktop menu and
-    icon files, and a file with udev rules.
+    This installs the Bash completion files, the D-Bus service file,
+    the XDG desktop menu and icon files, and udev rules file.
 
     The default udev rules file action is to `TAG+="uaccess"` which on
     modern Linux distributions will ensure access for locally logged
