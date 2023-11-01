@@ -52,7 +52,7 @@ Setting `TAG+="uaccess"` allows access to users with a local login
 session.
 
 ```
-# Soundcraft Notepad 5, Notepad 8FX and Notepad 12FX analog mixers with USB control
+# Soundcraft Notepad-5, Notepad-8FX and Notepad-12FX analog mixers with USB control
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0030", TAG+="uaccess"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0031", TAG+="uaccess"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0032", TAG+="uaccess"
@@ -70,7 +70,7 @@ group for this purpose instead of reusing the operating system's
 default *audio* group.
 
 ```
-# Soundcraft Notepad 5, Notepad 8FX and Notepad 12FX analog mixers with USB control
+# Soundcraft Notepad-5, Notepad-8FX and Notepad-12FX analog mixers with USB control
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0030", GROUP="audio"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0031", GROUP="audio"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0032", GROUP="audio"
