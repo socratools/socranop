@@ -29,6 +29,7 @@
 import abc
 import argparse
 import base64
+import functools
 import importlib
 import io
 import re
@@ -626,14 +627,15 @@ class DBusInstallTool(ResourceInstallTool):
         super(DBusInstallTool, self).__init__(heading="Dbus service")
         self.no_launch = no_launch
         self.walk_resources("dbus-1")
-        self.__session_bus = None
+
+    @functools.cached_property
+    def _session_bus(self):
+        import pydbus
+
+        return pydbus.SessionBus()
 
     def _service(self, service_name):
-        if self.__session_bus is None:
-            import pydbus
-
-            self.__session_bus = pydbus.SessionBus()
-        return self.__session_bus.get(service_name)
+        return self._session_bus.get(service_name)
 
     def add_resource(self, fullname):
         common.debug("add_resource", self, fullname)
