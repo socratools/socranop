@@ -336,7 +336,9 @@ def service_main():
     # Caution: If you change the command line parser in any way,
     #          update the man pages and bash completions accordingly.
 
-    parser = argparse.ArgumentParser(description=f"The {const.PACKAGE} D-Bus service.")
+    parser = argparse.ArgumentParser(
+        description=f"The {const.PACKAGE} D-Bus session service."
+    )
     common.parser_args(parser)
 
     args = parser.parse_args()

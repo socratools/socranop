@@ -267,6 +267,17 @@ class App(Gtk.Application):
         # Caution: If you change the command line parser in any way,
         #          update the man pages and bash completions accordingly.
 
+        # Equivalent to argparse "epilog" in --help printout
+        # self.set_option_context_description("set_option_context_description")
+
+        # Equivalent messing with part of the argparse "usage" in --help printout
+        # self.set_option_context_parameter_string("set_option_context_parameter_string")
+
+        # Equivalent to argparse "description" in --help printout
+        self.set_option_context_summary(
+            "Control a Soundcraft Notepad series mixer through a GUI."
+        )
+
         self.add_main_option(
             "version",
             0,

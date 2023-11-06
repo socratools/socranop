@@ -96,7 +96,9 @@ def main():
     # Caution: If you change the command line parser in any way,
     #          update the man pages and bash completions accordingly.
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Control a Soundcraft Notepad series mixer from the command line."
+    )
     common.parser_args(parser)
 
     parser.add_argument(
