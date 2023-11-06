@@ -110,33 +110,38 @@ def main():
         help="If no compatible device is found, wait for one to appear (D-Bus mode only)",
         action="store_true",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "-l",
         "--list",
         help="List the available source routing options",
         action="store_true",
     )
-    parser.add_argument(
-        "-s", "--set", help="Set the specified source to route to the USB capture input"
+    group.add_argument(
+        "-s",
+        "--set",
+        help="Route specified source to USB capture input",
+        choices=["0", "1", "2", "3"],
     )
+
     args = parser.parse_args()
     common.VERBOSE = args.verbose
-    if args.list or args.set:
-        dev = autodetect(dbus=not args.no_dbus, wait=args.wait)
-        if dev is None:
-            print("No compatible device detected")
+
+    dev = autodetect(dbus=not args.no_dbus, wait=args.wait)
+    if dev is None:
+        print("No compatible device detected")
+        sys.exit(1)
+    print(f"Detected a {dev.name}")
+    if args.set:
+        try:
+            dev.routingSource = args.set
+        except ValueError:
+            print(f"Unrecognised input choice {args.set}")
+            print("Run -l to list the valid choices")
             sys.exit(1)
-        print(f"Detected a {dev.name}")
-        if args.set:
-            try:
-                dev.routingSource = args.set
-            except ValueError:
-                print(f"Unrecognised input choice {args.set}")
-                print("Run -l to list the valid choices")
-                sys.exit(1)
-        show(dev)
-    else:
-        parser.print_help()
+
+    # Show the device state for both args.list and args.set
+    show(dev)
 
 
 if __name__ == "__main__":
