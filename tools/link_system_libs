@@ -20,25 +20,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-#
-# Usage:
-#     tools/link_system_libs
-#
-# In the pipenv virtualenv, create appropriate symlinks from
-# site-packages/gi pointing to the system's {dist,site}-packages/gi,
-# so that using the pipenv can succeed later without needing to
-# compile the *HUGE* amount of gobject package dependencies.
+
+"""\
+link_system_libs - link gobject system libraries into the pipenv.
+
+Usage:
+    tools/link_system_libs
+
+In the pipenv virtualenv, create appropriate symlinks from
+site-packages/gi pointing to the system's {dist,site}-packages/gi,
+so that using the pipenv can succeed later without needing to
+compile the *HUGE* amount of gobject package dependencies.
+"""
 
 
 import subprocess
 import sys
-
 from importlib import import_module
 from pathlib import Path
 
 
 def pipenv_values(var_names):
-    """Get the value for expr_string from a pipenv python3"""
+    """Get the value for expr_string from a pipenv python3 executable."""
     prog = "\n".join(
         ["import sys"] + [f"print('{var}', '=', repr(sys.{var}))" for var in var_names]
     )
@@ -54,7 +57,7 @@ def pipenv_values(var_names):
 
 
 def ensure_symlink(target, symlink):
-    """Ensure symlink 'symlink' points to target 'target'"""
+    """Ensure symlink 'symlink' points to target 'target'."""
     print(" ", "from", symlink)
     print(" ", "  to", target)
     if symlink.is_symlink():
@@ -73,7 +76,10 @@ def ensure_symlink(target, symlink):
 
 
 class LibraryLinker:
+    """Link system libraries to the pipenv virtual environment."""
+
     def __init__(self):
+        """Prepare for linking system libs by detecting system lib paths."""
         self.symlinks = {}
 
         print("Library Linker")
@@ -109,27 +115,25 @@ class LibraryLinker:
         for p in self.pipenv_path:
             print(" ", " ", p)
 
-        yyy = [
+        pipenv_python_dir_list = [
             p.parent.name
             for p in self.pipenv_path
             if (
                 (p.name in ["dist-packages", "site-packages"])
-                and (str(p).startswith(f"{self.pipenv_prefix}/"))
+                and p.is_relative_to(self.pipenv_prefix)
             )
         ]
-        print(" ", "yyy")
-        for p in yyy:
-            print(" ", " ", p)
-        self.pipenv_python_dir = yyy[0]
-        for p in yyy[1:]:
+        self.pipenv_python_dir = pipenv_python_dir_list[0]
+        for p in pipenv_python_dir_list[1:]:
             if p != self.pipenv_python_dir:
-                raise RuntimeError("All names in yyy should be the same")
+                raise RuntimeError("All pipenv python dirs should be the same")
 
         print(" ", "pipenv_python_dir", self.pipenv_python_dir)
 
         print()
 
     def link_lib(self, libname):
+        """Link the library called 'libname'."""
         print("Module", libname)
         module = import_module(libname)
         module_path = [Path(p) for p in module.__path__]
@@ -165,6 +169,7 @@ class LibraryLinker:
 
 
 def main():
+    """Run the main program for tools/link_system_libs."""
     libname_list = ["gi"]
     if libname_list:
         ll = LibraryLinker()
