@@ -146,7 +146,7 @@ setup(
     entry_points={
         "console_scripts": [
             f"{const.BASE_EXE_CLI}=socranop.cli:main",
-            f"{const.BASE_EXE_SERVICE}=socranop.dbus:service_main",
+            f"{const.BASE_EXE_SERVICE}=socranop.dbus:main",
             f"{const.BASE_EXE_INSTALLTOOL}=socranop.installtool:main",
         ],
         "gui_scripts": [f"{const.BASE_EXE_GUI}=socranop.gui:main"],

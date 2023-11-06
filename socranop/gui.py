@@ -350,9 +350,14 @@ class App(Gtk.Application):
         self.add_action(action)
 
 
-def main():
+def main(argv=None):
+    """Main program for socranop-gui."""
+
+    if argv is None:
+        argv = sys.argv
+
     app = App()
-    sys.exit(app.run(sys.argv))
+    sys.exit(app.run(argv))
 
 
 if __name__ == "__main__":

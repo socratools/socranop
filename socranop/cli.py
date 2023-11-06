@@ -92,7 +92,9 @@ def show(dev):
     print("-" * table_width)
 
 
-def main():
+def parse_argv(argv=None):
+    """Parse the command line arguments for socranop-ctl."""
+
     # Caution: If you change the command line parser in any way,
     #          update the man pages and bash completions accordingly.
 
@@ -126,8 +128,15 @@ def main():
         choices=["0", "1", "2", "3"],
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     common.VERBOSE = args.verbose
+    return args
+
+
+def main(argv=None):
+    """Main program for socranop-ctl."""
+
+    args = parse_argv(argv)
 
     dev = autodetect(dbus=not args.no_dbus, wait=args.wait)
     if dev is None:
