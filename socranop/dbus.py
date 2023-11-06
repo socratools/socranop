@@ -332,7 +332,9 @@ class Client:
         self.deviceRemoved(path)
 
 
-def service_main():
+def parse_argv(argv=None):
+    """Parse the command line arguments for socranop-session-service."""
+
     # Caution: If you change the command line parser in any way,
     #          update the man pages and bash completions accordingly.
 
@@ -341,8 +343,15 @@ def service_main():
     )
     common.parser_args(parser)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     common.VERBOSE = args.verbose
+    return args
+
+
+def main(argv=None):
+    """Main program for socranop-session-service."""
+
+    parse_argv(argv)
 
     service = Service()
     service.run()

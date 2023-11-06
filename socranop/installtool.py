@@ -964,7 +964,9 @@ class InstallToolEverything(AbstractInstallTool):
         print(f"Finally, run `pip uninstall socranop` to complete uninstallation.")
 
 
-def main():
+def parse_argv(argv=None):
+    """Parse the command line arguments for socranop-installtool."""
+
     # Caution: If you change the command line parser in any way,
     #          update the man pages and bash completions accordingly.
 
@@ -1005,7 +1007,7 @@ def main():
         default=None,
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     common.VERBOSE = args.verbose
     if args.chroot:
         # If chroot is given, the service file is installed inside the chroot
@@ -1018,6 +1020,14 @@ def main():
 
     if args.chroot:
         print("Using chroot", args.chroot)
+
+    return args
+
+
+def main(argv=None):
+    """Main program for socranop-installtool."""
+
+    args = parse_argv(argv)
 
     # Initialize the dirs object with the chroot given so that later
     # calls to get_dirs() will yield an object which uses the same
