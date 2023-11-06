@@ -969,7 +969,7 @@ def main():
     #          update the man pages and bash completions accordingly.
 
     parser = argparse.ArgumentParser(
-        description=f"hook {const.PACKAGE} into the system post-install (or do the reverse)"
+        description=f"Hook {const.PACKAGE} into the system post-install (or do the reverse).",
     )
     common.parser_args(parser)
 
