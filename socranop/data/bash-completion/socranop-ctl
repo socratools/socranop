@@ -6,15 +6,53 @@ _socranop_ctl()
     # $2 is the word being completed
     # $3 is the preceding word
     case "$3" in
-	socranop-ctl | */socranop-ctl)
-	    COMPREPLY=($(compgen -W "-h --help --version -v --verbose --no-dbus -w --wait -l --list -s --set" -- "$2"))
-	    return
-	    ;;
         -s | --set)
             COMPREPLY=($(compgen -W "0 1 2 3" -- "$2"))
-            return
+            return 0
 	    ;;
     esac
-    return
+
+    local word
+    local REMAINING_OPTIONS
+    declare -A REMAINING_OPTIONS
+    REMAINING_OPTIONS=()
+    for word in -h --help --version -v --verbose --no-dbus -w --wait -l --list -s --set
+    do
+	REMAINING_OPTIONS["$word"]=t
+    done
+
+    local i
+    for (( i=0; i < COMP_CWORD; i++ ))
+    do
+	word="${COMP_WORDS[$i]}"
+	case "$word" in
+	    -h | --help | --version)
+		COMPREPLY=()
+		return 0
+		;;
+	    -v | --verbose)
+		unset REMAINING_OPTIONS["-v"]
+		unset REMAINING_OPTIONS["--verbose"]
+		;;
+	    -w | --wait)
+		unset REMAINING_OPTIONS["-w"]
+		unset REMAINING_OPTIONS["--wait"]
+		;;
+	    -l | --list | -s | --set)
+		unset REMAINING_OPTIONS["-l"]
+		unset REMAINING_OPTIONS["--list"]
+		unset REMAINING_OPTIONS["-s"]
+		unset REMAINING_OPTIONS["--set"]
+		COMPREPLY=()
+		return 0
+		;;
+	    *)
+		unset REMAINING_OPTIONS["$word"]
+		;;
+	esac
+    done
+
+    COMPREPLY=($(compgen -W "${!REMAINING_OPTIONS[*]}" -- "$2"))
+    return 0
 } &&
     complete -F _socranop_ctl "socranop-ctl"
