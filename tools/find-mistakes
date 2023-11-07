@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# Look for some easy to find and easy to miss mistakes in the code.
+
+cd "$(dirname "$0")/.."
+
+# disable pathname expansion to allow the globs to be passed to git
+set -f
+
+# Using bash's associative arrays, map "git grep -P" patterns to
+# "git grep" filename globs (or "" for all files).
+#
+# No pattern may match itself (change "foo" to "[f]oo" to fix that).
+declare -A patterns
+patterns=()
+
+# I mistype socranop-installtool from time to time
+patterns['socranop(-|\\-)install(?!tool)']=
+
+# Not a mistake any more with Python >= 3.8
+# patterns['missing_ok']='*.py'
+# patterns['cached_property']='*.py'
+
+errors=0
+for pattern in "${!patterns[@]}"
+do
+    if git grep -P -n "$pattern" ${patterns[$pattern]}
+    then
+	errors="$((errors + 1))"
+	# Some mistake has been found
+	# echo "Found mistake(s) for pattern" "$pattern"
+    fi
+done
+
+if [ "$errors" -gt 0 ]
+then
+    echo "Error: Found $errors mistake(s) (NOT necessarily shown in order)"
+    exit 1
+fi
+
+exit 0
