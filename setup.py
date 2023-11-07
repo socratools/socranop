@@ -2,13 +2,13 @@
 #
 # As we are lazy in defining possibly redundant information, we have
 # put a lot of information into the socranop.constants module and
-# import that module both from this setup.py and whzen the actual
+# import that module both from this setup.py and when the actual
 # software package is running.
 #
 # If we were to use importlib.metadata, we could move from setup.py to
 # setup.cfg and get to information like the package version from the
-# software package itself. Unfortunately, importlib.metadata is only
-# available in Python >= 3.8, but we want to support Python 3.6.
+# software package itself. As we now require Python >= 3.9, we can
+# move to using importlib.metadata to get that information now!
 
 import re
 
@@ -132,9 +132,6 @@ setup(
     # https://pypi.org/classifiers/
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -143,7 +140,7 @@ setup(
         "Operating System :: OS Independent",
         "Topic :: Multimedia :: Sound/Audio :: Mixers",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     install_requires=["pyusb", "pydbus"],
     dependency_links=[],
     entry_points={

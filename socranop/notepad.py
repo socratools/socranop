@@ -48,7 +48,7 @@ class NotepadBase:
         if not stateDir:
             stateDir = get_dirs().statedir
         else:
-            # Note that the testsuite absolutely requires we convert
+            # Note that the test suite absolutely requires we convert
             # whatever type stateDir is to a Path.
             stateDir = Path(stateDir)
         debug("Using stateDir", repr(stateDir))
@@ -111,7 +111,7 @@ class NotepadBase:
         assert self.found()
         # TODO: Decode these?
         # Unfortunately, inspection shows none of the data here
-        # corresponds to thr current source selection
+        # corresponds to the current source selection
         self.info1 = self.dev.ctrl_transfer(0xA1, 1, 0x0100, 0x2900, 256)
         self.info2 = self.dev.ctrl_transfer(0xA1, 2, 0x0100, 0x2900, 256)
 

@@ -144,7 +144,7 @@ rm ./socranop-sudo.sh
 
 ### Upgrading
 
-Simply update your package from pip, and rerun `socranop-installer
+Simply update your package from pip, and rerun `socranop-installtool
 --post-install` to ensure the D-Bus service, XDG desktop entry, man pages, etc.
 are upgraded to the latest version.
 

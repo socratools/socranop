@@ -108,7 +108,7 @@ class Main(Gtk.ApplicationWindow):
                 "Restart of this gui application is required",
             )
             self.app.quit()
-            # Todo: Can we relaunch ourselves?
+            # TODO: Can we relaunch ourselves?
 
     def setDevice(self, dev):
         if self.dev is not None:

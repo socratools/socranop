@@ -29,15 +29,15 @@ socranop
 .SH DESCRIPTION
 .PP
 The \f[V]socranop-session-service\f[R] D-Bus service and the
-\f[V]socranop-ctl --dbus\f[R] CLI skipping the D-Bus service change the
-mixer audio routing by opening and writing to the device special file
-corresponding to the mixer.
+\f[V]socranop-ctl --no-dbus\f[R] CLI skipping the D-Bus service change
+the mixer audio routing by opening and writing to the device special
+file corresponding to the mixer.
 .PP
 By default, the device special file cannot be written by unpriviledged
 users and since the \f[V]socranop-session-service\f[R] D-Bus service and
-the \f[V]socranop-ctl --dbus\f[R] CLI run as an unpriviledged user, the
-device special files\[cq]s permission must be opened up to allow write
-access to \f[V]socranop-session-service\f[R].
+the \f[V]socranop-ctl --no-dbus\f[R] CLI run as an unpriviledged user,
+the device special files\[cq]s permission must be opened up to allow
+write access to \f[V]socranop-session-service\f[R].
 .PP
 A new device special file is created every time the mixer device is
 connected to the host, so changing the device file\[cq]s permissions by
@@ -70,7 +70,7 @@ local login session.
 .IP
 .nf
 \f[C]
-# Soundcraft Notepad 5, Notepad 8FX and Notepad 12FX analog mixers with USB control
+# Soundcraft Notepad-5, Notepad-8FX and Notepad-12FX analog mixers with USB control
 ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq], ATTRS{idProduct}==\[dq]0030\[dq], TAG+=\[dq]uaccess\[dq]
 ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq], ATTRS{idProduct}==\[dq]0031\[dq], TAG+=\[dq]uaccess\[dq]
 ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq], ATTRS{idProduct}==\[dq]0032\[dq], TAG+=\[dq]uaccess\[dq]
@@ -88,7 +88,7 @@ reusing the operating system\[cq]s default \f[I]audio\f[R] group.
 .IP
 .nf
 \f[C]
-# Soundcraft Notepad 5, Notepad 8FX and Notepad 12FX analog mixers with USB control
+# Soundcraft Notepad-5, Notepad-8FX and Notepad-12FX analog mixers with USB control
 ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq], ATTRS{idProduct}==\[dq]0030\[dq], GROUP=\[dq]audio\[dq]
 ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq], ATTRS{idProduct}==\[dq]0031\[dq], GROUP=\[dq]audio\[dq]
 ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]usb\[dq], ATTRS{idVendor}==\[dq]05fc\[dq], ATTRS{idProduct}==\[dq]0032\[dq], GROUP=\[dq]audio\[dq]

@@ -7,8 +7,9 @@ Development Environment
 -----------------------
 
 To ensure homogeneity of development environments, I recommend using
-`pipenv` and python 3.8 (though python 3.6 is the minimum supported
-version).  `pipenv` can be installed via `pip` in the usual ways.
+`pipenv` and Python 3.9. Later versions of Python should also work.
+
+`pipenv` can be installed via `pip` in the usual ways.
 
 
 ### Get a git clone of the source repository
@@ -42,7 +43,7 @@ probably best installed using operating system packages:
   the virtualenv will actually use the source files from this source
   directory.
 
-  If you are getting the black version subdependency problem on Debian
+  If you are getting the `black` version subdependency problem on Debian
   or Ubuntu, `pipenv lock --pre --clear` might help.
 
 `tools/link_system_libs`
@@ -107,16 +108,11 @@ locally, `git clean` can help.
 
 ### Things to avoid in code
 
-For compatibility with all versions of Python >= 3.6, avoid the
+For compatibility with all versions of Python >= 3.9, avoid the
 following:
 
-  * The `missing_ok` parameter to several `pathlib.Path` methods
-    (since Python 3.8)
+  * **empty list** (so far)
 
-  * The `@functools.cached_property` decorator (since Python 3.8)
-
-  * `importlib.metadata.version()` (`importlib.metadata` since
-    Python 3.8)
 
 
 Submitting Changes

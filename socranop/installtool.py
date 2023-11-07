@@ -260,24 +260,8 @@ class SudoScript:
 SUDO_SCRIPT = SudoScript()
 
 
-def findDataFiles(subdir):
-    """Walk through data files in the socranop module's ``data`` subdir``"""
-
-    result = {}
-    modulepaths = socranop.__path__
-    for path in modulepaths:
-        path = Path(path)
-        datapath = path / "data" / subdir
-        result[datapath] = []
-        for f in datapath.glob("**/*"):
-            if f.is_dir():
-                continue  # ignore directories
-            result[datapath].append(f.relative_to(datapath))
-    return result
-
-
 class AbstractFile(metaclass=abc.ABCMeta):
-    """Common behaviour for different types of files defined as Subclasses"""
+    """Common behavior for different types of files defined as subclasses"""
 
     def __init__(self, dst, comment=None):
         super(AbstractFile, self).__init__()
@@ -337,9 +321,7 @@ class AbstractFile(metaclass=abc.ABCMeta):
         """
         print_step("rm", self.dst)
         try:
-            self.chroot_dst.unlink()
-        except FileNotFoundError:
-            pass  # we do not need to remove a non existant file
+            self.chroot_dst.unlink(missing_ok=True)
         except PermissionError:
             SUDO_SCRIPT.add_cmd(f"rm -f {self.dst}", comment=self.comment)
 
@@ -421,7 +403,7 @@ class TemplateFile(AbstractFile):
 
 
 class AbstractInstallTool(metaclass=abc.ABCMeta):
-    """Things common to subsystem installtools"""
+    """Things common to subsystem InstallTool classes"""
 
     def __init__(self, heading):
         self.heading = heading
@@ -620,7 +602,7 @@ class ResourceInstallTool(FileInstallTool):
 
     @abc.abstractmethod
     def add_resource(self, fullname):
-        """Examine src file and decide what to do about it
+        """Examine source file and decide what to do about it
 
         Examine the given source resource ``fullname`` and then
         decide whether to
@@ -787,9 +769,9 @@ class ManpageInstallTool(ResourceInstallTool):
     def add_resource(self, fullname):
         mansrc = Path(fullname)
         rexpr = re.compile(r".*\.(?P<section>[1-9])")
-        match = rexpr.fullmatch(fullname)
-        if match:
-            section = match.group("section")
+        m = rexpr.fullmatch(fullname)
+        if m:
+            section = m.group("section")
             mandst = self.mandir() / f"man{section}" / mansrc.name
             manfile = TemplateFile(mandst, fullname, template_data=self.template_data)
             self.add_file(manfile)
@@ -944,7 +926,7 @@ done""",
 
 
 class InstallToolEverything(AbstractInstallTool):
-    """Groups all subsystem installtools"""
+    """Groups all subsystem InstallTool objects into one"""
 
     def __init__(self):
         super(InstallToolEverything, self).__init__(heading=None)

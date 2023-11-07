@@ -7,13 +7,13 @@ DESCRIPTION
 ===========
 
 The `socranop-session-service` D-Bus service and the `socranop-ctl
---dbus` CLI skipping the D-Bus service change the mixer audio routing
+--no-dbus` CLI skipping the D-Bus service change the mixer audio routing
 by opening and writing to the device special file corresponding to the
 mixer.
 
 By default, the device special file cannot be written by unpriviledged
 users and since the `socranop-session-service` D-Bus service and the
-`socranop-ctl --dbus` CLI run as an unpriviledged user, the device
+`socranop-ctl --no-dbus` CLI run as an unpriviledged user, the device
 special files's permission must be opened up to allow write access to
 `socranop-session-service`.
 
@@ -52,7 +52,7 @@ Setting `TAG+="uaccess"` allows access to users with a local login
 session.
 
 ```
-# Soundcraft Notepad 5, Notepad 8FX and Notepad 12FX analog mixers with USB control
+# Soundcraft Notepad-5, Notepad-8FX and Notepad-12FX analog mixers with USB control
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0030", TAG+="uaccess"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0031", TAG+="uaccess"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0032", TAG+="uaccess"
@@ -70,7 +70,7 @@ group for this purpose instead of reusing the operating system's
 default *audio* group.
 
 ```
-# Soundcraft Notepad 5, Notepad 8FX and Notepad 12FX analog mixers with USB control
+# Soundcraft Notepad-5, Notepad-8FX and Notepad-12FX analog mixers with USB control
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0030", GROUP="audio"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0031", GROUP="audio"
 ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="05fc", ATTRS{idProduct}=="0032", GROUP="audio"
