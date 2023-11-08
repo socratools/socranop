@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Test "pip install --user ."
+# CAUTION: Overwrites parts of $HOME/.local
+
+cd "$(dirname "$0")/../.."
+set -ex
+
+if [ "$PIPENV_ACTIVE" = 1 ]
+then
+    echo "Fatal: pipenv is active"
+    exit 2
+fi
+
+pip install --user .
+socranop-installtool post-pip-install
+
+if lsusb -d 05fc:0030 -d 05fc:0031 -d 05fc:0032
+then
+    socranop-ctl --list
+fi
+
+socranop-installtool pre-pip-uninstall
+pip uninstall --yes socranop

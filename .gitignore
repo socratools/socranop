@@ -1,5 +1,6 @@
 /build/
 /dist/
+/fedpkg-socranop/
 /*.egg-info/
 __pycache__/
 pypi.*key

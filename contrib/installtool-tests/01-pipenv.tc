@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Test "pipenv install"
+#
+# CAUTION: Overwrites your pipenv.
+
+if [ "$PIPENV_ACTIVE" = 1 ]
+then
+    echo "Fatal: pipenv is active"
+    exit 2
+fi
+
+cd "$(dirname "$0")/../.."
+set -ex
+
+pipenv --rm ||:
+pipenv run pip install setuptools
+pipenv install --verbose
+tools/link_system_libs
+
+source "$(pipenv --venv)/bin/activate"
+
+socranop-installtool post-pip-install
+
+if lsusb -d 05fc:0030 -d 05fc:0031 -d 05fc:0032
+then
+    socranop-ctl --list
+fi
+
+socranop-installtool pre-pip-uninstall
+
+# deactivate the pipenv
+deactivate
+pipenv --rm

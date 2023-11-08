@@ -1,0 +1,183 @@
+#!/bin/sh
+#
+# Test building an RPM package using socranop-installtool package-build-install
+#
+# Given a Fedora system with fedpkg, mock, and rpm installed,
+# test build a socranop RPM package.
+
+cd "$(dirname "$0")/../.."
+set -ex
+
+if [ "$PIPENV_ACTIVE" = 1 ]
+then
+    echo "Fatal: pipenv is active"
+    exit 2
+fi
+
+# Skip this test case when prerequisites are missing
+if fedpkg --help > /dev/null; then :; else exit 77; fi
+if mock   --help > /dev/null; then :; else exit 77; fi
+if rpm    --help > /dev/null; then :; else exit 77; fi
+
+top="$PWD/fedpkg-socranop"
+rm -rf "$top"
+mkdir -p "$top"
+test -d "$top"
+
+./tools/dist
+
+for tarball in dist/*.tar.gz
+do
+    test -f "$tarball"
+    tarbase="$(basename "$tarball")"
+    cp "$tarball" "$top/$tarbase"
+done
+
+cd "$top"
+
+sha512sum --tag "$tarbase" > sources
+
+tarball_version="$(echo "$(basename "$tarbase" ".tar.gz")" | sed 's/^socranop-//')"
+
+cat>socranop.spec<<EOF
+%global srcname socranop
+%global underscored_srcname socranop
+
+%global dbus_service_name io.github.socratools.socranop
+%global gtk_app_id io.github.socratools.socranop
+
+%global compdir %(pkg-config --variable=completionsdir bash-completion)
+
+Name:           socranop
+Version:        ${tarball_version}
+Release:        %autorelease
+Summary:        Linux Utilities for Soundcraft Mixers
+
+License:        MIT
+URL:            https://github.com/socratools/socranop
+# wget https://github.com/socratools/%%{name}/archive/v%%{version}.tar.gz
+# Source0:      %%{name}-%%{version}.tar.gz
+Source0:        %{pypi_source}
+
+BuildArch:      noarch
+
+BuildRequires:  python3-devel
+BuildRequires:  %{py3_dist setuptools}
+BuildRequires:  desktop-file-utils
+# For %%{_udevrulesdir}
+BuildRequires:  systemd-rpm-macros
+
+BuildRequires:  python3-gobject-base
+BuildRequires:  python3-pydbus
+BuildRequires:  %{py3_dist pydbus}
+BuildRequires:  %{py3_dist pyusb}
+BuildRequires:  libgudev
+
+BuildRequires:  bash-completion
+
+Provides:       python3-socranop = %{version}-%{release}
+%{?python_provide:%python_provide python3-socranop}
+
+%description
+Configure advanced features of Soundcraft Notepad mixers like the USB
+routing for the capture channels.
+
+%prep
+%autosetup
+
+
+%build
+%py3_build
+
+
+%install
+rm -rf %{buildroot}
+%py3_install
+
+# find /builddir/build | sort
+
+find %{buildroot} -type f | sort
+
+# Run installtool script, then remove it and its data files
+export PYTHONPATH="\${PYTHONPATH:-%{buildroot}%{python3_sitearch}:%{buildroot}%{python3_sitelib}}"
+export PATH="%{buildroot}%{_bindir}:\$PATH"
+export PYTHONDONTWRITEBYTECODE=1
+socranop-installtool package-build-install --chroot=%{buildroot}
+
+# Move the service executable from %%{_bindir} to %%{_libexecdir}
+%{__install} -m 0755    -d %{buildroot}%{_libexecdir}
+mv %{buildroot}%{_bindir}/socranop-session-service %{buildroot}%{_libexecdir}/
+%{__sed} -i 's|=%{_bindir}/|=%{_libexecdir}/|' %{buildroot}%{_datadir}/dbus-1/services/%{dbus_service_name}.service
+
+# find %%{buildroot} -print0 | xargs -0 ls -dl | sed 's| %%{buildroot}/| /|'
+
+find %{buildroot} | sort
+
+
+%check
+#{python3} setup.py test
+desktop-file-validate %{buildroot}%{_datadir}/applications/%{gtk_app_id}.desktop
+
+
+%post
+udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor=05fc --attr-match=idProduct=0030
+udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor=05fc --attr-match=idProduct=0031
+udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor=05fc --attr-match=idProduct=0032
+
+
+%postun
+if [ \$1 -eq 0 ]; then
+udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor=05fc --attr-match=idProduct=0030
+udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor=05fc --attr-match=idProduct=0031
+udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor=05fc --attr-match=idProduct=0032
+fi
+
+
+%files
+%license LICENSE
+%doc CONTRIBUTORS.md
+%doc README.md
+%doc PERMISSIONS.md
+%{_bindir}/socranop-ctl
+%{_bindir}/socranop-gui
+%{_libexecdir}/socranop-session-service
+%{_mandir}/man1/socranop-ctl.1*
+%{_mandir}/man1/socranop-gui.1*
+%{_mandir}/man1/socranop-session-service.1*
+%{_mandir}/man7/socranop-permissions.7*
+%{_datadir}/applications/%{gtk_app_id}.desktop
+%{compdir}/socranop-ctl
+%{compdir}/socranop-gui
+%{compdir}/socranop-session-service
+%{_datadir}/icons/hicolor/16x16/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/24x24/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/32x32/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/48x48/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/64x64/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/96x96/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/128x128/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/192x192/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/256x256/apps/%{gtk_app_id}.png
+%{_datadir}/icons/hicolor/scalable/apps/%{gtk_app_id}.svg
+%{_datadir}/dbus-1/services/%{dbus_service_name}.service
+%{python3_sitelib}/%{underscored_srcname}-%{version}-*.egg-info/
+%{python3_sitelib}/socranop/
+%{_udevrulesdir}/70-socranop.rules
+
+
+%changelog
+%autochangelog
+EOF
+
+fNN="f$(rpm --eval='%{?fedora}')"
+test "$fNN" != "f"
+
+fedpkg --release "$fNN" --name socranop mockbuild
+
+rpm -qpflv results_socranop/*/*/socranop-*.noarch.rpm
+rpm -qp --scripts results_socranop/*/*/socranop-*.noarch.rpm
+
+if rpmlint --help > /dev/null
+then
+    rpmlint results_socranop/*/*/socranop-*.*.rpm
+fi

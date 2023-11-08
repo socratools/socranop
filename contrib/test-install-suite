@@ -46,18 +46,18 @@ sudo rm -rf "/usr/local/lib"/python*/{dist,site}-packages/socranop*
 rm -f  "$HOME/.local/bin"/socranop-* "$HOME/.local/share/dbus-1/services"/socranop*
 rm -rf "$HOME/.local/lib"/python*/{dist,site}-packages/socranop*
 
-if socranop-ctl --version
+if socranop-ctl --version >/dev/null 2>&1
 then
     echo "Fatal: There is still socranop-ctl in the PATH."
     exit 2
 fi
 
-test_install_pipenv() {
+test_install_pipenv_dev() {
     local virtual_env
     virtual_env="$(pipenv run printenv | sed -n 's|^VIRTUAL_ENV=||p')"
     rm -f  "$virtual_env"/bin/socranop-*
     rm -rf "$virtual_env"/lib/python*/{dist,site}-packages/socranop*
-    pipenv install -e .
+    pipenv install --dev
     ./tools/link_system_libs
     pipenv run "$virtual_env/bin/socranop-installtool" post-pip-install $sudo_script_post_install_arg
     cat sudo-script-post-pip-install.sh
@@ -74,6 +74,9 @@ test_install_pipenv() {
 }
 
 test_install_home() {
+    saved_PATH="$PATH"
+    saved_PYTHONPATH="$PYTHONPATH"
+
     pip install --user "$wheel"
     socranop-installtool post-pip-install $sudo_script_post_install_arg
     if [ -f sudo-script-post-pip-install.sh ]; then cat sudo-script-post-pip-install.sh; fi
@@ -88,6 +91,11 @@ test_install_home() {
     socranop-installtool pre-pip-uninstall $sudo_script_pre_uninstall_arg
     if [ -f sudo-script-pre-pip-uninstall.sh ]; then cat sudo-script-pre-pip-uninstall.sh; fi
     pip --verbose uninstall --yes socranop
+
+    PATH="$saved_PATH"
+    export PATH
+    PYTHONPATH="$saved_PYTHONPATH"
+    export PYTHONPATH
 }
 
 test_sudo_usr_local() {
@@ -143,6 +151,8 @@ test_chroot_usr() {
     # socranop-ctl --set 2
     # socranop-ctl --list
     # socranop-ctl --set 3
+
+    echo "Removing chroot $chroot"
     rm -rf "$chroot"
 
     PATH="$saved_PATH"
@@ -151,7 +161,7 @@ test_chroot_usr() {
     export PYTHONPATH
 }
 
-test_install_pipenv
+test_install_pipenv_dev
 
 pipenv run ./tools/dist
 wheel="$(ls -1 dist/socranop-*.whl | head -n1)"
