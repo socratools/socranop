@@ -1,0 +1,55 @@
+#!/bin/bash
+# Run all test cases and print a summary at the end.
+
+cd "$(dirname "$0")"
+
+if [ "$PIPENV_ACTIVE" = 1 ]
+then
+    echo "Fatal: pipenv is active"
+    exit 2
+fi
+
+bold="$(tput bold)"
+norm="$(tput sgr0)"
+
+# store all test case exit status values
+declare -A status
+status=()
+
+fail_count=0
+pass_count=0
+skip_count=0
+
+for tc in [0-9][0-9]-*.tc
+do
+    case "$tc" in
+	*~) continue ;;
+    esac
+    echo "${bold}Test case: $tc${norm}"
+    ./"$tc"
+    s="$?"
+    echo "${bold}Exit code: $s ($tc)${norm}"
+    status["$tc"]="$s"
+    case "$s" in
+	0)  pass_count=$(( pass_count + 1 )) ;;
+	77) skip_count=$(( skip_count + 1 )) ;;
+	*)  fail_count=$(( fail_count + 1 )) ;;
+    esac
+done
+total_count=$(( fail_count + pass_count + skip_count ))
+
+printf "%5s %s\n" "status" "test case"
+
+for tc in "${!status[@]}"
+do
+    case "${status["$tc"]}" in
+	0)  s="PASS" ;;
+	77) s="SKIP" ;;
+	*)  s="FAIL" ;;
+    esac
+    printf "%5s %s\n" "$s" "$tc"
+done
+
+cat<<EOF
+Summary by numbers: failed: $fail_count, passed: $pass_count, skipped: $skip_count, total:  $total_count
+EOF
