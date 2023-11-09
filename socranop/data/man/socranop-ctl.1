@@ -89,7 +89,11 @@ If successful, returns 0. Nonzero exit codes indicate an error.
 .SH ENVIRONMENT
 .TP
 .B XDG_CONFIG_HOME
-When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, \fBsocranop\-ctl\fR takes over handling device files and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, \fBsocranop\-ctl\fR takes over handling device files and state files from
+.MR socranop\-session\-service (1) .
+See the
+.MR socranop\-session\-service 1
+ENVIRONMENT and FILES sections for more information.
 .\"
 .\" ======================================================================
 .\"
@@ -97,16 +101,24 @@ When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, \fBsocranop\-ctl\fR tak
 .\" The device path is Linux specific
 .TP
 .BI /dev/bus/usb/ NNN / MMM
-When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from
+.MR socranop\-session\-service 1 .
+See the
+.MR socranop\-session\-service 1
+ENVIRONMENT and FILES sections for more information.
 .TP
 .B ~/.config/${PACKAGE}/state/*.state
-When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from \fBsocranop\-session\-service\fR(1). See the \fBsocranop\-session\-service\fR(1) ENVIRONMENT and FILES sections for more information.
+When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, it takes over handling device file and state files from
+.MR socranop\-session\-service 1 .
+See the
+.MR socranop\-session\-service 1
+ENVIRONMENT and FILES sections for more information.
 .\"
 .\" ======================================================================
 .\"
 .SH NOTES
 When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, the USB device file must be readable and writable for the \fBsocranop\-ctl\fR process. For more information on permission setup, see
-.BR socranop\-permissions (7).
+.MR socranop\-permissions 7 .
 .\"
 .\" ======================================================================
 .\"
@@ -158,9 +170,9 @@ For reading about known bugs and for filing new bugs, please go visit
 .\" ======================================================================
 .\"
 .SH SEE ALSO
-.BR socranop\-gui (1),
-.BR socranop\-session\-service (1),
-.BR socranop\-permissions (7),
+.MR socranop\-gui 1 ,
+.MR socranop\-session\-service 1 ,
+.MR socranop\-permissions 7 ,
 .UR https://github.com/socratools/socranop
 .UE
 .\"
