@@ -804,16 +804,17 @@ class DBusInstallTool(ResourceInstallTool):
             return
 
         dbus_service = self._service(".DBus")
-        with Step("verify", "Reload dbus to register the new service"):
-            # An explicit reload is required in case dbus isn't smart enough to see
-            # us drop in the service file (dbus-broker, for example, if we just
-            # created ~/.local/share/dbus-1/services)
+        with Step("verify", "Reload D-Bus to register the new service"):
+            # An explicit reload is required in case D-Bus isn't smart
+            # enough to observe us droping in the service file
+            # (dbus-broker, for example, if we just created
+            # ~/.local/share/dbus-1/services)
             dbus_service.ReloadConfig()
 
         with Step(
             "verify",
             "Checking for registered service",
-            error_msg=f"The dbus service we just installed has not yet been detected after {MAX_ATTEMPTS}s. You may need to restart your dbus session (for example, by logging out and back in to your desktop).",
+            error_msg=f"The D-Bus service we just installed has not yet been detected after {MAX_ATTEMPTS}s. You may need to restart your D-Bus session (for example, by logging out and back in to your desktop).",
             max_attempts=MAX_ATTEMPTS,
         ) as step:
             while const.BUSNAME not in dbus_service.ListActivatableNames():
