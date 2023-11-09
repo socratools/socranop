@@ -110,7 +110,7 @@ class NotepadBase:
 
     def fetchInfo(self):
         assert self.found()
-        # TODO: Decode these?
+        # TODO: Decode these control transfers?
         # Unfortunately, inspection shows none of the data here
         # corresponds to the current source selection
         self.info1 = self.dev.ctrl_transfer(0xA1, 1, 0x0100, 0x2900, 256)
