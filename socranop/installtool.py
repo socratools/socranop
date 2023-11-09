@@ -1080,11 +1080,6 @@ class UdevRulesInstallTool(FileInstallTool):
         self._emit_code_for_rule_change(skip_if=(new_content == old_content))
 
     def pre_pip_uninstall(self):
-        # FIXME05: Do we even want to uninstall the udev rules if it
-        #          is in /etc/udev/rules.d for a $HOME/.local install?
-        #          The next install will just need sudo access again
-        #          to install it again.
-
         old_content = {}
         if self.udev_rules_dst.exists():
             old_content[self.udev_rules_dst] = self.udev_rules_dst.read_text()
