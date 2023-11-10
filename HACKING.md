@@ -58,7 +58,7 @@ probably best installed using operating system packages:
 - Inside the virtual environment of `pipenv shell`, run
   `post-pip-install` to install the socranop config files into their
   proper places inside `$HOME/.local` (outside the pipenv!), like
-  e.g. the D-Bus `.service` file.
+  e.g. the essential D-Bus `.service` file.
 
   You can now also run `socranop-ctl` and `socranop-gui` from inside
   the `pipenv shell`. The D-Bus service should now be started
