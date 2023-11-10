@@ -64,6 +64,10 @@ probably best installed using operating system packages:
   the `pipenv shell`. The D-Bus service should now be started
   automatically.
 
+  Alternatively, you can manually start `socranop-session-service`
+  without needing to install the D-Bus `.service` file, and then run
+  `socranop-ctl` and `socranop-gui` to communicate with that service.
+
 ### Set up pre-commit
 
 `pre-commit install` (inside of pipenv shell)
