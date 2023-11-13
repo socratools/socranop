@@ -9,7 +9,16 @@ Development Environment
 To ensure homogeneity of development environments, I recommend using
 `pipenv` and Python 3.9. Later versions of Python should also work.
 
-`pipenv` can be installed via `pip` in the usual ways.
+`pipenv` can be installed via `pip` in the usual way:
+
+    [user@host ~]$ pip install pipenv
+    [user@host ~]$ _
+
+If your existing `pipenv` version is too old (such as the Debian 11
+system `pipenv` package), you need to update pipenv:
+
+    [user@host ~]$ pip install -U pipenv
+    [user@host ~]$ _
 
 
 ### Get a git clone of the source repository
