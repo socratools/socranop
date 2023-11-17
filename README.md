@@ -203,15 +203,9 @@ examples below). And while you're at it, you could also install the
 system's Python dbus and usb packages and save a bit more of compiling
 (second line in the install examples below):
 
-Debian:
+Debian and Ubuntu:
 
 ``` sh
-sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-gudev-1.0
-sudo apt install python3-pydbus python3-usb
-```
-
-Ubuntu:
-```sh
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-gudev-1.0
 sudo apt install python3-pydbus python3-usb
 ```
