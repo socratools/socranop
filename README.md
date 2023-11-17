@@ -204,14 +204,15 @@ system's Python dbus and usb packages and save a bit more of compiling
 (second line in the install examples below):
 
 Debian and Ubuntu:
-
 ``` sh
+sudo apt install python3-pip
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-gudev-1.0
 sudo apt install python3-pydbus python3-usb
 ```
 
 Fedora:
 ```sh
+sudo dnf install python3-pip
 sudo dnf install python3-gobject gtk3 libgudev
 sudo dnf install python3-dbus python3-pyusb
 ```
