@@ -9,5 +9,23 @@ if [[ $VERSION_SUFFIX ]]; then
     EGG_INFO="egg_info -b $VERSION_SUFFIX"
 fi
 python3 setup.py $EGG_INFO sdist bdist_wheel || exit 1
+
+# Ensure the source dist tarball contains the LICENSE file
+for tgz in dist/*.tar.gz
+do
+  if test -f "$tgz"
+  then :; else
+    echo "Error: No source tarball found" >&2
+    exit 1
+  fi
+
+  if tar tfz "$tgz" | grep /LICENSE
+  then :; else
+    echo "Error: LICENSE file not found in source tarball $tgz" >&2
+    rm -f dist/*.tar.gz dist/*.whl
+    exit 1
+  fi
+done
+
 [[ -f $BAK ]] && mv $BAK $ORIG
 exit 0
