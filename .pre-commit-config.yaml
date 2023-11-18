@@ -49,3 +49,8 @@ repos:
     pass_filenames: false
     files: ^(socranop|test)/
     types: [file, python]
+  - id: dist
+    name: Generate dist files
+    language: system
+    entry: bash tools/dist
+    pass_filenames: false
