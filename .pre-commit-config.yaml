@@ -21,7 +21,7 @@ repos:
   - id: find-mistakes
     name: Find mistakes in the sources
     language: system
-    entry: tools/find-mistakes
+    entry: bash tools/find-mistakes
     pass_filenames: false
   - id: manpages
     name: Update manpages from markdown source files
