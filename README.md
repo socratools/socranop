@@ -50,7 +50,7 @@ alongside all your other favorite GUI applications.
 
 The GUI can also be started manually via:
 
-```bash
+```sh
 socranop-gui
 ```
 
@@ -75,13 +75,13 @@ socranop-gui
 
 List possible channel routing choices:
 
-```bash
+```sh
 socranop-ctl --list/-l
 ```
 
 Set channel routing:
 
-```bash
+```sh
 socranop-ctl --set/-s <number>
 ```
 
@@ -204,7 +204,7 @@ system's Python dbus and usb packages and save a bit more of compiling
 (second line in the install examples below):
 
 Debian and Ubuntu:
-``` sh
+```sh
 sudo apt install python3-pip
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-gudev-1.0
 sudo apt install python3-pydbus python3-usb
@@ -233,7 +233,7 @@ privileges.
 
 #### Example
 
-```bash
+```sh
 pip install socranop
 socranop-installtool post-pip-install --sudo-script ./socranop-sudo.sh
 # Inspect ./socranop-sudo.sh to make sure it's safe to run as root
@@ -253,7 +253,7 @@ will guide you through.
 
 #### Example
 
-```bash
+```sh
 pip install --upgrade socranop
 socranop-installtool post-pip-install
 ```
@@ -268,7 +268,7 @@ are again placed in a script that needs to be run manually.
 
 #### Example
 
-```bash
+```sh
 socranop-installtool pre-pip-uninstall --sudo-script ./socranop-sudo.sh
 # Inspect ./socranop-sudo.sh to make sure it's safe to run as root
 sudo ./socranop-sudo.sh
