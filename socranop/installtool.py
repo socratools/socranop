@@ -1205,25 +1205,32 @@ def parse_argv(argv=None):
     add_sudo_script_argument(parser_ppi)
     add_sudo_script_argument(parser_ppu)
 
-    parser_pbi.add_argument(
+    mutex_pbi = parser_pbi.add_mutually_exclusive_group(required=True)
+    mutex_pbi.add_argument(
         "--chroot",
         metavar="CHROOT",
         help="package build root chroot directory",
         type=Path,
         default=None,
-        required=True,
+    )
+    mutex_pbi.add_argument(
+        "--force-prefix",
+        help="force acceptance of non-standard installation prefix",
+        action="store_true",
     )
 
     args = parser.parse_args(argv)
     print("args after parse_args:", args)
 
-    if hasattr(args, "chroot"):
+    if hasattr(args, "chroot") and hasattr(args, "force_prefix"):
         # Initialize the dirs object with the chroot given so that later
         # calls to get_dirs() will yield an object which uses the same
         # chroot value.
-        dirs = init_dirs(chroot=args.chroot)
-    else:
+        dirs = init_dirs(chroot=args.chroot, force_prefix=args.force_prefix)
+    elif (not hasattr(args, "chroot")) and (not hasattr(args, "force_prefix")):
         dirs = init_dirs()
+    else:
+        parser.error("Internal error related to chroot and force_prefix")
     common.debug("Using dirs", dirs)
 
     print("args", args)

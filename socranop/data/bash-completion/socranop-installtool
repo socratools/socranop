@@ -17,7 +17,7 @@ _socranop_installtool()
 	    package-build-install)
 		subcommand="$word"
 		REMAINING_OPTIONS=()
-		for word in --chroot -h --help
+		for word in --chroot --force-prefix -h --help
 		do
 		    REMAINING_OPTIONS["$word"]=t
 		done
@@ -42,7 +42,7 @@ _socranop_installtool()
 		    COMPREPLY=($(compgen -A directory -- "$2"))
 		    return 0
 		    ;;
-		-h | --help)
+		-h | --help | --force-prefix)
                     COMPREPLY=()
                     return 0
                     ;;
@@ -51,7 +51,7 @@ _socranop_installtool()
 	    do
 		word="${COMP_WORDS[$i]}"
 		case "$word" in
-		    -h | --help)
+		    -h | --help | --force-prefix)
 			COMPREPLY=()
 			return 0
 			;;

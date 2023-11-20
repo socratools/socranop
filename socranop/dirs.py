@@ -90,6 +90,9 @@ class AbstractDirs(metaclass=abc.ABCMeta):
         ps = ", ".join([("%s=%r" % (p, c(getattr(self, p)))) for p in props])
         return f"{self.__class__.__name__}({ps})"
 
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def chroot(self):
         return self._chroot
@@ -101,6 +104,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
             rel_path = path.relative_to(self.chroot)
             return Path(f"/{rel_path}")
 
+    @classmethod
     @property
     def exePath(self):
         """The path the currently running executable"""
@@ -197,6 +201,29 @@ class GlobalDirs(AbstractDirs):
     pass  # class GlobalDirs
 
 
+class AnyPrefixDirs(GlobalDirs):
+    """Global install to ANY prefix.
+
+    Should be useful for NixOS installs.
+    """
+
+    def __init__(self, chroot=None):
+        exe_path = GlobalDirs.exePath
+        if chroot is not None:
+            exe_path_relative = exe_path.relative_to(Path(chroot))
+            rooted_path = Path("/") / exe_path_relative
+        else:
+            rooted_path = exe_path
+        assert rooted_path.parent.name == "bin"
+        rooted_prefix = rooted_path.parent.parent
+        self.PREFIX = rooted_prefix.resolve()
+        super().__init__(chroot=chroot)
+
+    @property
+    def udev_rulesdir(self):
+        return self.PREFIX / "lib/udev/rules.d"
+
+
 class UsrDirs(GlobalDirs):
     """Global install to /usr"""
 
@@ -231,10 +258,15 @@ class HomeDirs(AbstractDirs):
 __dir_instance = None
 
 
-def init_dirs(chroot=None):
+def init_dirs(chroot=None, force_prefix=False):
     global __dir_instance
 
     assert __dir_instance is None
+
+    if force_prefix is not None:
+        __dir_instance = AnyPrefixDirs(chroot)
+        debug("Using dirs:", __dir_instance)
+        return __dir_instance
 
     for cls in [UsrLocalDirs, UsrDirs, HomeDirs]:
         try:
