@@ -9,9 +9,13 @@ Development Environment
 To ensure homogeneity of development environments, I recommend using
 `pipenv` and Python 3.9. Later versions of Python should also work.
 
-`pipenv` can be installed via `pip` in the usual way:
+`pipenv` can be installed via `pip` in the usual way, or on systems
+using an externally managed environment, using that system's `pipenv`
+package:
 
     [user@host ~]$ pip install pipenv
+    [user@host ~]$ sudo pacman -S python-pipenv  # Arch
+    [user@host ~]$ sudo apt install pipenv  # Debian 12+, Ubuntu 23.10+
     [user@host ~]$ _
 
 If your existing `pipenv` version is too old (such as the Debian 11
@@ -36,8 +40,9 @@ probably best installed using operating system packages:
   * pandoc: The pandoc command is required when you modify some parts
     of the documentation.
 
-        [user@host ~]$ sudo apt install pandoc   # Debian, Ubuntu
-        [user@host ~]$ sudo dnf install pandoc   # Fedora
+        [user@host ~]$ sudo pacman -S pandoc        # Arch
+        [user@host ~]$ sudo apt install pandoc      # Debian, Ubuntu
+        [user@host ~]$ sudo dnf install pandoc tar  # Fedora
         [user@host ~]$ _
 
 
