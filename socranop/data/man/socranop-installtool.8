@@ -56,11 +56,12 @@ socranop\-installtool - Hook socranop into the system post-install (or do the re
 .\"                         write the script of sudo commands to the given
 .\"                         FILENAME
 .\"
-.\" usage: socranop-installtool package-build-install [-h] --chroot CHROOT
+.\" usage: socranop-installtool package-build-install [-h] ( --chroot CHROOT | --force-prefix )
 .\"
 .\" options:
 .\"   -h, --help       show this help message and exit
 .\"   --chroot CHROOT  package build root chroot directory
+.\"   --force-prefix   force acceptance of non-standard installation prefix
 .\"
 .\"
 .\" ======================================================================
@@ -78,8 +79,9 @@ socranop\-installtool - Hook socranop into the system post-install (or do the re
 .\" .B socranop\-installtool
 .\" .RB [\| \-v \|]
 .\" .RB [\| \-n \|]
-.\" .B package\-build\-install
+.\" .BR package\-build\-install (
 .\" .BI \-\-chroot\  CHROOT
+.\" .RI | \-\-force\-prefix )
 .\" .br
 .\" .B socranop\-installtool
 .\" .RB [\| \-v \|]
@@ -155,9 +157,11 @@ If \fI\-\-sudo\-script\fR is not given, prints the sudo script to stdout as info
 .SS \fIsocranop\-installtool package\-build\-install\fR command
 Call \fIsocranop\-installtool package\-build\-install\fR from your package build script when you are \fIbuilding\fR an OS binary package like \fI*.rpm\fR, \fI*.deb\fR, AUR \fI*.tar.zstd\fR, etc.
 
-This installs the configuration and resource files into the \fICHROOT\fR, prints some commands to \fIstdout\fR so that the packager can decide whether and where to write package hook scripts running those commands (e.g. \fIudevadm trigger\fR for ONLY the Notepad devices), and finally removes \fIsocranop\-installtool\fR related files  from the \fICHROOT\fR.
+This installs the configuration and resource files into the proper location (\fIprefix\fR or \fICHROOT\fR), prints some commands to \fIstdout\fR so that the packager can decide whether and where to write package hook scripts running those commands (e.g. \fIudevadm trigger\fR for ONLY the Notepad devices), and finally removes \fIsocranop\-installtool\fR related files  from the installation location (\fIprefix\fR or \fICHROOT\fR).
 
-As uninstalling an OS package is handled by the package manager (\fIdnf\fR/\fIrpm\fR, \fIapt\fR/\fIdpkg\fR, \fIpacman\fR, etc.), \fIsocranop\-installtool\fR only needs to care about installing, not about uninstalling. However, the packager may want to put some of the command suggestions printed by \fIsocranop\-installtool package\-build\-install\fR into some uninstall hook scripts.
+As uninstalling an OS package is handled by the package manager (\fIdnf\fR/\fIrpm\fR, \fIapt\fR/\fIdpkg\fR, \fIpacman\fR, etc.), \fIsocranop\-installtool\fR only needs to care about installing, not about uninstalling.
+
+However, the packager may want to put some of the command suggestions printed by \fIsocranop\-installtool package\-build\-install\fR into some install/uninstall/update hook scripts.
 .\"
 .\"
 .\" ======================================================================
@@ -200,9 +204,12 @@ to execute those privileged operations after the \fIpip uninstall socranop\fR ha
 .\"
 .\"
 .SS Options for \fIpackage\-build\-install\fR command
+One of the following arguments is required:
 .TP
 .BI \-\-chroot\  CHROOT
-Give the package's build chroot \fICHROOT\fR to install to (required argument).
+Give the package's build chroot \fICHROOT\fR to install to.
+.B \-\-force\-prefix
+Force \fIsocranop\-installtool package-build-install\fR into accepting \fIsocranop\-installtool\fR's \fIprefix\fR whatever it may be. This should work for the weird NixOS installation locations like \fI/nix/store/w3y50ifd6zss5j09n21c36wk45ip84x0-socranop-0.4.92\fR.
 .\"
 .\" ======================================================================
 .\"
