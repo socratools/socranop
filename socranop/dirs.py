@@ -262,8 +262,9 @@ def init_dirs(chroot=None, force_prefix=False):
     global __dir_instance
 
     assert __dir_instance is None
+    assert force_prefix is not None
 
-    if force_prefix is not None:
+    if force_prefix:
         __dir_instance = AnyPrefixDirs(chroot)
         debug("Using dirs:", __dir_instance)
         return __dir_instance
