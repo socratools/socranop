@@ -30,7 +30,6 @@
 import abc
 import argparse
 import base64
-import functools
 import importlib
 import importlib.resources
 import io
@@ -39,6 +38,7 @@ import re
 import sys
 import time
 
+from functools import cached_property
 from logging import debug
 from pathlib import Path
 from string import Template
@@ -738,7 +738,7 @@ class DBusInstallTool(ResourceInstallTool):
         self.no_launch = no_launch
         self.walk_resources("dbus-1")
 
-    @functools.cached_property
+    @cached_property
     def _session_bus(self):
         import pydbus  # type: ignore
 
