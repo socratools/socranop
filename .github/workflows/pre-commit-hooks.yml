@@ -37,3 +37,6 @@ jobs:
     - name: run commit-hook contrib
       run: |
         pipenv run pre-commit run -a contrib
+    - name: run commit-hook dictionary
+      run: |
+        pipenv run pre-commit run -a dictionary
