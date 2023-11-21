@@ -93,7 +93,7 @@ def show(dev):
 
 
 def parse_argv(argv=None):
-    """Parse the command line arguments for socranop-ctl."""
+    """Parse the command line arguments for `socranop-ctl`."""
 
     # Caution: If you change the command line parser in any way,
     #          update the man pages and bash completions accordingly.
@@ -134,7 +134,7 @@ def parse_argv(argv=None):
 
 
 def main(argv=None):
-    """Main program for socranop-ctl."""
+    """Main program for `socranop-ctl`."""
 
     args = parse_argv(argv)
 
@@ -151,7 +151,7 @@ def main(argv=None):
             print("Run -l to list the valid choices")
             sys.exit(1)
 
-    # Show the device state for both args.list and args.set
+    # Show the device state for both `args.list` and `args.set`
     show(dev)
 
 
