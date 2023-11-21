@@ -267,13 +267,13 @@ class App(Gtk.Application):
         # Caution: If you change the command line parser in any way,
         #          update the man pages and bash completions accordingly.
 
-        # Equivalent to argparse "epilog" in --help printout
+        # Equivalent to `argparse` `epilog` in --help printout
         # self.set_option_context_description("set_option_context_description")
 
-        # Equivalent messing with part of the argparse "usage" in --help printout
+        # Equivalent messing with part of the `argparse` `usage` in --help printout
         # self.set_option_context_parameter_string("set_option_context_parameter_string")
 
-        # Equivalent to argparse "description" in --help printout
+        # Equivalent to `argparse` `description` in --help printout
         self.set_option_context_summary(
             "Control a Soundcraft Notepad series mixer through a GUI."
         )
@@ -351,7 +351,7 @@ class App(Gtk.Application):
 
 
 def main(argv=None):
-    """Main program for socranop-gui."""
+    """Main program for `socranop-gui`."""
 
     if argv is None:
         argv = sys.argv

@@ -806,8 +806,8 @@ class DBusInstallTool(ResourceInstallTool):
         dbus_service = self._service(".DBus")
         with Step("verify", "Reload D-Bus to register the new service"):
             # An explicit reload is required in case D-Bus isn't smart
-            # enough to observe us droping in the service file
-            # (dbus-broker, for example, if we just created
+            # enough to observe us dropping the service file into the
+            # folder (dbus-broker, for example, if we just created
             # ~/.local/share/dbus-1/services)
             dbus_service.ReloadConfig()
 
@@ -1242,7 +1242,7 @@ def parse_argv(argv=None):
     if args.command == "post-pip-install":
         pass
     elif args.command == "pre-pip-uninstall":
-        # Always false for ppu, so there is no --no-launch argument to ppu.
+        # Always false for pre-pip-uninstall, so there is no --no-launch argument
         setattr(args, "no_launch", False)
     elif args.command == "package-build-install":
         if args.chroot == "/":
@@ -1278,9 +1278,9 @@ def main(argv=None):
     # Compiled module source file (socranop/__pycache__/installtool.*.pyc)
     if "__cached__" in globals():
         pyc = Path(globals()["__cached__"])
-        # Occasionally, there are two *.pyc files but __cached__ only
+        # Occasionally, there are two `*.pyc` files but __cached__ only
         # points to one. So we use __cached__ to find the directory,
-        # and just remove all installtool.*.pyc files.
+        # and just remove all `installtool.*.pyc` files.
         for p in pyc.parent.glob("installtool.*.pyc"):
             files_to_delete.add(p)
 

@@ -4,8 +4,10 @@ GVariant
 Gio
 Gtk
 Niedermann
+PNG
 README
 SHA
+SVG
 Ulrich
 Wireshark
 XDG
@@ -20,6 +22,7 @@ datadir
 dbus
 de
 dirs
+epilog
 exePath
 firefox
 gi
