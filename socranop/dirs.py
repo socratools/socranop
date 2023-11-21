@@ -102,7 +102,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
             return path
         else:
             rel_path = path.relative_to(self.chroot)
-            return Path(f"/{rel_path}")
+            return Path("/") / rel_path
 
     @classmethod
     @property
