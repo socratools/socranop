@@ -1276,9 +1276,9 @@ def main(argv=None):
     # Compiled module source file (socranop/__pycache__/installtool.*.pyc)
     if "__cached__" in globals():
         pyc = Path(globals()["__cached__"])
-        # Occasionally, there are two `*.pyc` files but __cached__ only
-        # points to one. So we use __cached__ to find the directory,
-        # and just remove all `installtool.*.pyc` files.
+        # Occasionally, there are two `*.pyc` files but `__cached__`
+        # only points to one. So we use `__cached__` to find the
+        # directory, and just remove all `installtool.*.pyc` files.
         for p in pyc.parent.glob("installtool.*.pyc"):
             files_to_delete.add(p)
 
