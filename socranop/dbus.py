@@ -131,7 +131,7 @@ class Service:
     def run(self):
         self.tryRegister()
         if not self.hasDevice():
-            print("Waiting for one to arrive...")
+            print("Waiting for a device to arrive...")
         self.loop.run()
 
     @property
