@@ -15,12 +15,11 @@ isort = "*"
 pytest = "*"
 tox = "~= 3.0"
 tox-pyenv = "*"
-pipenv-setup = "*"
 pre-commit = "*"
 chardet = "*"
 twine = "*"
 pygit2 = "*"
-vistir = "< 0.7.0"
+wheel = "*"
 
 [pipenv]
 allow_prereleases = true

@@ -35,13 +35,6 @@ repos:
     entry:  tools/sort-dictionary
     pass_filenames: true
     files: .private-dictionary.txt
-  - id: pipenv-setup
-    name: Sync pipfile dependency changes to setup.py
-    language: system
-    entry: pipenv-setup
-    args: [sync, --pipfile]
-    pass_filenames: false
-    files: Pipfile
   - id: pytest
     name: Run unit tests
     language: system
