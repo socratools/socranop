@@ -54,7 +54,6 @@ def print_step(tag, details, **printopts):
 
 
 class Step:
-
     """\
     Allow easy printing of checks similar to the following:
 
@@ -436,7 +435,6 @@ files_to_delete = None
 
 
 class TemplateFile(AbstractFile):
-
     """This destination file is a source file after string template processing"""
 
     def __init__(self, dst, resource_entry, template_data=None, comment=None):
