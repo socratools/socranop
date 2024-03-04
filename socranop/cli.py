@@ -28,9 +28,9 @@ import socranop.common as common
 
 def autodetect(dbus=True, wait=False):
     if dbus:
-        try:
-            from socranop.dbus import Client, DbusInitializationError
+        from socranop.dbus import Client, DbusInitializationError
 
+        try:
             client = Client()
             result = client.autodetect()
             if result is None and wait:
