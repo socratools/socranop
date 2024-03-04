@@ -34,9 +34,9 @@ under the [socratools](https://github.com/socratools) organization.
 
 ### Legacy Upgrades
 
-If you're upgrading from soundcraft-utils, this version is different enough
-that it's worth uninstalling the soundcraft-utils and doing a fresh install of
-socranop as outlined below.
+If you are upgrading from soundcraft-utils, this version is different
+enough that it is worth uninstalling the soundcraft-utils and doing a
+fresh install of socranop as outlined below.
 
 
 Usage
@@ -199,7 +199,7 @@ available via pypi without a lot of dev libraries for it to compile against.
 
 It is usually easier to install `PyGObject` separately using your
 system's package installation tools (first line in the install
-examples below). And while you're at it, you could also install the
+examples below). And while you are at it, you could also install the
 system's Python dbus and usb packages and save a bit more of compiling
 (second line in the install examples below):
 
@@ -220,7 +220,7 @@ sudo dnf install python3-dbus python3-pyusb
 ### Installation and Configuration
 
 The installation may be done as root to install system-wide, or as a
-normal user to install in `~/.local`.  Regardless of how it's
+normal user to install in `~/.local`.  Regardless of how it is
 installed, `socranop-installtool post-pip-install` needs to be run to
 configure the D-Bus service, XDG desktop entry, man pages, etc.
 However, it can only do part of the work on its own and relies on a
@@ -236,7 +236,7 @@ privileges.
 ```sh
 pip install socranop
 socranop-installtool post-pip-install --sudo-script ./socranop-sudo.sh
-# Inspect ./socranop-sudo.sh to make sure it's safe to run as root
+# Inspect ./socranop-sudo.sh to make sure it is safe to run as root
 sudo ./socranop-sudo.sh
 rm ./socranop-sudo.sh
 ```
@@ -270,7 +270,7 @@ are again placed in a script that needs to be run manually.
 
 ```sh
 socranop-installtool pre-pip-uninstall --sudo-script ./socranop-sudo.sh
-# Inspect ./socranop-sudo.sh to make sure it's safe to run as root
+# Inspect ./socranop-sudo.sh to make sure it is safe to run as root
 sudo ./socranop-sudo.sh
 rm ./socranop-sudo.sh
 pip uninstall socranop
@@ -291,8 +291,8 @@ system-wide with appropriate udev permissions.  See
 Contact us
 ----------
 
-To submit ideas or bugs, and see what we're working on next, see the [socranop
-issues page](https://github.com/socratools/socranop/issues)
+To submit ideas or bugs, and see what we are working on next, see the
+[socranop issues page](https://github.com/socratools/socranop/issues)
 
 To chat with us on IRC, join the
 [#socratools](https://web.libera.chat/?channel=#socratools) channel on
