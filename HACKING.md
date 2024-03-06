@@ -61,7 +61,7 @@ probably best installed using operating system packages:
   or Ubuntu, `pipenv lock --pre --clear` might help.
 
 `tools/link_system_libs`
-- Set up a symlink to your system's 'gi' lib which isn't otherwise available
+- Set up a symlink to your system's 'gi' lib which is not otherwise available
   via pip (allows you to run the D-Bus service and the gui from within pipenv)
 
 `pipenv shell`
@@ -137,11 +137,11 @@ Submitting Changes
 
 - Please ensure that `pytest` passes, using `pytest` itself or `tox`.
 
-  Github runs this for you on all branches as well, and I'm working on
+  Github runs this for you on all branches as well, and I am working on
   getting the feedback from that integrated into the pull requests,
   eventually.
 
-  Try to test new code thoroughly.  I'm working on increasing code
+  Try to test new code thoroughly.  I am working on increasing code
   coverage as I go as well.  Use `pytest` or `tox` to test.
 
   The `pre-commit` hooks ensure `pytest` is passing on every commit, too.
@@ -196,10 +196,10 @@ Submitting Changes
       This may include changes to pre-existing D-Bus data structures or remove
       D-Bus endpoints.
 
-    - A major bump (0.x.y -> 1.0.0) hasn't happened yet.  Maybe it will some day :)
+    - A major bump (0.x.y -> 1.0.0) has not happened yet.  Maybe it will some day :)
 
 - The official release schedule is sporadic and ad-hoc (aka when I feel like
-  it).  If you think there's enough in mainline that you want me to kick a
+  it).  If you think there is enough in mainline that you want me to kick a
   release, just send me an email or open an issue.
 
 
