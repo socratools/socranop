@@ -126,6 +126,9 @@ capture_4 <- Mix R
 
 ### D-Bus Service
 
+The GUI and the CLI both communicate with the D-Bus service which in
+turn actually communicates with the mixer hardware.
+
 The D-Bus service runs on the user's session bus unprivileged, and relies on
 he proper udev device permissions to access the USB device to make changes.
 See [PERMISSIONS.md](PERMISSIONS.md) for a more in-depth discussion about the
