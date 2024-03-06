@@ -48,52 +48,63 @@ probably best installed using operating system packages:
 
 ### Set up and use pipenv
 
-`pipenv run pip install setuptools`
-- Install setuptools (Python 3.12 and later does not come with setuptools).
+  * `pipenv run pip install setuptools`
 
-`pipenv install --dev`
-- Sets up an appropriate virtual environment, installs all appropriate
-  development packages, and egg-links to our source directory so that
-  the virtualenv will actually use the source files from this source
-  directory.
+    Install setuptools (Python 3.12 and later does not come with
+    setuptools).
 
-  If you are getting the `black` version subdependency problem on Debian
-  or Ubuntu, `pipenv lock --pre --clear` might help.
+  * `pipenv install --dev`
 
-`tools/link_system_libs`
-- Set up a symlink to your system's 'gi' lib which is not otherwise available
-  via pip (allows you to run the D-Bus service and the gui from within pipenv)
+    Sets up an appropriate virtual environment, installs all
+    appropriate development packages, and egg-links to our source
+    directory so that the virtualenv will actually use the source
+    files from this source directory.
 
-`pipenv shell`
-- Starts a subshell with the appropriate environment so that the
-  sandboxed libraries and utilities are in use
+    If you are getting the `black` version subdependency problem on
+    Debian or Ubuntu, `pipenv lock --pre --clear` might help.
 
-`socranop-installtool post-pip-install`
-- Inside the virtual environment of `pipenv shell`, run
-  `post-pip-install` to install the socranop config files into their
-  proper places inside `$HOME/.local` (outside the pipenv!), like
-  e.g. the essential D-Bus `.service` file.
+  * `tools/link_system_libs`
 
-  You can now also run `socranop-ctl` and `socranop-gui` from inside
-  the `pipenv shell`. The D-Bus service should now be started
-  automatically.
+    Set up a symlink to your system's 'gi' lib which is not otherwise
+    available via pip (allows you to run the D-Bus service and the gui
+    from within pipenv)
 
-  Alternatively, you can manually start `socranop-session-service`
-  without needing to install the D-Bus `.service` file, and then run
-  `socranop-ctl` and `socranop-gui` to communicate with that service.
+  * `pipenv shell`
+
+    Starts a subshell with the appropriate environment so that the
+    sandboxed libraries and utilities are in use
+
+  * `socranop-installtool post-pip-install`
+
+    Inside the virtual environment of `pipenv shell`, run
+    `post-pip-install` to install the socranop config files into their
+    proper places inside `$HOME/.local` (outside the pipenv!), like
+    e.g. the essential D-Bus `.service` file.
+
+    You can now also run `socranop-ctl` and `socranop-gui` from inside
+    the `pipenv shell`. The D-Bus service should now be started
+    automatically.
+
+    Alternatively, you can manually start `socranop-session-service`
+    without needing to install the D-Bus `.service` file, and then run
+    `socranop-ctl` and `socranop-gui` to communicate with that
+    service.
 
 ### Set up pre-commit
 
-`pre-commit install` (inside of pipenv shell)
-- Set up git hooks management so every commit gets checked/fixed
-- Only needs to be done once after cloning the `socranop` repo
+  * `pre-commit install` (inside of pipenv shell)
+
+    This sets up git hooks management so every commit gets
+    checked/fixed. It only needs to be done once after cloning the
+    `socranop` repo.
 
 ### Adding new dependencies
 
-`pipenv install [--dev] <pgkname>`
-- Installs the dependency to the local pipenv environment.  Use
-  `--dev` for development-only packages, omit for run-time
-  dependencies.
+  * `pipenv install [--dev] <pgkname>`
+
+    Installs the dependency to the local pipenv environment.  Use
+    `--dev` for development-only packages, omit for run-time
+    dependencies.
 
 ### Changing setup.py, setup.cfg, etc.
 
