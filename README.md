@@ -247,6 +247,15 @@ sudo ./socranop-sudo.sh
 rm ./socranop-sudo.sh
 ```
 
+Please note that on some systems like e.g. Debian 13 and Ubuntu 23.10,
+the `pip install` command will fail with `error:
+externally-managed-environment` and recommend using a venv or pipx
+based installation.
+
+For such systems, following the instructions from `HACKING.md` to set
+up a development environment with `socranop` will still work.
+
+
 ### Upgrading
 
 Simply update your package from pip, and rerun `socranop-installtool
