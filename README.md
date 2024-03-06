@@ -293,14 +293,17 @@ pip uninstall socranop
 
 ### Distro-specific Packages
 
-The previous version of this software, called `soundcraft-utils` had Arch Linux
-and NixOS packages.  These will have to be re-done with the rename to
-`socranop`.
+The predecessor of this software was called `soundcraft-utils` and had
+Arch Linux AUR and NixOS/nixpkgs packages.  The AUR package has
+already been re-done for `socranop`, but the nixpkgs package still
+needs to be re-done.
 
 Distro-specific packages will not require the user to run
 `socranop-installtool` and should instead install everything
 system-wide with appropriate udev permissions.  See
 [PACKAGING.md](PACKAGING.md) for details.
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/socranop.svg?columns=4)](https://repology.org/badge/vertical-allrepos/socranop.svg?columns=4)
 
 
 Contact us
