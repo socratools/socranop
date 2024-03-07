@@ -41,6 +41,9 @@ BASE_EXE_GUI = "socranop-gui"
 BASE_EXE_SERVICE = "socranop-session-service"
 BASE_EXE_INSTALLTOOL = "socranop-installtool"
 
+# Misc constants
+ENVVAR_LOGLEVEL = "SOCRANOP_LOGLEVEL"
+
 
 # Gtk Application ID of the socranop GUI
 # https://developer.gnome.org/gio/stable/GApplication.html#g-application-id-is-valid

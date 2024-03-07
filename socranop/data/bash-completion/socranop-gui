@@ -8,8 +8,12 @@ _socranop_gui()
     case "$3" in
 	socranop-gui | */socranop-gui)
 	    # only common completions, other options need to be typed in
-	    COMPREPLY=($(compgen -W "-h --help --help-all --version -v --verbose" -- "$2"))
+	    COMPREPLY=($(compgen -W "-h --help --help-all --version -v --verbose -q --quiet -L --log-level" -- "$2"))
 	    return
+	    ;;
+	-L | --log-level)
+	    COMPREPLY=($(compgen -W "DEBUG INFO WARNING ERROR CRITICAL" -- "$2"))
+	    return 0
 	    ;;
     esac
     return

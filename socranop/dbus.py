@@ -23,6 +23,8 @@
 
 import argparse
 
+from logging import debug
+
 try:
     import gi
 except ModuleNotFoundError:
@@ -195,7 +197,7 @@ class Service:
         if action == "add":
             idVStr = device.get_property("ID_VENDOR_ID")
             idPStr = device.get_property("ID_MODEL_ID")
-            common.debug(f"Device added (idVendor={idVStr!r}, idProduct={idPStr!r})")
+            debug(f"Device added (idVendor=%r, idProduct=%r)", idVStr, idPStr)
             idVendor = int(idVStr, 16)
             idProduct = int(idPStr, 16)
             if idVendor == const.VENDOR_ID_HARMAN:
@@ -342,11 +344,17 @@ def parse_argv(argv=None):
     parser = argparse.ArgumentParser(
         description=f"The {const.PACKAGE} D-Bus session service."
     )
-    common.parser_args(parser)
+    common.add_parser_args(parser)
 
     args = parser.parse_args(argv)
-    common.VERBOSE = args.verbose
+    common.process_args(parser, args)
+    process_args(parser, args)
     return args
+
+
+def process_args(parser, args):
+    """Process args, potentially calling parser.error()"""
+    pass
 
 
 def main(argv=None):

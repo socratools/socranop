@@ -34,10 +34,12 @@ import functools
 import importlib
 import importlib.resources
 import io
+import logging
 import re
 import sys
 import time
 
+from logging import debug
 from pathlib import Path
 from string import Template
 
@@ -158,7 +160,7 @@ class ScriptCommand:
     """
 
     def __init__(self, cmd, skip_if=False, comment=None):
-        common.debug("ScriptCommand.__init__", repr(cmd))
+        debug("ScriptCommand.__init__(%r)", cmd)
         assert isinstance(cmd, str)
         self.cmd = cmd
         self.skip_if = skip_if
@@ -195,10 +197,10 @@ class SudoScript:
         """Add a command to the sudo script"""
         if skip_if:
             c = ScriptCommand(cmd, skip_if=True, comment=comment)
-            common.debug(f"    [skip] {c.cmd!r}")
+            print(f"    [skip] {c.cmd!r}")
         else:
             c = ScriptCommand(cmd, skip_if=False, comment=comment)
-            common.debug(f"    [q'ed] {c.cmd!r}")
+            print(f"    [q'ed] {c.cmd!r}")
         self.sudo_commands.append(c)
 
     def needs_to_run(self):
@@ -351,7 +353,7 @@ class ResourceFile(AbstractFile):
         self.resource_entry = resource_entry
 
     def __str__(self):
-        return f"{self.__class__.__name__}:{self.dst}:resource({self.resource_entry})"
+        return f"{self.__class__.__name__}:{self.dst}<-resource({self.resource_entry})"
 
     def direct_install(self):
         self.chroot_dst.write_bytes(self.resource_entry.read_bytes())
@@ -407,13 +409,17 @@ class FilesToDelete:
         # print("self.chroot", self.chroot)
         if not abs_name.is_relative_to(self.chroot):
             return
+        debug("FilesToDelete adding %s", abs_name)
         self.files.add(abs_name)
 
     def remove_all(self):
         if not self.chroot:
+            debug("FilesToDelete remove_all aborting due to chroot: %s", self.chroot)
             return
         if self.chroot.samefile("/"):
+            debug("FilesToDelete remove_all aborting due to chroot: %s", self.chroot)
             return
+        debug("FilesToDelete remove_all going ahead")
         print()
         print(
             f"Removing all installed files related to {const.BASE_EXE_INSTALLTOOL} from chroot {self.chroot}:"
@@ -642,7 +648,7 @@ class FileInstallTool(AbstractInstallTool):
         self.files = []
 
     def add_file(self, file):
-        common.debug("Adding file", self, file)
+        debug("Adding file %s %s", self, file)
         self.files.append(file)
 
     def do_install_files(self):
@@ -674,7 +680,7 @@ class ResourceInstallTool(FileInstallTool):
         super(ResourceInstallTool, self).__init__(dry_run, heading)
 
     def walk_resources(self, res_subdir: str):
-        common.debug("walk_resources", self, res_subdir)
+        debug("walk_resources %s %s", self, res_subdir)
 
         res_data = importlib.resources.files(RESOURCE_MODULE) / "data"
 
@@ -689,7 +695,7 @@ class ResourceInstallTool(FileInstallTool):
             files_to_delete.add(topdir)
             for entry in topdir.iterdir():
                 full_name = entry.absolute()
-                common.debug(f"entry {entry} res fullname {full_name}")
+                debug("entry %s res fullname %s", entry, full_name)
                 if entry.is_dir():
                     walk_resource_subdir(entry)
                 else:
@@ -740,7 +746,7 @@ class DBusInstallTool(ResourceInstallTool):
         return self._session_bus.get(service_name)
 
     def add_resource(self, resource_entry):
-        common.debug("add_resource", self, resource_entry)
+        debug("add_resource %s %s", self, resource_entry)
         if resource_entry.name.endswith(".service"):
             dirs = get_dirs()
             templateData = {
@@ -770,7 +776,7 @@ class DBusInstallTool(ResourceInstallTool):
 
     def _shutdown_service(self, reason):
         if self.no_launch:
-            common.debug("no_launch is set; not shutting down old service")
+            debug("no_launch is set; not shutting down old service")
             return
 
         if self.dry_run:
@@ -780,7 +786,7 @@ class DBusInstallTool(ResourceInstallTool):
 
         dbus_service = self._service(".DBus")
         if not dbus_service.NameHasOwner(const.BUSNAME):
-            common.debug("D-Bus service not running")
+            debug("D-Bus service is not running")
         else:
             service = self._service(const.BUSNAME)
             service_version = service.version
@@ -796,7 +802,7 @@ class DBusInstallTool(ResourceInstallTool):
 
     def _verify_install(self):
         if self.no_launch:
-            common.debug("no_launch is set; not verifying our dbus service")
+            debug("no_launch is set; not verifying our dbus service")
             return
 
         if self.dry_run:
@@ -1060,7 +1066,8 @@ class UdevRulesInstallTool(FileInstallTool):
         new_content = {}
         new_content[self.udev_rules_dst] = self.udev_rules_content
 
-        if common.VERBOSE:
+        if logging.root.getEffectiveLevel() <= logging.INFO:
+            # TODO: Move from pprint to logging.*
             from pprint import pprint
 
             print("OLD")
@@ -1089,7 +1096,8 @@ class UdevRulesInstallTool(FileInstallTool):
         if self.udev_rules_dst in new_content:
             del new_content[self.udev_rules_dst]
 
-        if common.VERBOSE:
+        if logging.root.getEffectiveLevel() <= logging.INFO:
+            # TODO: Move from pprint to logging.*
             from pprint import pprint
 
             print("OLD")
@@ -1193,7 +1201,7 @@ def parse_argv(argv=None):
     parser = argparse.ArgumentParser(
         description=f"Hook {const.PACKAGE} into the system post-install (or do the reverse).",
     )
-    common.parser_args(parser)
+    common.add_parser_args(parser)
 
     parser.add_argument(
         "-n",
@@ -1258,8 +1266,13 @@ def parse_argv(argv=None):
     )
 
     args = parser.parse_args(argv)
-    print("args after parse_args:", args)
+    common.process_args(parser, args)
+    process_args(parser, args)
+    return args
 
+
+def process_args(parser, args):
+    """Process args, potentially calling parser.error()"""
     if hasattr(args, "chroot") and hasattr(args, "force_prefix"):
         # Initialize the dirs object with the chroot given so that later
         # calls to get_dirs() will yield an object which uses the same
@@ -1269,13 +1282,11 @@ def parse_argv(argv=None):
         dirs = init_dirs()
     else:
         parser.error("Internal error related to chroot and force_prefix")
-    common.debug("Using dirs", dirs)
+    debug("Using dirs: %s", dirs)
 
-    print("args", args)
+    debug("args: %s", args)
 
     # args.dry_run = True
-
-    common.VERBOSE = args.verbose
 
     if args.command == "post-pip-install":
         pass
@@ -1294,9 +1305,6 @@ def parse_argv(argv=None):
         setattr(args, "sudo_script", None)
     else:
         parser.error(f"Unhandled command: {args.command}")
-
-    print("args before return:", args)
-    return args
 
 
 def main(argv=None):

@@ -102,7 +102,7 @@ def parse_argv(argv=None):
     parser = argparse.ArgumentParser(
         description="Control a Soundcraft Notepad series mixer from the command line."
     )
-    common.parser_args(parser)
+    common.add_parser_args(parser)
 
     parser.add_argument(
         "--no-dbus",
@@ -130,8 +130,14 @@ def parse_argv(argv=None):
     )
 
     args = parser.parse_args(argv)
-    common.VERBOSE = args.verbose
+    common.process_args(parser, args)
+    process_args(parser, args)
     return args
+
+
+def process_args(parser, args):
+    """Process args, potentially calling parser.error()"""
+    pass
 
 
 def main(argv=None):

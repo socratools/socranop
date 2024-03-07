@@ -48,11 +48,11 @@ only once, and cannot change during one program invocation.
 import abc
 import sys
 
+from logging import debug, info
 from os import getenv
 from pathlib import Path
 
 import socranop.constants as const
-from socranop.common import debug
 
 
 class NotDetected(Exception):
@@ -75,7 +75,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
         self._prefix = None
         self._statedir = None
 
-        debug("AbstractDirs.__init__", self, f"chroot={chroot!r}")
+        debug("AbstractDirs.__init__(%s, %s)", self, f"chroot={chroot!r}")
 
         self.__detect()
 
@@ -209,7 +209,9 @@ class AnyPrefixDirs(GlobalDirs):
     """
 
     def __init__(self, chroot=None):
+        debug("AnyPrefixDirs using chroot: %s", chroot)
         exe_path = GlobalDirs.exePath
+        debug("AnyPrefixDirs starting from exe path: %s", exe_path)
         if chroot is not None:
             exe_path_relative = exe_path.relative_to(Path(chroot))
             rooted_path = Path("/") / exe_path_relative
@@ -267,13 +269,13 @@ def init_dirs(chroot=None, force_prefix=False):
 
     if force_prefix:
         __dir_instance = AnyPrefixDirs(chroot)
-        debug("Using dirs:", __dir_instance)
+        info("Using dirs: %s", __dir_instance)
         return __dir_instance
 
     for cls in [UsrLocalDirs, UsrDirs, HomeDirs]:
         try:
             __dir_instance = cls(chroot)
-            debug("Using dirs:", __dir_instance)
+            info("Using dirs: %s", __dir_instance)
             return __dir_instance
         except NotDetected:
             pass  # This installation is not for the current cls

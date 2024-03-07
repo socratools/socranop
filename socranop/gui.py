@@ -23,6 +23,7 @@
 
 import sys
 import traceback
+from logging import debug, error, info
 from pathlib import Path
 from collections.abc import Iterable
 from pkg_resources import resource_filename
@@ -69,7 +70,7 @@ class SocranopMainWindow(Gtk.ApplicationWindow):
         self.app = app
         icon = iconFile()
         if icon is not None:
-            print("Using Application Window icon from", icon)
+            debug("Using Application Window icon from %s", icon)
             self.set_default_icon_from_file(icon)
         self.connect("destroy", self.app.quit_cb)
         self.grid = None
@@ -94,11 +95,11 @@ class SocranopMainWindow(Gtk.ApplicationWindow):
         try:
             self.dbus = Client(added_cb=self.deviceAdded, removed_cb=self.deviceRemoved)
         except DbusInitializationError as e:
-            print(f"Startup error: {str(e)}")
+            error("Startup error: %s", e)
             self._startupFailure(f"Could not start {const.BASE_EXE_GUI}", str(e))
             raise e
         except Exception as e:
-            print("Unexpected exception at gui startup")
+            error("Unexpected exception at gui startup")
             traceback.print_exc()
             self._startupFailure(f"Unexpected exception {e.__class__.__name__}", str(e))
             raise e
@@ -184,11 +185,11 @@ class SocranopMainWindow(Gtk.ApplicationWindow):
         self.show_all()
 
     def deviceAdded(self, dev):
-        print(f"Added {dev._path}")
+        info("Device added: %s", dev._path)
         self.setDevice(dev)
 
     def deviceRemoved(self, path):
-        print(f"Removed {path}")
+        info("Device removed: %s", path)
         if self.dev is not None:
             if self.dev._path != path:
                 # Not our device
@@ -252,7 +253,7 @@ class SocranopMainWindow(Gtk.ApplicationWindow):
         self.setActionsEnabled(self.nextSelection != self.dev.routingSource)
 
     def apply_cb(self, *args, **kwargs):
-        print(f"Setting routing source to {self.nextSelection}")
+        info("Setting routing source to %s", self.nextSelection)
         self.dev.routingSource = self.nextSelection
         self.setActionsEnabled(False)
 
@@ -322,11 +323,31 @@ class SocranopApp(Gtk.Application):
         )
 
         self.add_main_option(
+            "log-level",
+            ord("L"),
+            GLib.OptionFlags.NONE,
+            GLib.OptionArg.STRING,
+            "set the log level (DEBUG INFO WARNING[default] ERROR CRITICAL)",
+            None,
+        )
+
+        # TODO: Figure out how to support repeated -q options
+        self.add_main_option(
+            "quiet",
+            ord("q"),
+            GLib.OptionFlags.NONE,
+            GLib.OptionArg.NONE,
+            "make program output less verbose",
+            None,
+        )
+
+        # TODO: Figure out how to support repeated -v options
+        self.add_main_option(
             "verbose",
             ord("v"),
             GLib.OptionFlags.NONE,
             GLib.OptionArg.NONE,
-            "Enable more verbose output, largely for debugging",
+            "make program output more verbose (mostly for debugging)",
             None,
         )
 
@@ -343,7 +364,7 @@ class SocranopApp(Gtk.Application):
         # convert GVariantDict -> GVariant -> dict
         options = options.end().unpack()
 
-        common.VERBOSE = "verbose" in options
+        common.process_gtk_options(options)
 
         if "version" in options:
             return self.__cmdline_version()
@@ -359,7 +380,7 @@ class SocranopApp(Gtk.Application):
         except DbusInitializationError:
             self.quit()
         except Exception:
-            print("Unexpected exception at gui startup")
+            error("Unexpected exception at gui startup")
             traceback.print_exc()
             self.quit()
 
