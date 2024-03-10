@@ -997,8 +997,7 @@ class UdevRulesInstallTool(FileInstallTool):
         # FIXME: In case installtool is running as root, run udevadm directly?
 
         udevadm_trigger_commands = [
-            "sleep 5   # wait until udev should have noticed the new rules",
-            "# Alternatively, you can also unplug and replug the USB cable.",
+            "udevadm control --reload  # ensure udev notes ruleset changes before the triggers",
         ] + [
             f"udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor={const.VENDOR_ID_HARMAN:04x} --attr-match=idProduct={pid:04x}"
             for pid in const.PY_LIST_OF_PRODUCT_IDS
@@ -1007,7 +1006,7 @@ class UdevRulesInstallTool(FileInstallTool):
         SUDO_SCRIPT.add_cmd(
             "\n".join(udevadm_trigger_commands),
             skip_if=skip_if,
-            comment="Trigger the udev rules which run when adding existing mixer devices",
+            comment="Trigger the udev rules (just as when plugging in a Notepad mixer)",
         )
 
     def post_pip_install(self):
