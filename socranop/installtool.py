@@ -905,6 +905,44 @@ class ManpageInstallTool(ResourceInstallTool):
             raise UnhandledResource(resource_entry)
 
 
+class AppstreamInstallTool(ResourceInstallTool):
+    """Deal with Appstream metadata"""
+
+    def __init__(self, dry_run):
+        super(AppstreamInstallTool, self).__init__(
+            dry_run=dry_run, heading="Appstream metainfo"
+        )
+        self.walk_resources("appstream")
+
+    def add_resource(self, resource_entry):
+        if resource_entry.name.endswith(".metainfo.xml"):
+            dirs = get_dirs()
+            metainfo_dir = dirs.datadir / "metainfo"
+            dst = metainfo_dir / f"{const.APPLICATION_ID}.metainfo.xml"
+            modaliases = "\n    ".join(
+                [
+                    f"<modalias>usb:v{vid:04X}p{pid:04X}d*</modalias>"
+                    for vid in [
+                        const.VENDOR_ID_HARMAN,
+                    ]
+                    for pid in const.PY_LIST_OF_PRODUCT_IDS
+                ]
+            )
+            binaries = "\n    ".join(
+                [
+                    f"<binary>{bin}</binary>"
+                    for bin in [const.BASE_EXE_CLI, const.BASE_EXE_GUI]
+                ]
+            )
+            templateData = {
+                "APPLICATION_ID": const.APPLICATION_ID,
+                "BUSNAME": const.BUSNAME,
+                "APPSTREAM_MODALIASES": modaliases,
+                "APPSTREAM_BINARIES": binaries,
+            }
+            self.add_file(TemplateFile(dst, resource_entry, templateData))
+
+
 class XDGDesktopInstallTool(ResourceInstallTool):
     """Deal with the XDG .desktop and PNG/SVG icon files"""
 
@@ -1285,6 +1323,7 @@ def main(argv=None):
             files_to_delete.add(p)
 
     everything = InstallToolEverything()
+    everything.add(AppstreamInstallTool(dry_run=args.dry_run))
     everything.add(CheckDependencies(dry_run=args.dry_run))
     everything.add(BashCompletionInstallTool(dry_run=args.dry_run))
     everything.add(DBusInstallTool(dry_run=args.dry_run, no_launch=args.no_launch))
