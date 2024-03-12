@@ -6,7 +6,7 @@
 # install part of building a package).
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2020,2021,2023,2024 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
