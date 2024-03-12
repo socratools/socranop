@@ -415,14 +415,17 @@ class FilesToDelete:
         if self.chroot.samefile("/"):
             return
         print()
-        print(f"Removing all installed files related to {const.BASE_EXE_INSTALLTOOL}:")
+        print(
+            f"Removing all installed files related to {const.BASE_EXE_INSTALLTOOL} from chroot {self.chroot}:"
+        )
 
         for e in sorted(list(self.files), reverse=True):
+            unchrooted_e = e.relative_to(self.chroot)
             if e.is_dir():
-                print(f"  rmdir {e!s}")
+                print(f"  rmdir {unchrooted_e!s}")
                 e.rmdir()
             else:
-                print(f"  rm    {e!s}")
+                print(f"  rm    {unchrooted_e!s}")
                 e.unlink()
 
         print(
