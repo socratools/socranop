@@ -120,7 +120,7 @@ class Main(Gtk.ApplicationWindow):
         if self.grid is not None:
             self.remove(self.grid)
         self.dev = dev
-        dev.onPropertiesChanged = self.reset
+        dev.onPropertiesChanged = self.reset_cb
         self.grid = Gtk.Grid()
         self.add(self.grid)
         self.row = 0
@@ -139,7 +139,7 @@ class Main(Gtk.ApplicationWindow):
         self.sourceCombo.connect("changed", self.selectionChanged)
         self.addRow(self.dev.routingTarget, self.sourceCombo)
         self.addActions()
-        self.reset()
+        self.reset_cb()
         self.show_all()
 
     def setNoDevice(self):
@@ -212,20 +212,20 @@ class Main(Gtk.ApplicationWindow):
         self.resetButton = Gtk.Button.new_with_mnemonic("_Reset")
         self.actions.pack_end(self.applyButton)
         self.actions.pack_end(self.resetButton)
-        self.resetButton.connect("clicked", self.reset)
-        self.applyButton.connect("clicked", self.apply)
+        self.resetButton.connect("clicked", self.reset_cb)
+        self.applyButton.connect("clicked", self.apply_cb)
 
     def selectionChanged(self, comboBox):
         i = comboBox.get_active_iter()
         self.nextSelection = comboBox.get_model()[i][0]
         self.setActionsEnabled(self.nextSelection != self.dev.routingSource)
 
-    def apply(self, button=None):
+    def apply_cb(self, *args, **kwargs):
         print(f"Setting routing source to {self.nextSelection}")
         self.dev.routingSource = self.nextSelection
         self.setActionsEnabled(False)
 
-    def reset(self, button=None, *args, **kwargs):
+    def reset_cb(self, *args, **kwargs):
         for i, source in enumerate(self.dev.sources.items()):
             if self.dev.routingSource == source[0]:
                 self.sourceCombo.set_active(i)
@@ -332,7 +332,7 @@ class App(Gtk.Application):
             traceback.print_exc()
             self.quit()
 
-    def about_cb(self, action, parameter):
+    def about_cb(self, *args, **kwargs):
         about = About()
         about.show()
 
