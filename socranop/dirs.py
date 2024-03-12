@@ -48,7 +48,7 @@ only once, and cannot change during one program invocation.
 import abc
 import sys
 
-from functools import cache
+from functools import cache, cached_property
 from logging import debug, info
 from os import getenv
 from pathlib import Path
@@ -163,15 +163,19 @@ class AbstractDirs(metaclass=abc.ABCMeta):
 
         raise NotDetected(f"Exe path is not supported: {exePath()!r}")
 
-    @property
+    @cached_property
     def prefix(self):
         """The prefix corresponding to the installation type of the currently running executable"""
-        return self.PREFIX
+        prefix = self.PREFIX
+        debug("Using prefix: %s", prefix)
+        return prefix
 
-    @property
+    @cached_property
     def datadir(self):
         """The datadir corresponding to the installation type of the currently running executable"""
-        return self.prefix / "share"
+        data_dir = self.prefix / "share"
+        debug("Using datadir: %s", data_dir)
+        return data_dir
 
     @property
     def statedir(self):
