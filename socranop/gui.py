@@ -264,6 +264,7 @@ class App(Gtk.Application):
                 | Gio.ApplicationFlags.NON_UNIQUE  # noqa: W503
             ),
         )
+        GLib.set_prgname(const.APPLICATION_ID)  # TODO: remove this with Gtk4
         self.window = None
 
         # Caution: If you change the command line parser in any way,
