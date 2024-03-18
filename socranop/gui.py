@@ -40,6 +40,7 @@ python-gi, python-gobject, python3-gobject, pygobject, or something similar.
 gi.require_version("Gtk", "3.0")
 from gi.repository import GLib
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import Gio
 
 import socranop
@@ -103,6 +104,18 @@ class Main(Gtk.ApplicationWindow):
             raise e
         self.dbus.serviceDisconnected.connect(self.dbusDisconnect)
         self.dbus.serviceConnected.connect(self.dbusReconnect)
+
+        accel_group = Gtk.AccelGroup()
+
+        def add_ctrl_accel(key, cb):
+            accel_group.connect(
+                Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, cb
+            )
+
+        add_ctrl_accel("B", self.app.about_cb)
+        add_ctrl_accel("W", self.app.quit_cb)
+        add_ctrl_accel("Q", self.app.quit_cb)
+        self.add_accel_group(accel_group)
 
     def _startupFailure(self, title, message):
         dialog = Gtk.MessageDialog(
@@ -357,8 +370,19 @@ class App(Gtk.Application):
     def quit_cb(self, *args, **kwargs):
         self.quit()
 
+    def __init_socranop_actions(self):
+        ACTIONS = [
+            ("app.about", self.about_cb),
+            ("app.quit", self.quit_cb),
+        ]
+        for name, callback in ACTIONS:
+            action = Gio.SimpleAction(name=name)
+            action.connect("activate", callback)
+            self.add_action(action)
+
     def do_startup(self):
         Gtk.Application.do_startup(self)
+        self.__init_socranop_actions()
 
 
 def main(argv=None):

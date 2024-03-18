@@ -213,6 +213,8 @@ socranop-gui
 - Apply the selection by clicking "Apply" (ALT+A)
 - Instead of applying the selection, clicking "Reset" (ALT+R) will set the
   selection back to the current state of the mixer (if known)
+- See the "About socranop" dialog from the burger menu or app menu (CTRL+B)
+- Quit the socranop GUI by closing the window (or CTRL+Q)
 
 #### Screenshots
 
