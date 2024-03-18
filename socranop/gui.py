@@ -98,6 +98,7 @@ class Main(Gtk.ApplicationWindow):
         dialog.run()
 
     def dbusDisconnect(self):
+        print("D-Bus disconnect")
         self.setNoDevice()
 
     def dbusReconnect(self):
