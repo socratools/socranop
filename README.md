@@ -216,8 +216,9 @@ socranop-gui
 
 #### Screenshots
 
-![GUI Window](images/gui-screenshot.png)
-![GUI Window with drop-down open](images/gui-screenshot-with-dropdown.png)
+![GUI Window](doc/img/gui-screenshot-notepad-12fx.png)
+![GUI Window with drop-down open](doc/img/gui-screenshot-notepad-12fx-with-dropdown.png)
+![GUI Window without device](doc/img/gui-screenshot-no-device-found.png)
 
 ### CLI
 

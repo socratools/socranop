@@ -63,7 +63,8 @@ def iconFile():
 
 class Main(Gtk.ApplicationWindow):
     def __init__(self, app):
-        super().__init__(title="socranop", application=app)
+        WINDOW_TITLE = "socranop"
+        super().__init__(title=WINDOW_TITLE, application=app)
         self.app = app
         icon = iconFile()
         if icon is not None:
@@ -72,6 +73,22 @@ class Main(Gtk.ApplicationWindow):
         self.connect("destroy", self.app.quit_cb)
         self.grid = None
         self.dev = None
+
+        self.header_bar = Gtk.HeaderBar()
+        self.header_bar.set_title(WINDOW_TITLE)
+        self.header_bar.set_has_subtitle(False)
+        self.header_bar.set_show_close_button(True)
+
+        about_btn = Gtk.Button.new_from_icon_name(
+            "help-about-symbolic", Gtk.IconSize.BUTTON
+        )
+        about_btn.set_tooltip_text("Show information about socranop")
+        about_btn.set_relief(Gtk.ReliefStyle.NONE)
+        about_btn.connect("clicked", self.app.about_cb)
+        self.header_bar.pack_start(about_btn)
+
+        self.set_titlebar(self.header_bar)
+
         self.setNoDevice()
         try:
             self.dbus = Client(added_cb=self.deviceAdded, removed_cb=self.deviceRemoved)
@@ -141,6 +158,7 @@ class Main(Gtk.ApplicationWindow):
         self.addActions()
         self.reset_cb()
         self.show_all()
+        self.sourceCombo.grab_focus()
 
     def setNoDevice(self):
         self.dev = None
@@ -341,16 +359,6 @@ class App(Gtk.Application):
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
-        self.set_app_menu(Gio.Menu())
-        self.addAppmenu("About", self.about_cb)
-        self.addAppmenu("Quit", self.quit_cb)
-
-    def addAppmenu(self, name, cb):
-        actionName = name.lower()
-        self.get_app_menu().append(name, f"app.{actionName}")
-        action = Gio.SimpleAction(name=actionName)
-        action.connect("activate", cb)
-        self.add_action(action)
 
 
 def main(argv=None):
