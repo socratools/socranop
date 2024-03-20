@@ -34,6 +34,9 @@ jobs:
     - name: run commit-hook black
       run: |
         pipenv run pre-commit run -a black
+    - name: run commit-hook mypy
+      run: |
+        pipenv run pre-commit run -a mypy
     - name: run commit-hook contrib
       run: |
         pipenv run pre-commit run -a contrib

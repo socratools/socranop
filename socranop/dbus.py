@@ -26,7 +26,7 @@ import argparse
 from logging import debug
 
 try:
-    import gi
+    import gi  # type: ignore
 except ModuleNotFoundError:
     print(
         """
@@ -36,9 +36,9 @@ python-gi, python-gobject, python3-gobject, pygobject, or something similar.
     )
     raise
 gi.require_version("GUdev", "1.0")
-from gi.repository import GLib, GUdev
-from pydbus import SessionBus
-from pydbus.generic import signal
+from gi.repository import GLib, GUdev  # type: ignore
+from pydbus import SessionBus  # type: ignore
+from pydbus.generic import signal  # type: ignore
 
 import socranop
 import socranop.notepad

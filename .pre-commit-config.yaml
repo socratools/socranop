@@ -42,6 +42,13 @@ repos:
     pass_filenames: false
     files: ^(socranop|test)/
     types: [file, python]
+  - id: mypy
+    name: Run mypy on socranop/*.py
+    language: system
+    entry: tools/conditional-mypy
+    pass_filenames: true
+    files: ^socranop/
+    types: [file, python]
   - id: dist
     name: Generate dist files
     language: system

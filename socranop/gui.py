@@ -26,10 +26,10 @@ import traceback
 from logging import debug, error, info
 from pathlib import Path
 from collections.abc import Iterable
-from pkg_resources import resource_filename
+from pkg_resources import resource_filename  # type: ignore
 
 try:
-    import gi
+    import gi  # type: ignore
 except ModuleNotFoundError:
     print(
         """
@@ -39,7 +39,7 @@ python-gi, python-gobject, python3-gobject, pygobject, or something similar.
     )
     raise
 gi.require_version("Gtk", "3.0")
-from gi.repository import GLib
+from gi.repository import GLib  # type: ignore
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio

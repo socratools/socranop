@@ -440,7 +440,8 @@ class FilesToDelete:
 
 
 global files_to_delete
-files_to_delete = None
+# Initializing this here instead of main() stops mypy from complaining about None.add()
+files_to_delete = FilesToDelete()
 
 
 class TemplateFile(AbstractFile):
@@ -544,7 +545,7 @@ class CheckDependencies(AbstractInstallTool):
         ):
             importlib.import_module("gi")  # import must work; discard retval
 
-        import gi
+        import gi  # type: ignore
 
         for module, version in [
             ("GLib", None),
@@ -589,7 +590,7 @@ class CheckDependencies(AbstractInstallTool):
         ):
             importlib.import_module("usb.core")  # import must work; discard retval
 
-        import usb.core
+        import usb.core  # type: ignore
 
         # check that finding any USB device works
         with Step(
@@ -738,7 +739,7 @@ class DBusInstallTool(ResourceInstallTool):
 
     @functools.cached_property
     def _session_bus(self):
-        import pydbus
+        import pydbus  # type: ignore
 
         return pydbus.SessionBus()
 
@@ -1313,7 +1314,6 @@ def main(argv=None):
     args = parse_argv(argv)
 
     global files_to_delete
-    files_to_delete = FilesToDelete()
 
     # In some cases, we can delete the socranop-installtool executable after use
     files_to_delete.add(Path(sys.argv[0]))

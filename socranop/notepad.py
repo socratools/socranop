@@ -28,7 +28,7 @@ import json
 from logging import debug, warning, info
 from pathlib import Path
 
-import usb.core
+import usb.core  # type: ignore
 
 import socranop.constants as const
 from socranop.dirs import get_dirs
