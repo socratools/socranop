@@ -73,11 +73,6 @@ FIXME05: You can start the D-Bus service by running
   `--dev` for development-only packages, omit for run-time
   dependencies.
 
-`pipenv-setup sync --pipfile`
-- Syncs any run-time dependencies from `pipenv` to `setup.py`.
-
-  The `socranop` pre-commit hooks run this automatically.
-
 ### Changing setup.py, setup.cfg, etc.
 
 After changing any of the setup config files, it is advisable to run

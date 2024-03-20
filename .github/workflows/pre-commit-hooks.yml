@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Re-check pre-commit hooks
+name: Verify pre-commit hooks
 
 on:
   push:
@@ -14,9 +14,9 @@ jobs:
     name: Pre-commit verification
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: 3.x
     - name: 'Install OS build requirements (Linux)'
@@ -37,6 +37,6 @@ jobs:
     - name: run commit-hook contrib
       run: |
         pipenv run pre-commit run -a contrib
-    - name: run commit-hook pipenv-setup
+    - name: run commit-hook dictionary
       run: |
-        pipenv run pre-commit run -a pipenv-setup
+        pipenv run pre-commit run -a dictionary

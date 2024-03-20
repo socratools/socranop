@@ -54,7 +54,6 @@ def print_step(tag, details, **printopts):
 
 
 class Step:
-
     """\
     Allow easy printing of checks similar to the following:
 
@@ -436,7 +435,6 @@ files_to_delete = None
 
 
 class TemplateFile(AbstractFile):
-
     """This destination file is a source file after string template processing"""
 
     def __init__(self, dst, resource_entry, template_data=None, comment=None):
@@ -1278,9 +1276,9 @@ def main(argv=None):
     # Compiled module source file (socranop/__pycache__/installtool.*.pyc)
     if "__cached__" in globals():
         pyc = Path(globals()["__cached__"])
-        # Occasionally, there are two `*.pyc` files but __cached__ only
-        # points to one. So we use __cached__ to find the directory,
-        # and just remove all `installtool.*.pyc` files.
+        # Occasionally, there are two `*.pyc` files but `__cached__`
+        # only points to one. So we use `__cached__` to find the
+        # directory, and just remove all `installtool.*.pyc` files.
         for p in pyc.parent.glob("installtool.*.pyc"):
             files_to_delete.add(p)
 
