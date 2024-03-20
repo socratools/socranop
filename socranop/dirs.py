@@ -169,14 +169,14 @@ class AbstractDirs(metaclass=abc.ABCMeta):
     def prefix(self):
         """The prefix corresponding to the installation type of the currently running executable"""
         prefix = self.PREFIX
-        debug("Using prefix: %s", prefix)
+        debug("%s prefix: %s", self.__class__.__name__, prefix)
         return prefix
 
     @cached_property
     def datadir(self):
         """The datadir corresponding to the installation type of the currently running executable"""
         data_dir = self.prefix / "share"
-        debug("Using datadir: %s", data_dir)
+        debug("%s datadir: %s", self.__class__.__name__, data_dir)
         return data_dir
 
     @cached_property
@@ -190,13 +190,21 @@ class AbstractDirs(metaclass=abc.ABCMeta):
         xdg_config_home = getenv("XDG_CONFIG_HOME")
         if xdg_config_home:  # neither None nor empty string
             config_dir = Path(xdg_config_home)
-            debug("Using XDG config dir from XDG_CONFIG_HOME variable: %s", config_dir)
+            debug(
+                "%s XDG config dir from XDG_CONFIG_HOME variable: %s",
+                self.__class__.__name__,
+                config_dir,
+            )
         else:
             config_dir = Path("~/.config").expanduser()
-            debug("Using XDG config dir default in ~: %s", config_dir)
+            debug(
+                "%s XDG config dir default in ~: %s",
+                self.__class__.__name__,
+                config_dir,
+            )
 
         state_dir = config_dir / const.PACKAGE / "state"
-        debug("Using statedir: %s", state_dir)
+        debug("%s statedir: %s", self.__class__.__name__, state_dir)
         return state_dir
 
     @property
