@@ -62,7 +62,7 @@ def iconFile():
     return resource_filename("socranop", f"data/xdg/{const.APPLICATION_ID}.256.png")
 
 
-class Main(Gtk.ApplicationWindow):
+class SocranopMainWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         WINDOW_TITLE = "socranop"
         super().__init__(title=WINDOW_TITLE, application=app)
@@ -267,7 +267,7 @@ class Main(Gtk.ApplicationWindow):
         self.resetButton.set_sensitive(enabled)
 
 
-class About(Gtk.AboutDialog):
+class AboutSocranopDialog(Gtk.AboutDialog):
     def __init__(self):
         super().__init__(
             program_name=const.PACKAGE,
@@ -285,7 +285,7 @@ class About(Gtk.AboutDialog):
         action.close()
 
 
-class App(Gtk.Application):
+class SocranopApp(Gtk.Application):
     def __init__(self):
         super().__init__(
             application_id=const.APPLICATION_ID,
@@ -355,7 +355,7 @@ class App(Gtk.Application):
         if self.window is not None:
             return
         try:
-            self.window = Main(self)
+            self.window = SocranopMainWindow(self)
         except DbusInitializationError:
             self.quit()
         except Exception:
@@ -364,7 +364,7 @@ class App(Gtk.Application):
             self.quit()
 
     def about_cb(self, *args, **kwargs):
-        about = About()
+        about = AboutSocranopDialog()
         about.show()
 
     def quit_cb(self, *args, **kwargs):
@@ -391,7 +391,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    app = App()
+    app = SocranopApp()
     sys.exit(app.run(argv))
 
 
