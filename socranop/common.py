@@ -1,3 +1,4 @@
+# socranop/common.py - Define common functions for socranop
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>

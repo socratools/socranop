@@ -1,3 +1,4 @@
+# socranop/cli.py - The socranop command line interface (CLI)
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2021,2023,2024 Hans Ulrich Niedermann <hun@n-dimensional.de>

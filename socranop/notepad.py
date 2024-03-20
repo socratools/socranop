@@ -1,3 +1,4 @@
+# socranop/notepad.py - Handle notepad devices
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021,2023 Hans Ulrich Niedermann <hun@n-dimensional.de>

@@ -1,3 +1,4 @@
+# socranop/dbus.py - The socranop D-Bus service
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021,2023 Hans Ulrich Niedermann <hun@n-dimensional.de>
