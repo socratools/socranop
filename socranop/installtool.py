@@ -700,6 +700,7 @@ class ResourceInstallTool(FileInstallTool):
                 if entry.is_dir():
                     walk_resource_subdir(entry)
                 else:
+                    debug("entry.name %s", entry.name)
                     if entry.name.endswith("~"):
                         continue  # ignore editor backup files
                     self.add_resource(entry)
