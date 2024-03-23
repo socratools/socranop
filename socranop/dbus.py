@@ -1,6 +1,7 @@
+# socranop/dbus.py - The socranop D-Bus service
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2020,2021,2023 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +23,10 @@
 
 import argparse
 
+from logging import debug
+
 try:
-    import gi
+    import gi  # type: ignore
 except ModuleNotFoundError:
     print(
         """
@@ -33,9 +36,9 @@ python-gi, python-gobject, python3-gobject, pygobject, or something similar.
     )
     raise
 gi.require_version("GUdev", "1.0")
-from gi.repository import GLib, GUdev
-from pydbus import SessionBus
-from pydbus.generic import signal
+from gi.repository import GLib, GUdev  # type: ignore
+from pydbus import SessionBus  # type: ignore
+from pydbus.generic import signal  # type: ignore
 
 import socranop
 import socranop.notepad
@@ -194,7 +197,7 @@ class Service:
         if action == "add":
             idVStr = device.get_property("ID_VENDOR_ID")
             idPStr = device.get_property("ID_MODEL_ID")
-            common.debug(f"Device added (idVendor={idVStr!r}, idProduct={idPStr!r})")
+            debug(f"Device added (idVendor=%r, idProduct=%r)", idVStr, idPStr)
             idVendor = int(idVStr, 16)
             idProduct = int(idPStr, 16)
             if idVendor == const.VENDOR_ID_HARMAN:
@@ -341,11 +344,17 @@ def parse_argv(argv=None):
     parser = argparse.ArgumentParser(
         description=f"The {const.PACKAGE} D-Bus session service."
     )
-    common.parser_args(parser)
+    common.add_parser_args(parser)
 
     args = parser.parse_args(argv)
-    common.VERBOSE = args.verbose
+    common.process_args(parser, args)
+    process_args(parser, args)
     return args
+
+
+def process_args(parser, args):
+    """Process args, potentially calling parser.error()"""
+    pass
 
 
 def main(argv=None):

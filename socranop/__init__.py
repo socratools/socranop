@@ -1,3 +1,4 @@
+# socranop/__init__.py - Make this directory a regular Python package
 #
 # Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
 #

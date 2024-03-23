@@ -30,7 +30,7 @@ socranop\-session\-service \- session D\-Bus service for socranop
 .RB (\| \-\-help \|| \-\-version \|)
 .br
 .B socranop\-session\-service
-.RB [\| \-\-verbose \|]
+.RB [\| "\-\-log\-level \fILOGLEVEL\fR" | \-\-quiet | \-\-verbose \|]
 .\"
 .\" ======================================================================
 .\"
@@ -68,8 +68,14 @@ Print command line help and exit.
 .BR \-\-version
 Print the program version and exit.
 .TP
+.RB (\| \-L | \-\-log\-level \|) \ \fILOGLEVEL\fR
+Set the program's log level to a specific value. Must be one of \fICRITICAL ERROR WARNING INFO DEBUG\fR. The default is the content of the \fBSOCRANOP_LOGLEVEL\fR environment variable if set, or \fIWARNING\fR otherwise.
+.TP
+.RB (\| \-q | \-\-quiet \|)
+Make the program output less verbose.
+.TP
 .RB (\| \-v | \-\-verbose \|)
-Make the program output more information. Helpful for debugging.
+Make the program output more verbose. Helpful for debugging.
 .\"
 .\" ======================================================================
 .\"
@@ -79,6 +85,10 @@ If successful, returns 0. Nonzero exit codes indicate an error.
 .\" ======================================================================
 .\"
 .SH ENVIRONMENT
+.TP
+.B SOCRANOP_LOGLEVEL
+When set, use the given log level as the default loglevel if no log
+level related command line argument is given.
 .TP
 .B XDG_CONFIG_HOME
 See the state file description in the FILES section below.

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+  <id>${APPLICATION_ID}</id>
+  <metadata_license>MIT</metadata_license>
+  <name>socranop</name>
+  <summary>Utilities for Soundcraft Notepad series of mixers</summary>
+  <description>
+    <p>
+      Configures advanced features of the Soundcraft Notepad series of
+      mixers like the audio routing from mixer channels to USB audio
+      capture channels.
+    </p>
+    <p>The supported devices are:</p>
+    <ul>
+      <li>Notepad-5</li>
+      <li>Notepad-8FX</li>
+      <li>Notepad-12FX</li>
+    </ul>
+  </description>
+  <categories>
+    <category>Audio</category>
+  </categories>
+  <launchable type="desktop-id">${APPLICATION_ID}.desktop</launchable>
+  <provides>
+    ${APPSTREAM_MODALIASES}
+    <dbus type="user">${BUSNAME}</dbus>
+    ${APPSTREAM_BINARIES}
+  </provides>
+  <developer id="io.github.socratools">
+    <name>The Socratools Team</name>
+  </developer>
+  <url type="homepage">https://github.com/socratools/socranop</url>
+  <url type="bugtracker">https://github.com/socratools/socranop/issues</url>
+  <project_license>MIT</project_license>
+  <screenshots>
+    <screenshot environment="gnome" type="default">
+      <caption>Socranop main window for Soundcraft Notepad-12FX mixer</caption>
+      <image type="source" width="270" height="309">https://raw.githubusercontent.com/socratools/socranop/main/doc/img/gui-screenshot-notepad-12fx.png</image>
+    </screenshot>
+    <screenshot environment="gnome">
+      <caption>Socranop main window selecting audio sources</caption>
+      <image type="source" width="270" height="336">https://raw.githubusercontent.com/socratools/socranop/main/doc/img/gui-screenshot-with-dropdown.png</image>
+    </screenshot>
+    <screenshot environment="gnome">
+      <caption>Socranop main window with no supported device connected </caption>
+      <image type="source" width="270" height="309">https://raw.githubusercontent.com/socratools/socranop/main/doc/img/gui-screenshot-no-device-found.png</image>
+    </screenshot>
+  </screenshots>
+</component>
