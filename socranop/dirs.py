@@ -48,6 +48,7 @@ only once, and cannot change during one program invocation.
 import abc
 import sys
 
+from functools import cache
 from logging import debug, info
 from os import getenv
 from pathlib import Path
@@ -61,6 +62,15 @@ class NotDetected(Exception):
 
 class UnsupportedInstall(Exception):
     pass  # class UnsupportedInstall
+
+
+@cache
+def exePath():
+    """The path the currently running executable"""
+    exename = Path(sys.argv[0]).resolve()
+    if exename.suffix == ".py":
+        raise ValueError("Running out of a module-based execution is not supported")
+    return exename
 
 
 class AbstractDirs(metaclass=abc.ABCMeta):
@@ -105,24 +115,15 @@ class AbstractDirs(metaclass=abc.ABCMeta):
             rel_path = path.relative_to(self.chroot)
             return Path("/") / rel_path
 
-    @classmethod
-    @property
-    def exePath(self):
-        """The path the currently running executable"""
-        exename = Path(sys.argv[0]).resolve()
-        if exename.suffix == ".py":
-            raise ValueError("Running out of a module-based execution is not supported")
-        return exename
-
     @property
     def guiExePath(self):
         """Full path to the GUI script executable"""
-        return self.remove_chroot(self.exePath.parent / const.BASE_EXE_GUI)
+        return self.remove_chroot(exePath().parent / const.BASE_EXE_GUI)
 
     @property
     def serviceExePath(self):
         """Full path to the service script executable"""
-        return self.remove_chroot(self.exePath.parent / const.BASE_EXE_SERVICE)
+        return self.remove_chroot(exePath().parent / const.BASE_EXE_SERVICE)
 
     def __detect(self):
         """Detect whether the current installation matches this class.
@@ -144,11 +145,10 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                 const.BASE_EXE_INSTALLTOOL,
             ]:
                 sx_path = chr_prefix / sx_dir / sx
-                # print("sx_path", sx_path)
-                if sx_path == self.exePath:
+                if sx_path == exePath():
                     return
                 try:
-                    self.exePath.relative_to(chr_prefix)  # ignore result
+                    exePath().relative_to(chr_prefix)  # ignore result
 
                     # If this is, say,
                     # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/bin/socranop-installtool``,
@@ -159,9 +159,9 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                     # the latter.
                     return
                 except ValueError:
-                    pass  # self.exePath is not a subdir of chr_prefix
+                    pass  # exePath() is not a subdir of chr_prefix
 
-        raise NotDetected(f"Exe path is not supported: {self.exePath!r}")
+        raise NotDetected(f"Exe path is not supported: {exePath()!r}")
 
     @property
     def prefix(self):
@@ -210,7 +210,7 @@ class AnyPrefixDirs(GlobalDirs):
 
     def __init__(self, chroot=None):
         debug("AnyPrefixDirs using chroot: %s", chroot)
-        exe_path = GlobalDirs.exePath
+        exe_path = exePath()
         debug("AnyPrefixDirs starting from exe path: %s", exe_path)
         if chroot is not None:
             exe_path_relative = exe_path.relative_to(Path(chroot))
