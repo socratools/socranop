@@ -83,7 +83,6 @@ class AbstractDirs(metaclass=abc.ABCMeta):
             self._chroot = None
 
         self._prefix = None
-        self._statedir = None
 
         debug("AbstractDirs.__init__(%s, %s)", self, f"chroot={chroot!r}")
 
@@ -180,24 +179,25 @@ class AbstractDirs(metaclass=abc.ABCMeta):
         debug("Using datadir: %s", data_dir)
         return data_dir
 
-    @property
+    @cached_property
     def statedir(self):
         """The statedir where the device state files are stored
 
         The state directory for a user session service must be somewhere
         in the user's ``$HOME``, and a config file is a good place.
         """
-        if self._statedir is None:
+
+        xdg_config_home = getenv("XDG_CONFIG_HOME")
+        if xdg_config_home:  # neither None nor empty string
+            config_dir = Path(xdg_config_home)
+            debug("Using XDG config dir from XDG_CONFIG_HOME variable: %s", config_dir)
+        else:
             config_dir = Path("~/.config").expanduser()
+            debug("Using XDG config dir default in ~: %s", config_dir)
 
-            xdg_config_home = getenv("XDG_CONFIG_HOME")
-            if xdg_config_home:  # neither None nor empty string
-                xdg_config_home_path = Path(xdg_config_home)
-                config_dir = xdg_config_home_path
-
-            self._statedir = config_dir / const.PACKAGE / "state"
-
-        return self._statedir
+        state_dir = config_dir / const.PACKAGE / "state"
+        debug("Using statedir: %s", state_dir)
+        return state_dir
 
     @property
     @abc.abstractmethod
