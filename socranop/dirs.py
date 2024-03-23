@@ -132,10 +132,12 @@ class AbstractDirs(metaclass=abc.ABCMeta):
         """
 
         if self.chroot is None:
-            chr_prefix = self.PREFIX
+            chroot_plus_prefix = self.PREFIX
         else:
             root_rel_prefix = self.PREFIX.relative_to("/")
-            chr_prefix = self.chroot / root_rel_prefix
+            chroot_plus_prefix = self.chroot / root_rel_prefix
+
+        debug("detect: chroot_plus_prefix is %s", chroot_plus_prefix)
 
         for sx_dir in ["bin", "sbin", "libexec"]:
             for sx in [
@@ -144,11 +146,12 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                 const.BASE_EXE_SERVICE,
                 const.BASE_EXE_INSTALLTOOL,
             ]:
-                sx_path = chr_prefix / sx_dir / sx
+                sx_path = chroot_plus_prefix / sx_dir / sx
                 if sx_path == exePath():
+                    debug("found exe path inside chroot_plus_prefix %s", sx_path)
                     return
                 try:
-                    exePath().relative_to(chr_prefix)  # ignore result
+                    exePath().relative_to(chroot_plus_prefix)  # ignore result
 
                     # If this is, say,
                     # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/bin/socranop-installtool``,
@@ -159,7 +162,7 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                     # the latter.
                     return
                 except ValueError:
-                    pass  # exePath() is not a subdir of chr_prefix
+                    pass  # exePath() is not in a subdir of chroot_plus_prefix
 
         raise NotDetected(f"Exe path is not supported: {exePath()!r}")
 
