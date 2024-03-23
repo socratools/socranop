@@ -683,9 +683,9 @@ class ResourceInstallTool(FileInstallTool):
         debug("walk_resources %s %s", self, res_subdir)
 
         res_data = importlib.resources.files(RESOURCE_MODULE) / "data"
-
+        debug("res_data %s .name %s", res_data, res_data.name)
         global files_to_delete
-        files_to_delete.add(res_data)
+        files_to_delete.add(Path(str(res_data)))
 
         td = res_data / res_subdir
 
