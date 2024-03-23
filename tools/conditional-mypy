@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if ${MYPY-mypy} --version > /dev/null
+then
+    ${MYPY-mypy} "$@"
+fi

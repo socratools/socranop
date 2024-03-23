@@ -5,6 +5,13 @@ _socranop_installtool()
     # $1 is the command name
     # $2 is the word being completed
     # $3 is the preceding word
+    case "$3" in
+	-L | --log-level)
+	    COMPREPLY=($(compgen -W "DEBUG INFO WARNING ERROR CRITICAL" -- "$2"))
+	    return 0
+	    ;;
+    esac
+
     local i word
     local REMAINING_OPTIONS
     declare -A REMAINING_OPTIONS
@@ -102,7 +109,7 @@ _socranop_installtool()
     esac
 
     REMAINING_OPTIONS=()
-    for word in -h --help --version -v --verbose -n --dry-run package-build-install post-pip-install pre-pip-uninstall
+    for word in -h --help --version -v --verbose -q --quiet -L --log-level -n --dry-run package-build-install post-pip-install pre-pip-uninstall
     do
         REMAINING_OPTIONS["$word"]=t
     done
@@ -115,9 +122,25 @@ _socranop_installtool()
                 COMPREPLY=()
                 return 0
                 ;;
-            -v | --verbose)
+            -L | --log-level)
+                unset REMAINING_OPTIONS["-L"]
+                unset REMAINING_OPTIONS["--log-level"]
+                unset REMAINING_OPTIONS["-q"]
+                unset REMAINING_OPTIONS["--quiet"]
                 unset REMAINING_OPTIONS["-v"]
                 unset REMAINING_OPTIONS["--verbose"]
+                ;;
+            -q | --quiet)
+                unset REMAINING_OPTIONS["-v"]
+                unset REMAINING_OPTIONS["--verbose"]
+                unset REMAINING_OPTIONS["-L"]
+                unset REMAINING_OPTIONS["--log-level"]
+                ;;
+            -v | --verbose)
+                unset REMAINING_OPTIONS["-q"]
+                unset REMAINING_OPTIONS["--quiet"]
+                unset REMAINING_OPTIONS["-L"]
+                unset REMAINING_OPTIONS["--log-level"]
                 ;;
             -n | --dry-run)
                 unset REMAINING_OPTIONS["-n"]

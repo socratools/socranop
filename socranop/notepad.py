@@ -1,6 +1,7 @@
+# socranop/notepad.py - Handle notepad devices
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2020,2021,2023 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +25,13 @@ import array
 import enum
 import json
 
+from logging import debug, warning, info
 from pathlib import Path
 
-import usb.core
+import usb.core  # type: ignore
 
 import socranop.constants as const
 from socranop.dirs import get_dirs
-from socranop.common import debug
 
 
 class NotepadBase:
@@ -51,9 +52,9 @@ class NotepadBase:
             # Note that the test suite absolutely requires we convert
             # whatever type stateDir is to a Path.
             stateDir = Path(stateDir)
-        debug("Using stateDir", repr(stateDir))
+        debug("Using stateDir: %s", repr(stateDir))
         self.dev = usb.core.find(idVendor=const.VENDOR_ID_HARMAN, idProduct=idProduct)
-        debug("Found device", self.dev)
+        debug("Found device: %s", self.dev)
         if self.dev is not None:
             major = self.dev.bcdDevice >> 8
             minor = self.dev.bcdDevice & 0xFF
@@ -88,13 +89,13 @@ class NotepadBase:
         source = self._parseSourcename(request)
         if source is None:
             raise ValueError(f"Requested input {request} is not a valid choice")
-        print(f"Switching USB audio input to {source.name}")
+        info("Switching USB audio input to %s", source.name)
         # Reverse engineered via Wireshark on Windows
         # 0 => 0x00 00 04 00 00 00 00 00
         # 1 => 0x00 00 04 00 01 00 00 00
         #        Change this -^
         message = array.array("B", [0x00, 0x00, 0x04, 0x00, source, 0x00, 0x00, 0x00])
-        debug(f"Sending {message}")
+        debug("Sending %s", message)
         self.dev.ctrl_transfer(0x40, 16, 0, 0, message)
         self.state["source"] = source
         self._saveState()
@@ -138,12 +139,12 @@ class NotepadBase:
 
     def _saveState(self):
         try:
-            debug("self.stateFile", repr(self.stateFile))
+            debug("self.stateFile %s", repr(self.stateFile))
             self.stateFile.parent.mkdir(mode=0o0755, parents=True, exist_ok=True)
             text = json.dumps(self.state, sort_keys=True, indent=4) + "\n"
             self.stateFile.write_text(text)
         except Exception as e:
-            print(f"Warning: Could not write state file: {e}")
+            warning("Could not write state file: %s", e)
 
     def _loadState(self):
         try:

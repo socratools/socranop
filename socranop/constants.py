@@ -1,5 +1,6 @@
+# socranop/constants.py - Define common constants for socranop
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -39,6 +40,9 @@ BASE_EXE_CLI = "socranop-ctl"
 BASE_EXE_GUI = "socranop-gui"
 BASE_EXE_SERVICE = "socranop-session-service"
 BASE_EXE_INSTALLTOOL = "socranop-installtool"
+
+# Misc constants
+ENVVAR_LOGLEVEL = "SOCRANOP_LOGLEVEL"
 
 
 # Gtk Application ID of the socranop GUI

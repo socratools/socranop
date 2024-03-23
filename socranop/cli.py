@@ -1,6 +1,7 @@
+# socranop/cli.py - The socranop command line interface (CLI)
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2021,2023,2024 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +29,9 @@ import socranop.common as common
 
 def autodetect(dbus=True, wait=False):
     if dbus:
-        try:
-            from socranop.dbus import Client, DbusInitializationError
+        from socranop.dbus import Client, DbusInitializationError
 
+        try:
             client = Client()
             result = client.autodetect()
             if result is None and wait:
@@ -101,7 +102,7 @@ def parse_argv(argv=None):
     parser = argparse.ArgumentParser(
         description="Control a Soundcraft Notepad series mixer from the command line."
     )
-    common.parser_args(parser)
+    common.add_parser_args(parser)
 
     parser.add_argument(
         "--no-dbus",
@@ -129,8 +130,14 @@ def parse_argv(argv=None):
     )
 
     args = parser.parse_args(argv)
-    common.VERBOSE = args.verbose
+    common.process_args(parser, args)
+    process_args(parser, args)
     return args
+
+
+def process_args(parser, args):
+    """Process args, potentially calling parser.error()"""
+    pass
 
 
 def main(argv=None):

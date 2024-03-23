@@ -7,8 +7,12 @@ _socranop_session_service()
     # $3 is the preceding word
     case "$3" in
 	socranop-session-service | */socranop-session-service)
-	    COMPREPLY=($(compgen -W "-h --help --version -v --verbose" -- "$2"))
+	    COMPREPLY=($(compgen -W "-h --help --version -v --verbose -q --quiet -L --log-level" -- "$2"))
 	    return
+	    ;;
+	-L | --log-level)
+	    COMPREPLY=($(compgen -W "DEBUG INFO WARNING ERROR CRITICAL" -- "$2"))
+	    return 0
 	    ;;
     esac
     return
