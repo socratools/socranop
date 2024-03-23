@@ -71,7 +71,7 @@ socranop\-installtool - Hook socranop into the system post-install (or do the re
 .RB (\| \-\-help \|| \-\-version \|)
 .br
 .B socranop\-installtool
-.RB [\| \-v \|]
+.RB [\| "\-L \fILOGLEVEL\fR" | \-q | \-v \|]
 .RB [\| \-n \|]
 .I COMMAND
 .RI [\| cmd-options... \|]
@@ -179,6 +179,12 @@ Show program's version number and exit.
 .RB [\| \-n\| |\| \-\-dry\-run\| ]\|
 Do not actually change anything on the system. Only show what \fIwould\fR be done.
 .TP
+.RB (\| \-L | \-\-log\-level \|) \ \fILOGLEVEL\fR
+Set the program's log level to a specific value. Must be one of \fICRITICAL ERROR WARNING INFO DEBUG\fR. The default is the content of the \fBSOCRANOP_LOGLEVEL\fR environment variable if set, or \fIWARNING\fR otherwise.
+.TP
+.RB (\| \-q | \-\-quiet \|)
+Make the \fIsocranop\-installtool\fR output less verbose.
+.TP
 .RB [\| \-v\| |\| \-\-verbose\| ]\|
 Make the \fIsocranop\-installtool\fR output more verbose. This is mostly useful for debugging.
 .\"
@@ -218,7 +224,13 @@ Force \fIsocranop\-installtool package-build-install\fR into accepting \fIsocran
 .\"
 .\" ======================================================================
 .\"
-.\" .SH ENVIRONMENT
+.SH ENVIRONMENT
+.TP
+.B SOCRANOP_LOGLEVEL
+When set, use the given log level as the default loglevel if no log
+level related command line argument is given.
+.\"
+.\" ======================================================================
 .\"
 .\" .SH FILES
 .\"

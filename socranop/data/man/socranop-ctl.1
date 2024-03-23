@@ -21,6 +21,10 @@ socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from 
 .\" optional arguments:
 .\"   -h, --help         show this help message and exit
 .\"   --version          show program's version number and exit
+.\"   -L LOGLEVEL, --log-level LOGLEVEL
+.\"                      set the log level: one of DEBUG, INFO, WARNING (default),
+.\"                      ERROR, CRITICAL
+.\"   -q, --quiet        make program output less verbose
 .\"   -v, --verbose      Enable more verbose output, largely for debugging
 .\"   --no-dbus          Use direct USB device access instead of D-Bus service
 .\"                      access
@@ -35,13 +39,13 @@ socranop\-ctl \- control Soundcraft Notepad series mixer USB audio routing from 
 .RB (\| \-\-help \|| \-\-version \|)
 .br
 .B socranop\-ctl
-.RB [\| \-\-verbose \|]
+.RB [\| "\-L \fILOGLEVEL\fR" | \-q | \-v \|]
 .RB [\| \-\-no\-dbus \|]
 .RB [\| \-\-wait \|]
 .B \-\-list
 .br
 .B socranop\-ctl
-.RB [\| \-\-verbose \|]
+.RB [\| "\-L \fILOGLEVEL\fR" | \-q | \-v \|]
 .RB [\| \-\-no\-dbus \|]
 .RB [\| \-\-wait \|]
 .BI \-\-set\  SOURCE
@@ -70,8 +74,14 @@ D-Bus service.
 .RB (\| \-w | \-\-wait \|)
 If no compatible device is found, wait for one to appear (D-Bus mode only)
 .TP
+.RB (\| \-L | \-\-log\-level \|) \ \fILOGLEVEL\fR
+Set the program's log level to a specific value. Must be one of \fICRITICAL ERROR WARNING INFO DEBUG\fR. The default is the content of the \fBSOCRANOP_LOGLEVEL\fR environment variable if set, or \fIWARNING\fR otherwise.
+.TP
+.RB (\| \-q | \-\-quiet \|)
+Make the \fIsocranop\-ctl\fR output less verbose.
+.TP
 .RB (\| \-v | \-\-verbose \|)
-Make the program output more information. Helpful for debugging.
+Make the \fIsocranop\-ctl\fR output more verbose. Helpful for debugging.
 .TP
 .RB (\| \-l | \-\-list \|)
 List the available source routing options. This includes the current routing, if known.
@@ -87,6 +97,10 @@ If successful, returns 0. Nonzero exit codes indicate an error.
 .\" ======================================================================
 .\"
 .SH ENVIRONMENT
+.TP
+.B SOCRANOP_LOGLEVEL
+When set, use the given log level as the default loglevel if no log
+level related command line argument is given.
 .TP
 .B XDG_CONFIG_HOME
 When \fBsocranop\-ctl\fR is run with \fB\-\-no\-dbus\fR, \fBsocranop\-ctl\fR takes over handling device files and state files from

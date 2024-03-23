@@ -9,7 +9,20 @@ Development Environment
 To ensure homogeneity of development environments, I recommend using
 `pipenv` and Python 3.9. Later versions of Python should also work.
 
-`pipenv` can be installed via `pip` in the usual ways.
+`pipenv` can be installed via `pip` in the usual way, or on systems
+using an externally managed environment, using that system's `pipenv`
+package:
+
+    [user@host ~]$ pip install pipenv
+    [user@host ~]$ sudo pacman -S python-pipenv  # Arch
+    [user@host ~]$ sudo apt install pipenv  # Debian 12+, Ubuntu 23.10+
+    [user@host ~]$ _
+
+If your existing `pipenv` version is too old (such as the Debian 11
+system `pipenv` package), you need to update pipenv:
+
+    [user@host ~]$ pip install -U pipenv
+    [user@host ~]$ _
 
 
 ### Get a git clone of the source repository
@@ -27,56 +40,71 @@ probably best installed using operating system packages:
   * pandoc: The pandoc command is required when you modify some parts
     of the documentation.
 
-        [user@host ~]$ sudo apt install pandoc   # Debian, Ubuntu
-        [user@host ~]$ sudo dnf install pandoc   # Fedora
+        [user@host ~]$ sudo pacman -S pandoc        # Arch
+        [user@host ~]$ sudo apt install pandoc      # Debian, Ubuntu
+        [user@host ~]$ sudo dnf install pandoc tar  # Fedora
         [user@host ~]$ _
 
 
 ### Set up and use pipenv
 
-`pipenv run pip install setuptools`
-- Install setuptools (Python 3.12 and later does not come with setuptools).
+  * `pipenv run pip install setuptools`
 
-`pipenv install --dev`
-- Sets up an appropriate virtual environment, installs all appropriate
-  development packages, and egg-links to our source directory so that
-  the virtualenv will actually use the source files from this source
-  directory.
+    Install setuptools (Python 3.12 and later does not come with
+    setuptools).
 
-  If you are getting the `black` version subdependency problem on Debian
-  or Ubuntu, `pipenv lock --pre --clear` might help.
+  * `pipenv install --dev`
 
-`tools/link_system_libs`
-- Set up a symlink to your system's 'gi' lib which isn't otherwise available
-  via pip (allows you to run the D-Bus service and the gui from within pipenv)
+    Sets up an appropriate virtual environment, installs all
+    appropriate development packages, and egg-links to our source
+    directory so that the virtualenv will actually use the source
+    files from this source directory.
 
-`pipenv shell`
-- Starts a subshell with the appropriate environment so that the
-  sandboxed libraries and utilities are in use
+    If you are getting the `black` version subdependency problem on
+    Debian or Ubuntu, `pipenv lock --pre --clear` might help.
 
-FIXME05: You can start the D-Bus service by running
-         `socranop-session-service` from a pipenv. Bus activation
-         only works per-user, though, not per-pipenv, as the session
-         bus only looks for `*.service` files in one specific location
-         in $HOME.
+  * `tools/link_system_libs`
+
+    Set up a symlink to your system's 'gi' lib which is not otherwise
+    available via pip (allows you to run the D-Bus service and the gui
+    from within pipenv)
+
+  * `pipenv shell`
+
+    Starts a subshell with the appropriate environment so that the
+    sandboxed libraries and utilities are in use
+
+  * `socranop-installtool post-pip-install`
+
+    Inside the virtual environment of `pipenv shell`, run
+    `post-pip-install` to install the socranop config files into their
+    proper places inside `$HOME/.local` (outside the pipenv!), like
+    e.g. the essential D-Bus `.service` file.
+
+    You can now also run `socranop-ctl` and `socranop-gui` from inside
+    the `pipenv shell`. The D-Bus service should now be started
+    automatically.
+
+    Alternatively, you can manually start `socranop-session-service`
+    without needing to install the D-Bus `.service` file, and then run
+    `socranop-ctl` and `socranop-gui` to communicate with that
+    service.
 
 ### Set up pre-commit
 
-`pre-commit install` (inside of pipenv shell)
-- Set up git hooks management so every commit gets checked/fixed
-- Only needs to be done once after cloning the `socranop` repo
+  * `pre-commit install` (inside of pipenv shell)
+
+    This sets up git hooks management so every commit gets
+    checked/fixed. It only needs to be done once after cloning the
+    `socranop` repo.
 
 ### Adding new dependencies
 
-`pipenv install [--dev] <pgkname>`
-- Installs the dependency to the local pipenv environment.  Use
-  `--dev` for development-only packages, omit for run-time
-  dependencies.
+  * `pipenv install [--dev] <pgkname>`
 
-`pipenv-setup sync --pipfile`
-- Syncs any run-time dependencies from `pipenv` to `setup.py`.
-
-  The `socranop` pre-commit hooks run this automatically.
+    Installs the dependency to the local pipenv environment.  Use
+    `--dev` for development-only packages, omit for run-time
+    dependencies.
 
 ### Changing setup.py, setup.cfg, etc.
 
@@ -120,11 +148,11 @@ Submitting Changes
 
 - Please ensure that `pytest` passes, using `pytest` itself or `tox`.
 
-  Github runs this for you on all branches as well, and I'm working on
+  Github runs this for you on all branches as well, and I am working on
   getting the feedback from that integrated into the pull requests,
   eventually.
 
-  Try to test new code thoroughly.  I'm working on increasing code
+  Try to test new code thoroughly.  I am working on increasing code
   coverage as I go as well.  Use `pytest` or `tox` to test.
 
   The `pre-commit` hooks ensure `pytest` is passing on every commit, too.
@@ -179,10 +207,10 @@ Submitting Changes
       This may include changes to pre-existing D-Bus data structures or remove
       D-Bus endpoints.
 
-    - A major bump (0.x.y -> 1.0.0) hasn't happened yet.  Maybe it will some day :)
+    - A major bump (0.x.y -> 1.0.0) has not happened yet.  Maybe it will some day :)
 
 - The official release schedule is sporadic and ad-hoc (aka when I feel like
-  it).  If you think there's enough in mainline that you want me to kick a
+  it).  If you think there is enough in mainline that you want me to kick a
   release, just send me an email or open an issue.
 
 
