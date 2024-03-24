@@ -933,7 +933,7 @@ class AppstreamInstallTool(ResourceInstallTool):
                     for vid in [
                         const.VENDOR_ID_HARMAN,
                     ]
-                    for pid in const.PY_LIST_OF_PRODUCT_IDS
+                    for pid in const.PRODUCT_ID
                 ]
             )
             binaries = "\n    ".join(
@@ -1014,7 +1014,7 @@ class UdevRulesInstallTool(FileInstallTool):
         lines = [
             "# Soundcraft Notepad series mixers with audio routing controlled by USB"
         ]
-        for product_id in const.PY_LIST_OF_PRODUCT_IDS:
+        for product_id in const.PRODUCT_ID:
             lines.append(
                 f'ACTION=="add", SUBSYSTEM=="usb", ATTRS{{idVendor}}=="{const.VENDOR_ID_HARMAN:04x}", ATTRS{{idProduct}}=="{product_id:04x}", TAG+="uaccess"'
             )
@@ -1046,7 +1046,7 @@ class UdevRulesInstallTool(FileInstallTool):
             "udevadm control --reload  # ensure udev notes ruleset changes before the triggers",
         ] + [
             f"udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor={const.VENDOR_ID_HARMAN:04x} --attr-match=idProduct={pid:04x}"
-            for pid in const.PY_LIST_OF_PRODUCT_IDS
+            for pid in const.PRODUCT_ID
         ]
 
         SUDO_SCRIPT.add_cmd(

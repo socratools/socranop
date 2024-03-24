@@ -160,7 +160,7 @@ def stereo_label(base):
 class Notepad_12fx(NotepadBase):
     def __init__(self, **kwargs):
         super().__init__(
-            idProduct=const.PRODUCT_ID_NOTEPAD_12FX,
+            idProduct=const.PRODUCT_ID.NOTEPAD_12FX,
             routingTarget=("capture_3", "capture_4"),
             fixedRouting=[(("capture_1", "capture_2"), ("Mic/Line 1", "Mic/Line 2"))],
             **kwargs,
@@ -183,7 +183,7 @@ class Notepad_12fx(NotepadBase):
 class Notepad_8fx(NotepadBase):
     def __init__(self, **kwargs):
         super().__init__(
-            idProduct=const.PRODUCT_ID_NOTEPAD_8FX,
+            idProduct=const.PRODUCT_ID.NOTEPAD_8FX,
             routingTarget=("capture_1", "capture_2"),
             **kwargs,
         )
@@ -205,7 +205,7 @@ class Notepad_8fx(NotepadBase):
 class Notepad_5(NotepadBase):
     def __init__(self, **kwargs):
         super().__init__(
-            idProduct=const.PRODUCT_ID_NOTEPAD_5,
+            idProduct=const.PRODUCT_ID.NOTEPAD_5,
             routingTarget=("capture_1", "capture_2"),
             **kwargs,
         )

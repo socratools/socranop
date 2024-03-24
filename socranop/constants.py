@@ -31,9 +31,14 @@
 #
 ########################################################################
 
+
+import enum
+
+
 # Package name
 PACKAGE = "socranop"
 VERSION = "0.4.92"
+
 
 # Executable names
 BASE_EXE_CLI = "socranop-ctl"
@@ -60,11 +65,9 @@ MGRPATH = "/io/github/socratools/socranop"
 # USB Device vendor and product IDs
 VENDOR_ID_HARMAN = 0x05FC
 
-PRODUCT_ID_NOTEPAD_5 = 0x0030
-PRODUCT_ID_NOTEPAD_8FX = 0x0031
-PRODUCT_ID_NOTEPAD_12FX = 0x0032
-PY_LIST_OF_PRODUCT_IDS = [
-    PRODUCT_ID_NOTEPAD_5,
-    PRODUCT_ID_NOTEPAD_8FX,
-    PRODUCT_ID_NOTEPAD_12FX,
-]
+
+@enum.unique
+class PRODUCT_ID(enum.IntEnum):
+    NOTEPAD_5 = 0x0030
+    NOTEPAD_8FX = 0x0031
+    NOTEPAD_12FX = 0x0032
