@@ -1,5 +1,6 @@
+# socranop/constants.py - Define common constants for socranop
 #
-# Copyright (c) 2020 Jim Ramsay <i.am@jimramsay.com>
+# Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
 # Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -30,15 +31,23 @@
 #
 ########################################################################
 
+
+import enum
+
+
 # Package name
 PACKAGE = "socranop"
 VERSION = "0.4.92"
+
 
 # Executable names
 BASE_EXE_CLI = "socranop-ctl"
 BASE_EXE_GUI = "socranop-gui"
 BASE_EXE_SERVICE = "socranop-session-service"
 BASE_EXE_INSTALLTOOL = "socranop-installtool"
+
+# Misc constants
+ENVVAR_LOGLEVEL = "SOCRANOP_LOGLEVEL"
 
 
 # Gtk Application ID of the socranop GUI
@@ -56,11 +65,9 @@ MGRPATH = "/io/github/socratools/socranop"
 # USB Device vendor and product IDs
 VENDOR_ID_HARMAN = 0x05FC
 
-PRODUCT_ID_NOTEPAD_5 = 0x0030
-PRODUCT_ID_NOTEPAD_8FX = 0x0031
-PRODUCT_ID_NOTEPAD_12FX = 0x0032
-PY_LIST_OF_PRODUCT_IDS = [
-    PRODUCT_ID_NOTEPAD_5,
-    PRODUCT_ID_NOTEPAD_8FX,
-    PRODUCT_ID_NOTEPAD_12FX,
-]
+
+@enum.unique
+class PRODUCT_ID(enum.IntEnum):
+    NOTEPAD_5 = 0x0030
+    NOTEPAD_8FX = 0x0031
+    NOTEPAD_12FX = 0x0032

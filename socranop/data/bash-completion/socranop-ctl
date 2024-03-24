@@ -6,10 +6,14 @@ _socranop_ctl()
     # $2 is the word being completed
     # $3 is the preceding word
     case "$3" in
+        -L | --log-level)
+            COMPREPLY=($(compgen -W "DEBUG INFO WARNING ERROR CRITICAL" -- "$2"))
+            return 0
+            ;;
         -s | --set)
             COMPREPLY=($(compgen -W "0 1 2 3" -- "$2"))
             return 0
-	    ;;
+            ;;
     esac
 
     local word
@@ -30,10 +34,26 @@ _socranop_ctl()
 		COMPREPLY=()
 		return 0
 		;;
-	    -v | --verbose)
-		unset REMAINING_OPTIONS["-v"]
-		unset REMAINING_OPTIONS["--verbose"]
-		;;
+            -L | --log-level)
+                unset REMAINING_OPTIONS["-L"]
+                unset REMAINING_OPTIONS["--log-level"]
+                unset REMAINING_OPTIONS["-q"]
+                unset REMAINING_OPTIONS["--quiet"]
+                unset REMAINING_OPTIONS["-v"]
+                unset REMAINING_OPTIONS["--verbose"]
+                ;;
+            -q | --quiet)
+                unset REMAINING_OPTIONS["-v"]
+                unset REMAINING_OPTIONS["--verbose"]
+                unset REMAINING_OPTIONS["-L"]
+                unset REMAINING_OPTIONS["--log-level"]
+                ;;
+            -v | --verbose)
+                unset REMAINING_OPTIONS["-q"]
+                unset REMAINING_OPTIONS["--quiet"]
+                unset REMAINING_OPTIONS["-L"]
+                unset REMAINING_OPTIONS["--log-level"]
+                ;;
 	    -w | --wait)
 		unset REMAINING_OPTIONS["-w"]
 		unset REMAINING_OPTIONS["--wait"]

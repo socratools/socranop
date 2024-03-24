@@ -1,6 +1,7 @@
+# socranop/gui.py - The socranop Graphical User Interface (GUI)
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2021,2023 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +23,13 @@
 
 import sys
 import traceback
+from logging import debug, error, info
 from pathlib import Path
 from collections.abc import Iterable
-from pkg_resources import resource_filename
+from pkg_resources import resource_filename  # type: ignore
 
 try:
-    import gi
+    import gi  # type: ignore
 except ModuleNotFoundError:
     print(
         """
@@ -37,8 +39,9 @@ python-gi, python-gobject, python3-gobject, pygobject, or something similar.
     )
     raise
 gi.require_version("Gtk", "3.0")
-from gi.repository import GLib
+from gi.repository import GLib  # type: ignore
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import Gio
 
 import socranop
@@ -60,31 +63,60 @@ def iconFile():
     return resource_filename("socranop", f"data/xdg/{const.APPLICATION_ID}.256.png")
 
 
-class Main(Gtk.ApplicationWindow):
+class SocranopMainWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
-        super().__init__(title="socranop", application=app)
+        WINDOW_TITLE = "socranop"
+        super().__init__(title=WINDOW_TITLE, application=app)
         self.app = app
         icon = iconFile()
         if icon is not None:
-            print("Using Application Window icon from", icon)
+            debug("Using Application Window icon from %s", icon)
             self.set_default_icon_from_file(icon)
         self.connect("destroy", self.app.quit_cb)
         self.grid = None
         self.dev = None
+
+        self.header_bar = Gtk.HeaderBar()
+        self.header_bar.set_title(WINDOW_TITLE)
+        self.header_bar.set_has_subtitle(False)
+        self.header_bar.set_show_close_button(True)
+
+        about_btn = Gtk.Button.new_from_icon_name(
+            "help-about-symbolic", Gtk.IconSize.BUTTON
+        )
+        about_btn.set_tooltip_text("Show information about socranop")
+        about_btn.set_relief(Gtk.ReliefStyle.NONE)
+        about_btn.connect("clicked", self.app.about_cb)
+        self.header_bar.pack_start(about_btn)
+
+        self.set_titlebar(self.header_bar)
+
         self.setNoDevice()
         try:
             self.dbus = Client(added_cb=self.deviceAdded, removed_cb=self.deviceRemoved)
         except DbusInitializationError as e:
-            print(f"Startup error: {str(e)}")
+            error("Startup error: %s", e)
             self._startupFailure(f"Could not start {const.BASE_EXE_GUI}", str(e))
             raise e
         except Exception as e:
-            print("Unexpected exception at gui startup")
+            error("Unexpected exception at gui startup")
             traceback.print_exc()
             self._startupFailure(f"Unexpected exception {e.__class__.__name__}", str(e))
             raise e
         self.dbus.serviceDisconnected.connect(self.dbusDisconnect)
         self.dbus.serviceConnected.connect(self.dbusReconnect)
+
+        accel_group = Gtk.AccelGroup()
+
+        def add_ctrl_accel(key, cb):
+            accel_group.connect(
+                Gdk.keyval_from_name(key), Gdk.ModifierType.CONTROL_MASK, 0, cb
+            )
+
+        add_ctrl_accel("B", self.app.about_cb)
+        add_ctrl_accel("W", self.app.quit_cb)
+        add_ctrl_accel("Q", self.app.quit_cb)
+        self.add_accel_group(accel_group)
 
     def _startupFailure(self, title, message):
         dialog = Gtk.MessageDialog(
@@ -97,6 +129,7 @@ class Main(Gtk.ApplicationWindow):
         dialog.run()
 
     def dbusDisconnect(self):
+        print("D-Bus disconnect")
         self.setNoDevice()
 
     def dbusReconnect(self):
@@ -118,7 +151,7 @@ class Main(Gtk.ApplicationWindow):
         if self.grid is not None:
             self.remove(self.grid)
         self.dev = dev
-        dev.onPropertiesChanged = self.reset
+        dev.onPropertiesChanged = self.reset_cb
         self.grid = Gtk.Grid()
         self.add(self.grid)
         self.row = 0
@@ -137,8 +170,9 @@ class Main(Gtk.ApplicationWindow):
         self.sourceCombo.connect("changed", self.selectionChanged)
         self.addRow(self.dev.routingTarget, self.sourceCombo)
         self.addActions()
-        self.reset()
+        self.reset_cb()
         self.show_all()
+        self.sourceCombo.grab_focus()
 
     def setNoDevice(self):
         self.dev = None
@@ -151,11 +185,11 @@ class Main(Gtk.ApplicationWindow):
         self.show_all()
 
     def deviceAdded(self, dev):
-        print(f"Added {dev._path}")
+        info("Device added: %s", dev._path)
         self.setDevice(dev)
 
     def deviceRemoved(self, path):
-        print(f"Removed {path}")
+        info("Device removed: %s", path)
         if self.dev is not None:
             if self.dev._path != path:
                 # Not our device
@@ -210,20 +244,20 @@ class Main(Gtk.ApplicationWindow):
         self.resetButton = Gtk.Button.new_with_mnemonic("_Reset")
         self.actions.pack_end(self.applyButton)
         self.actions.pack_end(self.resetButton)
-        self.resetButton.connect("clicked", self.reset)
-        self.applyButton.connect("clicked", self.apply)
+        self.resetButton.connect("clicked", self.reset_cb)
+        self.applyButton.connect("clicked", self.apply_cb)
 
     def selectionChanged(self, comboBox):
         i = comboBox.get_active_iter()
         self.nextSelection = comboBox.get_model()[i][0]
         self.setActionsEnabled(self.nextSelection != self.dev.routingSource)
 
-    def apply(self, button=None):
-        print(f"Setting routing source to {self.nextSelection}")
+    def apply_cb(self, *args, **kwargs):
+        info("Setting routing source to %s", self.nextSelection)
         self.dev.routingSource = self.nextSelection
         self.setActionsEnabled(False)
 
-    def reset(self, button=None, *args, **kwargs):
+    def reset_cb(self, *args, **kwargs):
         for i, source in enumerate(self.dev.sources.items()):
             if self.dev.routingSource == source[0]:
                 self.sourceCombo.set_active(i)
@@ -234,7 +268,7 @@ class Main(Gtk.ApplicationWindow):
         self.resetButton.set_sensitive(enabled)
 
 
-class About(Gtk.AboutDialog):
+class AboutSocranopDialog(Gtk.AboutDialog):
     def __init__(self):
         super().__init__(
             program_name=const.PACKAGE,
@@ -252,7 +286,7 @@ class About(Gtk.AboutDialog):
         action.close()
 
 
-class App(Gtk.Application):
+class SocranopApp(Gtk.Application):
     def __init__(self):
         super().__init__(
             application_id=const.APPLICATION_ID,
@@ -262,6 +296,7 @@ class App(Gtk.Application):
                 | Gio.ApplicationFlags.NON_UNIQUE  # noqa: W503
             ),
         )
+        GLib.set_prgname(const.APPLICATION_ID)  # TODO: remove this with Gtk4
         self.window = None
 
         # Caution: If you change the command line parser in any way,
@@ -288,11 +323,31 @@ class App(Gtk.Application):
         )
 
         self.add_main_option(
+            "log-level",
+            ord("L"),
+            GLib.OptionFlags.NONE,
+            GLib.OptionArg.STRING,
+            "set the log level (DEBUG INFO WARNING[default] ERROR CRITICAL)",
+            None,
+        )
+
+        # TODO: Figure out how to support repeated -q options
+        self.add_main_option(
+            "quiet",
+            ord("q"),
+            GLib.OptionFlags.NONE,
+            GLib.OptionArg.NONE,
+            "make program output less verbose",
+            None,
+        )
+
+        # TODO: Figure out how to support repeated -v options
+        self.add_main_option(
             "verbose",
             ord("v"),
             GLib.OptionFlags.NONE,
             GLib.OptionArg.NONE,
-            "Enable more verbose output, largely for debugging",
+            "make program output more verbose (mostly for debugging)",
             None,
         )
 
@@ -309,7 +364,7 @@ class App(Gtk.Application):
         # convert GVariantDict -> GVariant -> dict
         options = options.end().unpack()
 
-        common.VERBOSE = "verbose" in options
+        common.process_gtk_options(options)
 
         if "version" in options:
             return self.__cmdline_version()
@@ -321,33 +376,34 @@ class App(Gtk.Application):
         if self.window is not None:
             return
         try:
-            self.window = Main(self)
+            self.window = SocranopMainWindow(self)
         except DbusInitializationError:
             self.quit()
         except Exception:
-            print("Unexpected exception at gui startup")
+            error("Unexpected exception at gui startup")
             traceback.print_exc()
             self.quit()
 
-    def about_cb(self, action, parameter):
-        about = About()
+    def about_cb(self, *args, **kwargs):
+        about = AboutSocranopDialog()
         about.show()
 
     def quit_cb(self, *args, **kwargs):
         self.quit()
 
+    def __init_socranop_actions(self):
+        ACTIONS = [
+            ("app.about", self.about_cb),
+            ("app.quit", self.quit_cb),
+        ]
+        for name, callback in ACTIONS:
+            action = Gio.SimpleAction(name=name)
+            action.connect("activate", callback)
+            self.add_action(action)
+
     def do_startup(self):
         Gtk.Application.do_startup(self)
-        self.set_app_menu(Gio.Menu())
-        self.addAppmenu("About", self.about_cb)
-        self.addAppmenu("Quit", self.quit_cb)
-
-    def addAppmenu(self, name, cb):
-        actionName = name.lower()
-        self.get_app_menu().append(name, f"app.{actionName}")
-        action = Gio.SimpleAction(name=actionName)
-        action.connect("activate", cb)
-        self.add_action(action)
+        self.__init_socranop_actions()
 
 
 def main(argv=None):
@@ -356,7 +412,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    app = App()
+    app = SocranopApp()
     sys.exit(app.run(argv))
 
 

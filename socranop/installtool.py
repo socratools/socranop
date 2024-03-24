@@ -6,7 +6,7 @@
 # install part of building a package).
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2020,2021,2023,2024 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,14 +30,16 @@
 import abc
 import argparse
 import base64
-import functools
 import importlib
 import importlib.resources
 import io
+import logging
 import re
 import sys
 import time
 
+from functools import cached_property
+from logging import debug
 from pathlib import Path
 from string import Template
 
@@ -54,7 +56,6 @@ def print_step(tag, details, **printopts):
 
 
 class Step:
-
     """\
     Allow easy printing of checks similar to the following:
 
@@ -159,7 +160,7 @@ class ScriptCommand:
     """
 
     def __init__(self, cmd, skip_if=False, comment=None):
-        common.debug("ScriptCommand.__init__", repr(cmd))
+        debug("ScriptCommand.__init__(%r)", cmd)
         assert isinstance(cmd, str)
         self.cmd = cmd
         self.skip_if = skip_if
@@ -196,10 +197,10 @@ class SudoScript:
         """Add a command to the sudo script"""
         if skip_if:
             c = ScriptCommand(cmd, skip_if=True, comment=comment)
-            common.debug(f"    [skip] {c.cmd!r}")
+            print(f"    [skip] {c.cmd!r}")
         else:
             c = ScriptCommand(cmd, skip_if=False, comment=comment)
-            common.debug(f"    [q'ed] {c.cmd!r}")
+            print(f"    [q'ed] {c.cmd!r}")
         self.sudo_commands.append(c)
 
     def needs_to_run(self):
@@ -352,7 +353,7 @@ class ResourceFile(AbstractFile):
         self.resource_entry = resource_entry
 
     def __str__(self):
-        return f"{self.__class__.__name__}:{self.dst}:resource({self.resource_entry})"
+        return f"{self.__class__.__name__}:{self.dst}<-resource({self.resource_entry})"
 
     def direct_install(self):
         self.chroot_dst.write_bytes(self.resource_entry.read_bytes())
@@ -408,22 +409,29 @@ class FilesToDelete:
         # print("self.chroot", self.chroot)
         if not abs_name.is_relative_to(self.chroot):
             return
+        debug("FilesToDelete adding %s", abs_name)
         self.files.add(abs_name)
 
     def remove_all(self):
         if not self.chroot:
+            debug("FilesToDelete remove_all aborting due to chroot: %s", self.chroot)
             return
         if self.chroot.samefile("/"):
+            debug("FilesToDelete remove_all aborting due to chroot: %s", self.chroot)
             return
+        debug("FilesToDelete remove_all going ahead")
         print()
-        print(f"Removing all installed files related to {const.BASE_EXE_INSTALLTOOL}:")
+        print(
+            f"Removing all installed files related to {const.BASE_EXE_INSTALLTOOL} from chroot {self.chroot}:"
+        )
 
         for e in sorted(list(self.files), reverse=True):
+            unchrooted_e = e.relative_to(self.chroot)
             if e.is_dir():
-                print(f"  rmdir {e!s}")
+                print(f"  rmdir {unchrooted_e!s}")
                 e.rmdir()
             else:
-                print(f"  rm    {e!s}")
+                print(f"  rm    {unchrooted_e!s}")
                 e.unlink()
 
         print(
@@ -432,11 +440,11 @@ class FilesToDelete:
 
 
 global files_to_delete
-files_to_delete = None
+# Initializing this here instead of main() stops mypy from complaining about None.add()
+files_to_delete = FilesToDelete()
 
 
 class TemplateFile(AbstractFile):
-
     """This destination file is a source file after string template processing"""
 
     def __init__(self, dst, resource_entry, template_data=None, comment=None):
@@ -537,7 +545,7 @@ class CheckDependencies(AbstractInstallTool):
         ):
             importlib.import_module("gi")  # import must work; discard retval
 
-        import gi
+        import gi  # type: ignore
 
         for module, version in [
             ("GLib", None),
@@ -582,7 +590,7 @@ class CheckDependencies(AbstractInstallTool):
         ):
             importlib.import_module("usb.core")  # import must work; discard retval
 
-        import usb.core
+        import usb.core  # type: ignore
 
         # check that finding any USB device works
         with Step(
@@ -641,7 +649,7 @@ class FileInstallTool(AbstractInstallTool):
         self.files = []
 
     def add_file(self, file):
-        common.debug("Adding file", self, file)
+        debug("Adding file %s %s", self, file)
         self.files.append(file)
 
     def do_install_files(self):
@@ -673,12 +681,12 @@ class ResourceInstallTool(FileInstallTool):
         super(ResourceInstallTool, self).__init__(dry_run, heading)
 
     def walk_resources(self, res_subdir: str):
-        common.debug("walk_resources", self, res_subdir)
+        debug("walk_resources %s %s", self, res_subdir)
 
         res_data = importlib.resources.files(RESOURCE_MODULE) / "data"
-
+        debug("res_data %s .name %s", res_data, res_data.name)
         global files_to_delete
-        files_to_delete.add(res_data)
+        files_to_delete.add(Path(str(res_data)))
 
         td = res_data / res_subdir
 
@@ -688,10 +696,11 @@ class ResourceInstallTool(FileInstallTool):
             files_to_delete.add(topdir)
             for entry in topdir.iterdir():
                 full_name = entry.absolute()
-                common.debug(f"entry {entry} res fullname {full_name}")
+                debug("entry %s res fullname %s", entry, full_name)
                 if entry.is_dir():
                     walk_resource_subdir(entry)
                 else:
+                    debug("entry.name %s", entry.name)
                     if entry.name.endswith("~"):
                         continue  # ignore editor backup files
                     self.add_resource(entry)
@@ -729,9 +738,9 @@ class DBusInstallTool(ResourceInstallTool):
         self.no_launch = no_launch
         self.walk_resources("dbus-1")
 
-    @functools.cached_property
+    @cached_property
     def _session_bus(self):
-        import pydbus
+        import pydbus  # type: ignore
 
         return pydbus.SessionBus()
 
@@ -739,7 +748,7 @@ class DBusInstallTool(ResourceInstallTool):
         return self._session_bus.get(service_name)
 
     def add_resource(self, resource_entry):
-        common.debug("add_resource", self, resource_entry)
+        debug("add_resource %s %s", self, resource_entry)
         if resource_entry.name.endswith(".service"):
             dirs = get_dirs()
             templateData = {
@@ -769,7 +778,7 @@ class DBusInstallTool(ResourceInstallTool):
 
     def _shutdown_service(self, reason):
         if self.no_launch:
-            common.debug("no_launch is set; not shutting down old service")
+            debug("no_launch is set; not shutting down old service")
             return
 
         if self.dry_run:
@@ -779,7 +788,7 @@ class DBusInstallTool(ResourceInstallTool):
 
         dbus_service = self._service(".DBus")
         if not dbus_service.NameHasOwner(const.BUSNAME):
-            common.debug("D-Bus service not running")
+            debug("D-Bus service is not running")
         else:
             service = self._service(const.BUSNAME)
             service_version = service.version
@@ -795,7 +804,7 @@ class DBusInstallTool(ResourceInstallTool):
 
     def _verify_install(self):
         if self.no_launch:
-            common.debug("no_launch is set; not verifying our dbus service")
+            debug("no_launch is set; not verifying our dbus service")
             return
 
         if self.dry_run:
@@ -852,7 +861,7 @@ class BashCompletionInstallTool(ResourceInstallTool):
             dry_run=dry_run, heading="Bash completion"
         )
 
-        # TODO: What about /usr/local?
+        # This works for /usr/local/share, /usr/share, ~/.local/share
         self.bc_dir = get_dirs().datadir / "bash-completion" / "completions"
 
         self.walk_resources("bash-completion")
@@ -904,11 +913,46 @@ class ManpageInstallTool(ResourceInstallTool):
             raise UnhandledResource(resource_entry)
 
 
+class AppstreamInstallTool(ResourceInstallTool):
+    """Deal with Appstream metadata"""
+
+    def __init__(self, dry_run):
+        super(AppstreamInstallTool, self).__init__(
+            dry_run=dry_run, heading="Appstream metainfo"
+        )
+        self.walk_resources("appstream")
+
+    def add_resource(self, resource_entry):
+        if resource_entry.name.endswith(".metainfo.xml"):
+            dirs = get_dirs()
+            metainfo_dir = dirs.datadir / "metainfo"
+            dst = metainfo_dir / f"{const.APPLICATION_ID}.metainfo.xml"
+            modaliases = "\n    ".join(
+                [
+                    f"<modalias>usb:v{vid:04X}p{pid:04X}d*</modalias>"
+                    for vid in [
+                        const.VENDOR_ID_HARMAN,
+                    ]
+                    for pid in const.PRODUCT_ID
+                ]
+            )
+            binaries = "\n    ".join(
+                [
+                    f"<binary>{bin}</binary>"
+                    for bin in [const.BASE_EXE_CLI, const.BASE_EXE_GUI]
+                ]
+            )
+            templateData = {
+                "APPLICATION_ID": const.APPLICATION_ID,
+                "BUSNAME": const.BUSNAME,
+                "APPSTREAM_MODALIASES": modaliases,
+                "APPSTREAM_BINARIES": binaries,
+            }
+            self.add_file(TemplateFile(dst, resource_entry, templateData))
+
+
 class XDGDesktopInstallTool(ResourceInstallTool):
     """Deal with the XDG .desktop and PNG/SVG icon files"""
-
-    # FIXME05: Find out whether `xdg-desktop-menu` and `xdg-desktop-icon`
-    #          must be run after all. Fedora Packaging docs suggest so.
 
     def __init__(self, dry_run):
         super(XDGDesktopInstallTool, self).__init__(
@@ -970,7 +1014,7 @@ class UdevRulesInstallTool(FileInstallTool):
         lines = [
             "# Soundcraft Notepad series mixers with audio routing controlled by USB"
         ]
-        for product_id in const.PY_LIST_OF_PRODUCT_IDS:
+        for product_id in const.PRODUCT_ID:
             lines.append(
                 f'ACTION=="add", SUBSYSTEM=="usb", ATTRS{{idVendor}}=="{const.VENDOR_ID_HARMAN:04x}", ATTRS{{idProduct}}=="{product_id:04x}", TAG+="uaccess"'
             )
@@ -999,17 +1043,16 @@ class UdevRulesInstallTool(FileInstallTool):
         # FIXME: In case installtool is running as root, run udevadm directly?
 
         udevadm_trigger_commands = [
-            "sleep 5   # wait until udev should have noticed the new rules",
-            "# Alternatively, you can also unplug and replug the USB cable.",
+            "udevadm control --reload  # ensure udev notes ruleset changes before the triggers",
         ] + [
             f"udevadm trigger --verbose --action=add --subsystem-match=usb --attr-match=idVendor={const.VENDOR_ID_HARMAN:04x} --attr-match=idProduct={pid:04x}"
-            for pid in const.PY_LIST_OF_PRODUCT_IDS
+            for pid in const.PRODUCT_ID
         ]
 
         SUDO_SCRIPT.add_cmd(
             "\n".join(udevadm_trigger_commands),
             skip_if=skip_if,
-            comment="Trigger the udev rules which run when adding existing mixer devices",
+            comment="Trigger the udev rules (just as when plugging in a Notepad mixer)",
         )
 
     def post_pip_install(self):
@@ -1022,7 +1065,8 @@ class UdevRulesInstallTool(FileInstallTool):
         new_content = {}
         new_content[self.udev_rules_dst] = self.udev_rules_content
 
-        if common.VERBOSE:
+        if logging.root.getEffectiveLevel() <= logging.INFO:
+            # TODO: Move from pprint to logging.*
             from pprint import pprint
 
             print("OLD")
@@ -1036,11 +1080,6 @@ class UdevRulesInstallTool(FileInstallTool):
         self._emit_code_for_rule_change(skip_if=(new_content == old_content))
 
     def pre_pip_uninstall(self):
-        # FIXME05: Do we even want to uninstall the udev rules if it
-        #          is in /etc/udev/rules.d for a $HOME/.local install?
-        #          The next install will just need sudo access again
-        #          to install it again.
-
         old_content = {}
         if self.udev_rules_dst.exists():
             old_content[self.udev_rules_dst] = self.udev_rules_dst.read_text()
@@ -1051,7 +1090,8 @@ class UdevRulesInstallTool(FileInstallTool):
         if self.udev_rules_dst in new_content:
             del new_content[self.udev_rules_dst]
 
-        if common.VERBOSE:
+        if logging.root.getEffectiveLevel() <= logging.INFO:
+            # TODO: Move from pprint to logging.*
             from pprint import pprint
 
             print("OLD")
@@ -1155,7 +1195,7 @@ def parse_argv(argv=None):
     parser = argparse.ArgumentParser(
         description=f"Hook {const.PACKAGE} into the system post-install (or do the reverse).",
     )
-    common.parser_args(parser)
+    common.add_parser_args(parser)
 
     parser.add_argument(
         "-n",
@@ -1220,8 +1260,13 @@ def parse_argv(argv=None):
     )
 
     args = parser.parse_args(argv)
-    print("args after parse_args:", args)
+    common.process_args(parser, args)
+    process_args(parser, args)
+    return args
 
+
+def process_args(parser, args):
+    """Process args, potentially calling parser.error()"""
     if hasattr(args, "chroot") and hasattr(args, "force_prefix"):
         # Initialize the dirs object with the chroot given so that later
         # calls to get_dirs() will yield an object which uses the same
@@ -1231,13 +1276,11 @@ def parse_argv(argv=None):
         dirs = init_dirs()
     else:
         parser.error("Internal error related to chroot and force_prefix")
-    common.debug("Using dirs", dirs)
+    debug("Using dirs: %s", dirs)
 
-    print("args", args)
+    debug("args: %s", args)
 
     # args.dry_run = True
-
-    common.VERBOSE = args.verbose
 
     if args.command == "post-pip-install":
         pass
@@ -1257,9 +1300,6 @@ def parse_argv(argv=None):
     else:
         parser.error(f"Unhandled command: {args.command}")
 
-    print("args before return:", args)
-    return args
-
 
 def main(argv=None):
     """Main program for socranop-installtool."""
@@ -1267,7 +1307,6 @@ def main(argv=None):
     args = parse_argv(argv)
 
     global files_to_delete
-    files_to_delete = FilesToDelete()
 
     # In some cases, we can delete the socranop-installtool executable after use
     files_to_delete.add(Path(sys.argv[0]))
@@ -1278,13 +1317,14 @@ def main(argv=None):
     # Compiled module source file (socranop/__pycache__/installtool.*.pyc)
     if "__cached__" in globals():
         pyc = Path(globals()["__cached__"])
-        # Occasionally, there are two `*.pyc` files but __cached__ only
-        # points to one. So we use __cached__ to find the directory,
-        # and just remove all `installtool.*.pyc` files.
+        # Occasionally, there are two `*.pyc` files but `__cached__`
+        # only points to one. So we use `__cached__` to find the
+        # directory, and just remove all `installtool.*.pyc` files.
         for p in pyc.parent.glob("installtool.*.pyc"):
             files_to_delete.add(p)
 
     everything = InstallToolEverything()
+    everything.add(AppstreamInstallTool(dry_run=args.dry_run))
     everything.add(CheckDependencies(dry_run=args.dry_run))
     everything.add(BashCompletionInstallTool(dry_run=args.dry_run))
     everything.add(DBusInstallTool(dry_run=args.dry_run, no_launch=args.no_launch))

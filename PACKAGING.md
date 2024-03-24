@@ -86,3 +86,13 @@ install/upgrade/removal.
 When you notice something wrong or missing in this file, please [file
 an issue](https://github.com/socratools/socranop/issues/new) or [file
 a pull request](https://github.com/socratools/socranop/compare).
+
+
+Existing socranop Packages
+==========================
+
+More information on miscelladeous distributions' `socranop` packages can be found
+at the [repology.org socranop page](https://repology.org/project/socranop/packages).
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/socranop.svg?columns=4)](https://repology.org/badge/vertical-allrepos/socranop.svg?columns=4)
+

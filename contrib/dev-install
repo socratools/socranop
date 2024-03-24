@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -ex
+
+cd "$(dirname "$0")/.."
+
+pipenv install --dev
+tools/link_system_libs

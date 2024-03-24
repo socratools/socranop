@@ -1,6 +1,7 @@
+# socranop/dirs.py - Determine installation directories
 #
 # Copyright (c) 2020,2021 Jim Ramsay <i.am@jimramsay.com>
-# Copyright (c) 2020,2021 Hans Ulrich Niedermann <hun@n-dimensional.de>
+# Copyright (c) 2020,2021,2023 Hans Ulrich Niedermann <hun@n-dimensional.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -47,11 +48,12 @@ only once, and cannot change during one program invocation.
 import abc
 import sys
 
+from functools import cache, cached_property
+from logging import debug, info
 from os import getenv
 from pathlib import Path
 
 import socranop.constants as const
-from socranop.common import debug
 
 
 class NotDetected(Exception):
@@ -60,6 +62,15 @@ class NotDetected(Exception):
 
 class UnsupportedInstall(Exception):
     pass  # class UnsupportedInstall
+
+
+@cache
+def exePath():
+    """The path the currently running executable"""
+    exename = Path(sys.argv[0]).resolve()
+    if exename.suffix == ".py":
+        raise ValueError("Running out of a module-based execution is not supported")
+    return exename
 
 
 class AbstractDirs(metaclass=abc.ABCMeta):
@@ -72,9 +83,8 @@ class AbstractDirs(metaclass=abc.ABCMeta):
             self._chroot = None
 
         self._prefix = None
-        self._statedir = None
 
-        debug("AbstractDirs.__init__", self, f"chroot={chroot!r}")
+        debug("AbstractDirs.__init__(%s, %s)", self, f"chroot={chroot!r}")
 
         self.__detect()
 
@@ -104,24 +114,15 @@ class AbstractDirs(metaclass=abc.ABCMeta):
             rel_path = path.relative_to(self.chroot)
             return Path("/") / rel_path
 
-    @classmethod
-    @property
-    def exePath(self):
-        """The path the currently running executable"""
-        exename = Path(sys.argv[0]).resolve()
-        if exename.suffix == ".py":
-            raise ValueError("Running out of a module-based execution is not supported")
-        return exename
-
     @property
     def guiExePath(self):
         """Full path to the GUI script executable"""
-        return self.remove_chroot(self.exePath.parent / const.BASE_EXE_GUI)
+        return self.remove_chroot(exePath().parent / const.BASE_EXE_GUI)
 
     @property
     def serviceExePath(self):
         """Full path to the service script executable"""
-        return self.remove_chroot(self.exePath.parent / const.BASE_EXE_SERVICE)
+        return self.remove_chroot(exePath().parent / const.BASE_EXE_SERVICE)
 
     def __detect(self):
         """Detect whether the current installation matches this class.
@@ -130,10 +131,12 @@ class AbstractDirs(metaclass=abc.ABCMeta):
         """
 
         if self.chroot is None:
-            chr_prefix = self.PREFIX
+            chroot_plus_prefix = self.PREFIX
         else:
             root_rel_prefix = self.PREFIX.relative_to("/")
-            chr_prefix = self.chroot / root_rel_prefix
+            chroot_plus_prefix = self.chroot / root_rel_prefix
+
+        debug("detect: chroot_plus_prefix is %s", chroot_plus_prefix)
 
         for sx_dir in ["bin", "sbin", "libexec"]:
             for sx in [
@@ -142,12 +145,12 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                 const.BASE_EXE_SERVICE,
                 const.BASE_EXE_INSTALLTOOL,
             ]:
-                sx_path = chr_prefix / sx_dir / sx
-                # print("sx_path", sx_path)
-                if sx_path == self.exePath:
+                sx_path = chroot_plus_prefix / sx_dir / sx
+                if sx_path == exePath():
+                    debug("found exe path inside chroot_plus_prefix %s", sx_path)
                     return
                 try:
-                    self.exePath.relative_to(chr_prefix)  # ignore result
+                    exePath().relative_to(chroot_plus_prefix)  # ignore result
 
                     # If this is, say,
                     # ``/home/user/.local/share/virtualenvs/socranop-ABCDEFG/bin/socranop-installtool``,
@@ -158,38 +161,51 @@ class AbstractDirs(metaclass=abc.ABCMeta):
                     # the latter.
                     return
                 except ValueError:
-                    pass  # self.exePath is not a subdir of chr_prefix
+                    pass  # exePath() is not in a subdir of chroot_plus_prefix
 
-        raise NotDetected(f"Exe path is not supported: {self.exePath!r}")
+        raise NotDetected(f"Exe path is not supported: {exePath()!r}")
 
-    @property
+    @cached_property
     def prefix(self):
         """The prefix corresponding to the installation type of the currently running executable"""
-        return self.PREFIX
+        prefix = self.PREFIX
+        debug("%s prefix: %s", self.__class__.__name__, prefix)
+        return prefix
 
-    @property
+    @cached_property
     def datadir(self):
         """The datadir corresponding to the installation type of the currently running executable"""
-        return self.prefix / "share"
+        data_dir = self.prefix / "share"
+        debug("%s datadir: %s", self.__class__.__name__, data_dir)
+        return data_dir
 
-    @property
+    @cached_property
     def statedir(self):
         """The statedir where the device state files are stored
 
         The state directory for a user session service must be somewhere
         in the user's ``$HOME``, and a config file is a good place.
         """
-        if self._statedir is None:
+
+        xdg_config_home = getenv("XDG_CONFIG_HOME")
+        if xdg_config_home:  # neither None nor empty string
+            config_dir = Path(xdg_config_home)
+            debug(
+                "%s XDG config dir from XDG_CONFIG_HOME variable: %s",
+                self.__class__.__name__,
+                config_dir,
+            )
+        else:
             config_dir = Path("~/.config").expanduser()
+            debug(
+                "%s XDG config dir default in ~: %s",
+                self.__class__.__name__,
+                config_dir,
+            )
 
-            xdg_config_home = getenv("XDG_CONFIG_HOME")
-            if xdg_config_home:  # neither None nor empty string
-                xdg_config_home_path = Path(xdg_config_home)
-                config_dir = xdg_config_home_path
-
-            self._statedir = config_dir / const.PACKAGE / "state"
-
-        return self._statedir
+        state_dir = config_dir / const.PACKAGE / "state"
+        debug("%s statedir: %s", self.__class__.__name__, state_dir)
+        return state_dir
 
     @property
     @abc.abstractmethod
@@ -208,7 +224,9 @@ class AnyPrefixDirs(GlobalDirs):
     """
 
     def __init__(self, chroot=None):
-        exe_path = GlobalDirs.exePath
+        debug("AnyPrefixDirs using chroot: %s", chroot)
+        exe_path = exePath()
+        debug("AnyPrefixDirs starting from exe path: %s", exe_path)
         if chroot is not None:
             exe_path_relative = exe_path.relative_to(Path(chroot))
             rooted_path = Path("/") / exe_path_relative
@@ -262,16 +280,17 @@ def init_dirs(chroot=None, force_prefix=False):
     global __dir_instance
 
     assert __dir_instance is None
+    assert force_prefix is not None
 
-    if force_prefix is not None:
+    if force_prefix:
         __dir_instance = AnyPrefixDirs(chroot)
-        debug("Using dirs:", __dir_instance)
+        info("Using dirs: %s", __dir_instance)
         return __dir_instance
 
     for cls in [UsrLocalDirs, UsrDirs, HomeDirs]:
         try:
             __dir_instance = cls(chroot)
-            debug("Using dirs:", __dir_instance)
+            info("Using dirs: %s", __dir_instance)
             return __dir_instance
         except NotDetected:
             pass  # This installation is not for the current cls
